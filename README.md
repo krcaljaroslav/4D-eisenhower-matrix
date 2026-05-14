@@ -1,85 +1,148 @@
 # Eisenhower Matrix — Obsidian plugin
 
-Vizualizace tasků napříč vault-em v 5-polové Eisenhower matici (DO / DECIDE / DELEGATE / DELETE / OPEN). Čte a zapisuje Obsidian Tasks syntaxi — `#tagy`, `📅 due`, `🛫 start`, `✅ done`, priority emoji `🔺/⏫/🔼/🔽/⏬`.
+Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (DO / DECIDE / DELEGATE / DELETE / OPEN). Čte a zapisuje [Obsidian Tasks](https://publish.obsidian.md/tasks/Introduction) syntaxi — `#tagy`, `📅 due`, `🛫 start`, `✅ done`, priority emoji.
 
-> Plugin verze webové aplikace „To-Do Today". Stejné UI a feature set, ale nativně v Obsidianu (žádný server, žádný browser). [Web verze](../Druhy-mozek/Eisenhower-matrix/README-Eisenhower-matrix.md) zůstává funkční paralelně (pro mobile přes LAN).
+> Ranní dashboard pro rozhodnutí *co dělat teď*: ráno otevřu, vidím tasky rozdělené podle priority, odškrtnu hotové, případně přidám nové. Source-of-truth zůstávají MD soubory, plugin je jen vizuální vrstva nad nimi.
 
-## Stav
+<!-- Screenshot sem (až bude):
+![screenshot](docs/screenshot.png)
+-->
 
-**Phase A — Foundation** (read-only proof of concept). Plugin lze nainstalovat, otevře view, vykreslí všechny tasky v matici. Žádné interakce zatím (checkbox je disabled). Další fáze přijdou postupně.
+## Co to umí
 
-| Fáze | Obsah | Stav |
-|------|-------|------|
-| A | Foundation: install, render, read-only matrix | ✅ |
-| B | Read-only UI polish: filtr, sort, datum nav | ⏳ |
-| C | Write ops: toggle, add, move, edit, set priority/due | ⏳ |
-| D | Settings tab + commands palette + ribbon polish | ⏳ |
-| E | Polish + mobile + popout window support | ⏳ |
+- **5-polová matice** — kvadrant určuje **první `#tag`** za checkboxem: `#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`. Cokoli jiného → OPEN.
+- **Cross-vault agregace** — sbírá tasky ze **všech `.md` souborů** ve vaultu (Dataview-like), ne jen z dnešní daily note.
+- **Plné CRUD** — přidání (formulář s text + tagy + due date + priorita), editace dvojklikem, odškrtnutí, drag mezi kvadranty.
+- **Priorita** podle Obsidian Tasks konvence: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest
+- **Filtr** podle context tagu (OR logika + virtuální „Ostatní" chip)
+- **Datum navigace** (← / → / kalendář / Dnes) + den-cutoff banner po půlnoci
+- **Pravý klik na task** → otevři source soubor (current pane / nová záložka / split / nové okno) — kurzor přistane přímo na řádku tasku
+- **3 s grace period** po odškrtnutí (zelený rámeček + odpočet — klikni znovu pro vrácení)
+- **Sticky header** + sbalitelná hlavička pro mobilní zobrazení
+- **Sortování v kvadrantu**: overdue → priorita desc → due date asc → alfabeticky
+- **Mobile** (Android testováno)
+- **Respektuje core „Daily notes"** — folder + template (s `{{date}}`, `{{title}}`, `{{time}}` substitucí)
 
-## Konvence
+## Instalace
 
-Tasky musí mít Obsidian Tasks formát:
+### Přes BRAT (doporučeno)
 
-```
-- [ ] #DO #Osobní ⏫ 📅 2026-05-10 🛫 2026-05-01 Zavolej Alici
-- [x] #DECIDE #Work ✅ 2026-04-30 Rozhodni se ohledně budgetu
-```
+[BRAT](https://github.com/TfTHacker/obsidian42-brat) je Obsidian community plugin pro instalaci pluginů přímo z GitHubu (s auto-update).
 
-Kvadrant určuje **první token po `- [ ]`**:
-- `#DO` → DO
-- `#DECIDE` → DECIDE
-- `#DELEGATE` → DELEGATE
-- `#DELETE` → DELETE
-- cokoli jiného → OPEN
+1. Settings → Community plugins → Browse → vyhledej **BRAT** → Install + Enable
+2. `Ctrl+P` (na mobilu: 3 tečky → Command palette) → **„BRAT: Add a beta plugin for testing"**
+3. Vlož URL: `https://github.com/krcaljaroslav/obsidian-eisenhower-matrix`
+4. Add Plugin
+5. Settings → Community plugins → enable **Eisenhower Matrix**
+6. Otevři přes ribbon ikonu (mřížka v levém panelu) nebo `Ctrl+P` → „Open Eisenhower Matrix"
 
-Priorita (z Obsidian Tasks pluginu):
-- 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest
+Update se objeví automaticky do 15 minut po vydání nového [releasu](https://github.com/krcaljaroslav/obsidian-eisenhower-matrix/releases). Nebo manuálně přes `BRAT: Check for updates to all beta plugins`.
 
-## Install (vývoj / Phase A)
+### Manuálně (bez BRAT)
 
-Plugin zatím není v Community Plugins store. Instalace ručně:
+Stáhni `main.js`, `manifest.json`, `styles.css` z [posledního releasu](https://github.com/krcaljaroslav/obsidian-eisenhower-matrix/releases/latest) a hoď je do `<vault>/.obsidian/plugins/eisenhower-matrix/`. Pak Settings → Community plugins → enable.
 
-1. `git clone https://github.com/krcaljaroslav/obsidian-eisenhower-matrix.git` (jakmile bude repo public)
-2. `cd obsidian-eisenhower-matrix && npm install && npm run build`
-3. Zkopíruj `manifest.json`, `main.js`, `styles.css` do `{vault}/.obsidian/plugins/eisenhower-matrix/`
-4. V Obsidianu: Settings → Community plugins → enable „Eisenhower Matrix"
-5. Klikni na ikonu mřížky v left ribbon, nebo `Ctrl+P` → „Open Eisenhower Matrix"
+## Syntaxe tasků
 
-### Symlink pro vývoj
+Plugin čte/zapisuje běžnou Obsidian Tasks syntaxi:
 
-Místo kopírování pro každý build můžeš nasymlinkovat dist do plugin složky:
-
-```powershell
-# PowerShell jako admin
-New-Item -ItemType SymbolicLink `
-  -Path "C:\path\to\vault\.obsidian\plugins\eisenhower-matrix" `
-  -Target "C:\Druhy_mozek\0_Projects\obsidian-eisenhower-matrix"
+```markdown
+- [ ] #DO #Osobní ⏫ 📅 2026-05-20 🛫 2026-05-15 Důležitý call s Alicí
+- [x] #DECIDE Dlouhodobé plánování ✅ 2026-05-10
+- [ ] task bez quadrant tagu  ← spadne do OPEN kvadrantu
 ```
 
-Pak stačí `npm run dev` v projektu — esbuild watch režim, Obsidian po každém buildu reload (`Ctrl+R` v dev tools, nebo „Reload app without saving" command).
+Kvadrantové tagy (první token po `- [ ]`):
 
-## Konfigurace
+| Tag | Kvadrant | Význam |
+|-----|----------|--------|
+| `#DO` | 🔴 DO | Důležité + Urgentní |
+| `#DECIDE` | 🔵 DECIDE | Důležité + Méně urgentní |
+| `#DELEGATE` | 🟢 DELEGATE | Méně důležité + Urgentní |
+| `#DELETE` | 🟡 DELETE | Méně důležité + Méně urgentní |
+| *(jiný / žádný)* | ⚫ OPEN | Nezařazené |
 
-Phase A: žádná. Plugin respektuje core plugin „Daily notes" — uživatelovu nastavenou složku pro daily.
+Priorita ([Obsidian Tasks konvence](https://publish.obsidian.md/tasks/Getting+Started/Priorities)):
 
-## Známé limity v Phase A
+| Emoji | Úroveň |
+|-------|--------|
+| 🔺 | Nejvyšší |
+| ⏫ | Vysoká |
+| 🔼 | Střední |
+| 🔽 | Nízká |
+| ⏬ | Nejnižší |
 
-- **Read-only** — checkbox, drag, edit, add task nefunguje. Přijde ve Fázi C.
-- **Žádný filtr / datum nav / dark mode toggle** — Fáze B.
-- **Žádná settings** — Fáze D.
-- Live reload přes `vault.on(modify/create/delete/rename)` funguje, ale debounce je hardcoded 200 ms.
+## Ovládání
 
-## Sdílený kód s web app
+| Akce | Jak |
+|------|-----|
+| Odškrtnout task | Klik na checkbox · 3 s grace period (klik znovu = vrátit) |
+| Přidat task | Klik `+` v headeru kvadrantu → text + #tagy + 📅 + ⏫ → Enter |
+| Editovat task | **Dvojklik** na kartu (text + tagy + 📅 + ⏫) |
+| Změnit termín samostatně | Klik na 📅 badge na kartě |
+| Přesun mezi kvadranty | **Drag** karty na cílový kvadrant — mění úvodní tag |
+| Otevřít source soubor | **Pravý klik** na kartu → menu (current / nová záložka / split / okno) |
+| Filtr podle tagu | Klik na chip ve filter baru (multi-select OR) |
+| Předchozí / další den | Šipky ← → v headeru, kalendář, nebo „Dnes" |
+| Sbalit kvadrant | Klik na header kvadrantu (▼ / ▶) |
+| Sbalit celou hlavičku | ▲ vpravo nahoře (užitečné na mobilu) |
+| Zobrazit hotové tasky | Toggle „Hotové" v headeru |
 
-Plugin sdílí ~300 řádků core kódu s [web verzí](../Druhy-mozek/Eisenhower-matrix/app/):
+### Pořadí v kvadrantu
 
-| Plugin | Web app |
-|--------|---------|
-| `src/core/parser.ts` | `server/parser.ts` |
-| `src/core/taskUtils.ts` | `src/utils/taskUtils.ts` |
-| `src/core/types.ts` | `src/types.ts` |
+Deterministické, nelze ručně přeskupit:
+1. **Overdue** (📅 < dnes) — nahoře
+2. **Priorita desc** — 🔺 → ⏫ → 🔼 → 🔽 → ⏬ → bez priority
+3. **Due date asc** — nejbližší termín první
+4. **Alfabeticky** podle textu
 
-**Drž sync ručně** — když měníš v jednom, uprav i druhý. Test suite obou repech zachytí drift.
+Manuální páka přeskupování je **priorita** — nastav ji a task se vyhoupne nahoru.
+
+## Nastavení
+
+`Settings → Eisenhower Matrix`:
+
+- **Daily folder** — kam ukládat nové daily notes. Prázdné = respektuj core plugin „Daily notes" config. Override = vlastní cesta (s folder suggesterem).
+- **Vyloučené složky** — tasky z těchto složek se ignorují. Default `_templates`, `1_Agents`. UI s + / × tlačítky a folder suggesterem.
+
+## Daily note integrace
+
+Plugin hledá v daily souboru sekci `# Dnes`. Nové tasky vkládá pod tuto sekci.
+
+Pokud daily note pro daný den neexistuje a přidáš první task, plugin ji **vytvoří automaticky**:
+1. Pokud má core plugin „Daily notes" nastavený **template**, použije ho (s expanzí `{{date}}`, `{{title}}`, `{{time}}`)
+2. Jinak fallback na minimální scaffold (frontmatter + `# Dnes` heading)
+
+> Aktuálně je hardcoded heading `# Dnes` (česky). Pokud chceš jiný (např. `# Today`), [otevři issue](https://github.com/krcaljaroslav/obsidian-eisenhower-matrix/issues) — udělám konfigurovatelné.
+
+## Mobile
+
+Funguje na Androidu. Pár tipů:
+- **Long-press** na kartu = ekvivalent pravého kliknutí (otevři source soubor)
+- **Sbalená hlavička** (▲ tlačítko) — uvolní místo pro matici, jinak header zabírá moc viewportu
+- Drag mezi kvadranty: long-press 250 ms + táhni — funguje, nekoliduje se scrollováním
+
+iOS nezkoušeno, ale `isDesktopOnly: false` v manifestu by mělo fungovat.
+
+## Roadmap
+
+- [ ] Konfigurovatelný heading sekce (`# Dnes` → user choice)
+- [ ] Quick-add task přes Command Palette (bez otvírání view)
+- [ ] Klávesové zkratky uvnitř view (J/K navigace, X toggle, N nový task)
+- [ ] Plný moment.js syntax v daily templatech (zatím jen `{{date}}`/`{{title}}`/`{{time}}`)
+- [ ] Anglická lokalizace UI (zatím česky)
+
+Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/obsidian-eisenhower-matrix/issues).
+
+## Známé limity
+
+- UI je momentálně **česky** (Sbalit vše, Hotové, Žádné tasky, atd.). Anglická lokalizace je na roadmap.
+- Daily heading je hardcoded `# Dnes`.
+- Manuální pořadí napříč soubory (jeden task v daily, jiný v projektu) není podporováno — sort je deterministický.
+
+## Bugs / přispívání
+
+[Issues](https://github.com/krcaljaroslav/obsidian-eisenhower-matrix/issues) · Pull requesty vítané.
 
 ## Licence
 
