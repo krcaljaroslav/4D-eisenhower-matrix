@@ -24,12 +24,19 @@ const DATE_FILE_RE = /^(\d{4}-\d{2}-\d{2})\.md$/;
  */
 export class ObsidianTaskRepo {
   private excludedFolders: string[];
+  private dailyFolderOverride: string;
 
   constructor(
     private app: App,
     excludedFolders: string[] = ['_templates', '1_Agents'],
+    dailyFolderOverride: string = '',
   ) {
     this.excludedFolders = excludedFolders;
+    this.dailyFolderOverride = dailyFolderOverride;
+  }
+
+  setDailyFolderOverride(folder: string) {
+    this.dailyFolderOverride = folder;
   }
 
   // ============================================================
@@ -41,7 +48,7 @@ export class ObsidianTaskRepo {
     todayFileExists: boolean;
     scannedFiles: number;
   }> {
-    const dailyPath = buildDailyNotePath(this.app, date);
+    const dailyPath = buildDailyNotePath(this.app, date, this.dailyFolderOverride);
     const dailyFile = this.app.vault.getFileByPath(dailyPath);
 
     const dnesTasks: Task[] = [];
@@ -86,7 +93,7 @@ export class ObsidianTaskRepo {
   }
 
   getExistingDailyDates(): Set<string> {
-    const folder = getDailyNotesFolder(this.app);
+    const folder = getDailyNotesFolder(this.app, this.dailyFolderOverride);
     const dates = new Set<string>();
     const files = this.app.vault.getMarkdownFiles();
     for (const f of files) {
@@ -171,7 +178,7 @@ export class ObsidianTaskRepo {
     dueDate?: string | null,
     priority?: Priority | null,
   ): Promise<{ sourceFile: string; lineIndex: number; newLine: string }> {
-    const file = await ensureDailyExists(this.app, date);
+    const file = await ensureDailyExists(this.app, date, this.dailyFolderOverride);
 
     let lineIndex = -1;
     let newLine = '';

@@ -13,6 +13,11 @@ export type PluginSettings = {
   showCompleted: boolean;
   lastOpenedDate: string | null;
   excludedFolders: string[];
+  /**
+   * Override pro daily notes folder. Prázdný string = použij konfiguraci
+   * z core pluginu „Daily notes". Cesta relativní k vault rootu.
+   */
+  dailyFolderOverride: string;
 };
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -27,4 +32,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   showCompleted: false,
   lastOpenedDate: null,
   excludedFolders: ['_templates', '1_Agents'],
+  dailyFolderOverride: '',
 };

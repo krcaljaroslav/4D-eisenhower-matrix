@@ -10,13 +10,18 @@ export const VIEW_TYPE_MATRIX = 'eisenhower-matrix-view';
 export class MatrixView extends ItemView {
   private root: Root | null = null;
   private repo: ObsidianTaskRepo;
+  private unregisterCallback: (() => void) | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
     private plugin: EisenhowerMatrixPlugin,
   ) {
     super(leaf);
-    this.repo = new ObsidianTaskRepo(this.app, plugin.settings.excludedFolders);
+    this.repo = new ObsidianTaskRepo(
+      this.app,
+      plugin.settings.excludedFolders,
+      plugin.settings.dailyFolderOverride,
+    );
   }
 
   getViewType(): string {
@@ -36,6 +41,27 @@ export class MatrixView extends ItemView {
     container.empty();
     container.addClass('eisenhower-matrix-root');
 
+    // Když uživatel změní settings (daily folder, excluded), repo by mělo
+    // přepočítat. Zde se ale React nevidí — pošleme reload pomocí re-render.
+    this.unregisterCallback = this.plugin.registerRepoConfigCallback(() => {
+      this.repo.setExcludedFolders(this.plugin.settings.excludedFolders);
+      this.repo.setDailyFolderOverride(this.plugin.settings.dailyFolderOverride);
+      // Bump rev — MatrixApp se přerenderuje a refetchne
+      this.remount();
+    });
+
+    this.mount();
+  }
+
+  async onClose(): Promise<void> {
+    this.unregisterCallback?.();
+    this.unregisterCallback = null;
+    this.root?.unmount();
+    this.root = null;
+  }
+
+  private mount(): void {
+    const container = this.containerEl.children[1] as HTMLElement;
     this.root = createRoot(container);
     this.root.render(
       createElement(
@@ -50,8 +76,8 @@ export class MatrixView extends ItemView {
     );
   }
 
-  async onClose(): Promise<void> {
+  private remount(): void {
     this.root?.unmount();
-    this.root = null;
+    this.mount();
   }
 }

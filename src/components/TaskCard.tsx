@@ -190,10 +190,9 @@ function EditForm({ task, onCancel, onSaved, onUpdate }: EditFormProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      void save();
-    } else if (e.key === 'Enter' && !e.shiftKey && e.target instanceof HTMLInputElement) {
+    // Enter (bez Shift) = uložit; Shift+Enter v textarea = nový řádek (default).
+    // Funguje stejně v inputu i textarea.
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       void save();
     } else if (e.key === 'Escape') {
@@ -269,7 +268,9 @@ function EditForm({ task, onCancel, onSaved, onUpdate }: EditFormProps) {
         <PriorityPicker value={priority} onChange={setPriority} disabled={pending} />
       </div>
       <div className="em-edit-actions">
-        <span className="em-edit-hint">Enter = uložit · Esc = zrušit</span>
+        <span className="em-edit-hint">
+          Enter = uložit · Shift+Enter = nový řádek · Esc = zrušit
+        </span>
         <div className="em-edit-buttons">
           <button
             type="button"

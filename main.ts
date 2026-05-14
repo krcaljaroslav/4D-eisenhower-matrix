@@ -1,9 +1,16 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { MatrixView, VIEW_TYPE_MATRIX } from './src/view/MatrixView.ts';
 import { DEFAULT_SETTINGS, type PluginSettings } from './src/settings/settings.ts';
+import { MatrixSettingsTab } from './src/settings/SettingsTab.ts';
 
 export default class EisenhowerMatrixPlugin extends Plugin {
   settings: PluginSettings = DEFAULT_SETTINGS;
+
+  /**
+   * Callback registrované MatrixView při vytvoření — voláme ho po změně settings,
+   * aby repo přepočítalo daily folder + excluded folders.
+   */
+  private repoConfigCallbacks: Set<() => void> = new Set();
 
   async onload(): Promise<void> {
     console.log('[Eisenhower Matrix] loading plugin');
@@ -22,6 +29,8 @@ export default class EisenhowerMatrixPlugin extends Plugin {
         void this.activateView();
       },
     });
+
+    this.addSettingTab(new MatrixSettingsTab(this.app, this));
   }
 
   async onunload(): Promise<void> {
@@ -33,7 +42,6 @@ export default class EisenhowerMatrixPlugin extends Plugin {
     this.settings = {
       ...DEFAULT_SETTINGS,
       ...(loaded ?? {}),
-      // collapsedQuadrants je objekt, deep-merge ručně aby chyběl-key nepřepsal default
       collapsedQuadrants: {
         ...DEFAULT_SETTINGS.collapsedQuadrants,
         ...(loaded?.collapsedQuadrants ?? {}),
@@ -43,6 +51,16 @@ export default class EisenhowerMatrixPlugin extends Plugin {
 
   async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
+  }
+
+  registerRepoConfigCallback(cb: () => void): () => void {
+    this.repoConfigCallbacks.add(cb);
+    return () => this.repoConfigCallbacks.delete(cb);
+  }
+
+  /** Voláno z SettingsTab po změně daily folderu / excluded folders. */
+  notifyRepoConfigChanged(): void {
+    for (const cb of this.repoConfigCallbacks) cb();
   }
 
   private async activateView(): Promise<void> {

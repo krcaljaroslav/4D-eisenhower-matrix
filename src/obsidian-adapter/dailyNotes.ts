@@ -2,12 +2,14 @@ import type { App, TFile } from 'obsidian';
 import { normalizePath, TFolder } from 'obsidian';
 
 /**
- * Vrátí složku, kam Obsidian ukládá daily notes. Respektuje core plugin
- * „Daily notes" — uživatel si tam nastavuje vlastní folder.
- *
- * Fallback: prázdný string (= vault root).
+ * Vrátí složku, kam ukládat daily notes. Priorita:
+ *   1. `override` (z plugin settings) — pokud neprázdný, použij
+ *   2. core plugin „Daily notes" — uživatelův global config
+ *   3. fallback: vault root (prázdný string)
  */
-export function getDailyNotesFolder(app: App): string {
+export function getDailyNotesFolder(app: App, override?: string): string {
+  if (override && override.trim()) return override.trim();
+
   const internalPlugins = (app as unknown as InternalApp).internalPlugins;
   const dailyNotes = internalPlugins?.plugins?.['daily-notes'];
   if (dailyNotes?.enabled && dailyNotes.instance?.options?.folder !== undefined) {
@@ -40,8 +42,8 @@ export function getDailyNoteFilenameFormat(_app: App): string {
 /**
  * Cesta k daily note souboru pro daný ISO datum.
  */
-export function buildDailyNotePath(app: App, isoDate: string): string {
-  const folder = getDailyNotesFolder(app);
+export function buildDailyNotePath(app: App, isoDate: string, override?: string): string {
+  const folder = getDailyNotesFolder(app, override);
   const filename = `${isoDate}.md`;
   return folder ? normalizePath(`${folder}/${filename}`) : filename;
 }
@@ -53,13 +55,17 @@ export function buildDailyNotePath(app: App, isoDate: string): string {
  *
  * Vrací `TFile` existujícího nebo nově vytvořeného souboru.
  */
-export async function ensureDailyExists(app: App, isoDate: string): Promise<TFile> {
-  const targetPath = buildDailyNotePath(app, isoDate);
+export async function ensureDailyExists(
+  app: App,
+  isoDate: string,
+  override?: string,
+): Promise<TFile> {
+  const targetPath = buildDailyNotePath(app, isoDate, override);
   const existing = app.vault.getFileByPath(targetPath);
   if (existing) return existing;
 
   // Ensure parent folder exists
-  const folder = getDailyNotesFolder(app);
+  const folder = getDailyNotesFolder(app, override);
   if (folder) {
     const folderObj = app.vault.getAbstractFileByPath(folder);
     if (!(folderObj instanceof TFolder)) {
