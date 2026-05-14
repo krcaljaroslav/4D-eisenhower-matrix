@@ -371,6 +371,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div className="em-app">
+        <div className="em-app-header">
         <header className="em-header">
           <div className="em-header-left">
             <h2 className="em-title">Eisenhower Matrix</h2>
@@ -457,7 +458,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           totalCount={totalUnfiltered}
           filteredCount={sortedVisibleTasks.length}
         />
+        </div>
 
+        <div className="em-app-body">
         <Matrix
           tasks={sortedVisibleTasks}
           today={today}
@@ -472,6 +475,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           onUpdateTask={handleUpdate}
           onAddTask={handleAdd}
         />
+        </div>
       </div>
       <DragOverlay dropAnimation={null}>
         {activeTask ? <TaskCardOverlay task={activeTask} /> : null}

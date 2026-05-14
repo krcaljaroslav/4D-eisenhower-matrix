@@ -6,14 +6,35 @@
 
 .eisenhower-matrix-root {
   padding: var(--size-4-3);
-  overflow-y: auto;
+  height: 100%;
+  overflow: hidden;
 }
 
 .em-app {
   display: flex;
   flex-direction: column;
-  gap: var(--size-4-3);
   width: 100%;
+  height: 100%;
+}
+
+/*
+ * Horní část (title, datum nav, controls, banner, filter) — fixed, nescrolluje.
+ * Matrix sám si vlastní scroll dole.
+ */
+.em-app-header {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-3);
+  padding-bottom: var(--size-2-3);
+}
+
+.em-app-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: var(--size-2-3);
 }
 
 /* === Header === */
@@ -447,8 +468,6 @@
 
 .em-quadrant-body {
   padding: 0 var(--size-4-2) var(--size-4-2);
-  max-height: 55vh;
-  overflow-y: auto;
 }
 
 .em-empty {
