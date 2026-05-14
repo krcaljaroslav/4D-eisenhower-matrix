@@ -468,6 +468,8 @@
 
 .em-quadrant-body {
   padding: 0 var(--size-4-2) var(--size-4-2);
+  max-height: 55vh;
+  overflow-y: auto;
 }
 
 .em-empty {
