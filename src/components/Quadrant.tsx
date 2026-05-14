@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
+import type { PaneType } from 'obsidian';
 import type { Priority, Quadrant as QuadrantKind, Task } from '../core/types.ts';
 import { QUADRANT_META } from '../core/types.ts';
 import { TaskCard } from './TaskCard.tsx';
@@ -27,6 +28,7 @@ type Props = {
     dueDate: string | null;
     priority: Priority | null;
   }) => Promise<void>;
+  onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
 };
 
 export function Quadrant({
@@ -41,6 +43,7 @@ export function Quadrant({
   onSetDueDate,
   onUpdateTask,
   onAddTask,
+  onOpenSource,
 }: Props) {
   const meta = QUADRANT_META[kind];
   const [adding, setAdding] = useState(false);
@@ -115,6 +118,7 @@ export function Quadrant({
                     onToggle={() => onToggleTask(t)}
                     onSetDueDate={(d) => onSetDueDate(t, d)}
                     onUpdateTask={(text, tags, opts) => onUpdateTask(t, text, tags, opts)}
+                    onOpenSource={(mode) => onOpenSource(t, mode)}
                   />
                 );
               })}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
+import { Menu, type PaneType } from 'obsidian';
 import type { Priority, Task } from '../core/types.ts';
 import { PRIORITY_META } from '../core/types.ts';
 import { isOverdue } from '../core/taskUtils.ts';
@@ -20,6 +21,7 @@ type Props = {
     contextTags: string[],
     options: { dueDate: string | null; priority: Priority | null },
   ) => Promise<void>;
+  onOpenSource: (mode?: PaneType | boolean) => void;
 };
 
 export function TaskCard({
@@ -30,6 +32,7 @@ export function TaskCard({
   onToggle,
   onSetDueDate,
   onUpdateTask,
+  onOpenSource,
 }: Props) {
   const overdue = isOverdue(task, today);
   const [editing, setEditing] = useState(false);
@@ -53,18 +56,51 @@ export function TaskCard({
     setEditing(true);
   };
 
+  const showContextMenu = (e: React.MouseEvent) => {
+    if (editing) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const menu = new Menu();
+    menu.addItem((item) =>
+      item
+        .setTitle('Otevřít soubor')
+        .setIcon('file-text')
+        .onClick(() => onOpenSource(false)),
+    );
+    menu.addItem((item) =>
+      item
+        .setTitle('Otevřít v nové záložce')
+        .setIcon('file-plus')
+        .onClick(() => onOpenSource('tab')),
+    );
+    menu.addItem((item) =>
+      item
+        .setTitle('Otevřít v novém panelu vpravo')
+        .setIcon('separator-vertical')
+        .onClick(() => onOpenSource('split')),
+    );
+    menu.addItem((item) =>
+      item
+        .setTitle('Otevřít v novém okně')
+        .setIcon('picture-in-picture-2')
+        .onClick(() => onOpenSource('window')),
+    );
+    menu.showAtMouseEvent(e.nativeEvent);
+  };
+
   return (
     <li
       ref={setNodeRef}
       {...(editing ? {} : attributes)}
       {...(editing ? {} : listeners)}
       onDoubleClick={enterEdit}
+      onContextMenu={showContextMenu}
       className={`em-task ${overdue ? 'em-task-overdue' : ''} ${
         inGrace ? 'em-task-grace' : ''
       } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${
         isActiveDrag ? 'em-task-active-drag' : ''
       }`}
-      title={editing ? undefined : 'Dvojklik pro editaci'}
+      title={editing ? undefined : 'Dvojklik pro editaci · pravý klik pro menu'}
     >
       {editing ? (
         <EditForm

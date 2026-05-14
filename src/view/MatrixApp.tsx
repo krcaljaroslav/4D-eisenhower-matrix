@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { App, EventRef } from 'obsidian';
+import type { App, EventRef, PaneType } from 'obsidian';
 import {
   DndContext,
   DragOverlay,
@@ -242,6 +242,22 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [repo, date],
   );
 
+  const handleOpenSource = useCallback(
+    (task: Task, mode: PaneType | boolean = false) => {
+      const file = app.vault.getFileByPath(task.sourceFile);
+      if (!file) {
+        showError(`Soubor nenalezen: ${task.sourceFile}`);
+        return;
+      }
+      const leaf = app.workspace.getLeaf(mode);
+      void leaf.openFile(file, {
+        active: true,
+        eState: { line: task.lineIndex },
+      });
+    },
+    [app],
+  );
+
   // === Derived state ===
   const visibleTasks = useMemo(
     () =>
@@ -474,6 +490,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           onSetDueDate={handleSetDueDate}
           onUpdateTask={handleUpdate}
           onAddTask={handleAdd}
+          onOpenSource={handleOpenSource}
         />
         </div>
       </div>

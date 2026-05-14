@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import type { PaneType } from 'obsidian';
 import type { Priority, Task, Quadrant as QuadrantKind } from '../core/types.ts';
 import { QUADRANTS } from '../core/types.ts';
 import { Quadrant } from './Quadrant.tsx';
@@ -24,6 +25,7 @@ type Props = {
     dueDate: string | null;
     priority: Priority | null;
   }) => Promise<void>;
+  onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
 };
 
 export function Matrix(props: Props) {
@@ -55,6 +57,7 @@ export function Matrix(props: Props) {
       onSetDueDate={props.onSetDueDate}
       onUpdateTask={props.onUpdateTask}
       onAddTask={props.onAddTask}
+      onOpenSource={props.onOpenSource}
     />
   );
 
