@@ -151,7 +151,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate }: EditFormProps) {
   const [priority, setPriority] = useState<Priority | null>(task.priority ?? null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const textRef = useRef<HTMLTextAreaElement>(null);
+  const textRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -190,9 +190,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate }: EditFormProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Enter (bez Shift) = uložit; Shift+Enter v textarea = nový řádek (default).
-    // Funguje stejně v inputu i textarea.
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter') {
       e.preventDefault();
       void save();
     } else if (e.key === 'Escape') {
@@ -215,12 +213,12 @@ function EditForm({ task, onCancel, onSaved, onUpdate }: EditFormProps) {
       onClick={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}
     >
-      <textarea
+      <input
         ref={textRef}
+        type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        rows={2}
         disabled={pending}
         className="em-edit-text"
         placeholder="Text tasku"
@@ -268,9 +266,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate }: EditFormProps) {
         <PriorityPicker value={priority} onChange={setPriority} disabled={pending} />
       </div>
       <div className="em-edit-actions">
-        <span className="em-edit-hint">
-          Enter = uložit · Shift+Enter = nový řádek · Esc = zrušit
-        </span>
+        <span className="em-edit-hint">Enter = uložit · Esc = zrušit</span>
         <div className="em-edit-buttons">
           <button
             type="button"

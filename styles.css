@@ -819,7 +819,6 @@
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-s);
   padding: var(--size-2-1) var(--size-2-2);
-  resize: vertical;
   font-family: inherit;
 }
 
