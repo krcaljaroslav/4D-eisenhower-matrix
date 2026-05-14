@@ -505,10 +505,6 @@
   color: var(--text-muted);
 }
 
-.em-task-dragging {
-  opacity: 0.3;
-}
-
 .em-task-grace {
   border-color: var(--color-green);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-green) 35%, transparent);

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import type { Priority, Task } from '../core/types.ts';
 import { PRIORITY_META } from '../core/types.ts';
 import { isOverdue } from '../core/taskUtils.ts';
@@ -34,12 +33,13 @@ export function TaskCard({
   const [editing, setEditing] = useState(false);
 
   const draggableId = `${task.sourceFile}:${task.lineIndex}`;
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  // Pozn.: vizuál během dragu řeší výhradně DragOverlay v MatrixApp.
+  // Originální karta zůstává na své grid pozici (žádný transform, žádný opacity hack)
+  // — pak nemůže "uvíznout" v drag stavu po dropu.
+  const { attributes, listeners, setNodeRef } = useDraggable({
     id: draggableId,
     disabled: editing,
   });
-
-  const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
 
   const now = Date.now();
   const inGrace = task.checked && graceExpiresAt !== undefined && graceExpiresAt > now;
@@ -54,15 +54,12 @@ export function TaskCard({
   return (
     <li
       ref={setNodeRef}
-      style={style}
       {...(editing ? {} : attributes)}
       {...(editing ? {} : listeners)}
       onDoubleClick={enterEdit}
       className={`em-task ${overdue ? 'em-task-overdue' : ''} ${
         inGrace ? 'em-task-grace' : ''
-      } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${
-        isDragging ? 'em-task-dragging' : ''
-      }`}
+      } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''}`}
       title={editing ? undefined : 'Dvojklik pro editaci'}
     >
       {editing ? (
