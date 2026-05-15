@@ -9,6 +9,7 @@ import {
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
+  type Modifier,
 } from '@dnd-kit/core';
 import type { ObsidianTaskRepo } from '../obsidian-adapter/ObsidianTaskRepo.ts';
 import { showError } from '../obsidian-adapter/toast.ts';
@@ -35,6 +36,51 @@ type Props = {
 function taskKey(sourceFile: string, lineIndex: number): string {
   return `${sourceFile}:${lineIndex}`;
 }
+
+/**
+ * Z events všech typů (Mouse/Pointer/Touch) vytáhne clientX/Y. Default dnd-kit
+ * to neumí univerzálně, takže si to spočítáme sami.
+ */
+function getEventCoordinates(event: Event): { x: number; y: number } | null {
+  if (event instanceof MouseEvent) {
+    return { x: event.clientX, y: event.clientY };
+  }
+  if (typeof TouchEvent !== 'undefined' && event instanceof TouchEvent) {
+    const touch = event.touches[0] ?? event.changedTouches[0];
+    if (touch) return { x: touch.clientX, y: touch.clientY };
+  }
+  // Fallback pro PointerEvent a jiné (mají clientX/Y)
+  if ('clientX' in event && 'clientY' in event) {
+    const ev = event as { clientX: number; clientY: number };
+    return { x: ev.clientX, y: ev.clientY };
+  }
+  return null;
+}
+
+/**
+ * Modifier pro DragOverlay — drží STŘED overlay přímo pod kurzorem,
+ * bez ohledu na to, kde uživatel kliknul na originální kartu.
+ *
+ * Standardní chování dnd-kit: top-left overlay = top-left source. Pokud
+ * uživatel kliknul na levý horní roh karty, vypadalo to OK; pokud kliknul
+ * na střed, vypadalo to že overlay „odskočil" doprava dolů.
+ */
+const snapCenterToCursor: Modifier = ({
+  activatorEvent,
+  draggingNodeRect,
+  transform,
+}) => {
+  if (!draggingNodeRect || !activatorEvent) return transform;
+  const coords = getEventCoordinates(activatorEvent);
+  if (!coords) return transform;
+  const offsetX = coords.x - draggingNodeRect.left;
+  const offsetY = coords.y - draggingNodeRect.top;
+  return {
+    ...transform,
+    x: transform.x + offsetX - draggingNodeRect.width / 2,
+    y: transform.y + offsetY - draggingNodeRect.height / 2,
+  };
+};
 
 export function MatrixApp({ app, repo, plugin }: Props) {
   const today = useMemo(() => formatDateISO(new Date()), []);
@@ -528,7 +574,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         />
         </div>
       </div>
-      <DragOverlay dropAnimation={null}>
+      <DragOverlay dropAnimation={null} modifiers={[snapCenterToCursor]}>
         {activeTask ? <TaskCardOverlay task={activeTask} /> : null}
       </DragOverlay>
     </DndContext>
