@@ -97,6 +97,7 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel }: Props) {
       <div className="em-add-controls">
         <button
           type="button"
+          tabIndex={-1}
           onClick={openDatePicker}
           className={`em-badge ${dueDate ? 'em-badge-clickable' : 'em-badge-add'}`}
           title="Nastav due date"
@@ -106,6 +107,7 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel }: Props) {
         {dueDate && (
           <button
             type="button"
+            tabIndex={-1}
             onClick={() => setDueDate('')}
             className="em-badge-clear"
             title="Odstranit termín"
@@ -117,7 +119,11 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel }: Props) {
           ref={dateRef}
           type="date"
           value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
+          onChange={(e) => {
+            setDueDate(e.target.value);
+            // Po zvolení data vrať focus do textu — Enter pak uloží task.
+            inputRef.current?.focus();
+          }}
           className="em-sr-only"
           aria-hidden
           tabIndex={-1}

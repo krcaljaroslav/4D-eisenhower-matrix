@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { Menu, type PaneType } from 'obsidian';
+import { Menu, Platform, type PaneType } from 'obsidian';
 import type { Priority, Task } from '../core/types.ts';
 import { PRIORITY_META } from '../core/types.ts';
 import { isOverdue } from '../core/taskUtils.ts';
@@ -56,11 +56,12 @@ export function TaskCard({
     setEditing(true);
   };
 
-  const showContextMenu = (e: React.MouseEvent) => {
-    if (editing) return;
-    e.preventDefault();
-    e.stopPropagation();
+  const buildMenu = (): Menu => {
     const menu = new Menu();
+    menu.addItem((item) =>
+      item.setTitle('Editovat').setIcon('pencil').onClick(enterEdit),
+    );
+    menu.addSeparator();
     menu.addItem((item) =>
       item
         .setTitle('Otevřít soubor')
@@ -85,7 +86,32 @@ export function TaskCard({
         .setIcon('picture-in-picture-2')
         .onClick(() => onOpenSource('window')),
     );
-    menu.showAtMouseEvent(e.nativeEvent);
+    return menu;
+  };
+
+  const showContextMenu = (e: React.MouseEvent) => {
+    if (editing) return;
+    e.preventDefault();
+    e.stopPropagation();
+    buildMenu().showAtMouseEvent(e.nativeEvent);
+  };
+
+  /**
+   * Double-tap chování:
+   *   - Desktop: rovnou edit (rychlá cesta)
+   *   - Mobile: kontextové menu (long-press kolidoval s drag, takže nešel right-click
+   *     jako na desktopu — místo toho dvojklepnutí otevře menu, ve kterém je „Editovat"
+   *     jako první položka)
+   */
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (editing) return;
+    if (Platform.isMobile) {
+      e.preventDefault();
+      e.stopPropagation();
+      buildMenu().showAtMouseEvent(e.nativeEvent);
+    } else {
+      enterEdit();
+    }
   };
 
   return (
@@ -93,14 +119,20 @@ export function TaskCard({
       ref={setNodeRef}
       {...(editing ? {} : attributes)}
       {...(editing ? {} : listeners)}
-      onDoubleClick={enterEdit}
+      onDoubleClick={handleDoubleClick}
       onContextMenu={showContextMenu}
       className={`em-task ${overdue ? 'em-task-overdue' : ''} ${
         inGrace ? 'em-task-grace' : ''
       } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${
         isActiveDrag ? 'em-task-active-drag' : ''
       }`}
-      title={editing ? undefined : 'Dvojklik pro editaci · pravý klik pro menu'}
+      title={
+        editing
+          ? undefined
+          : Platform.isMobile
+            ? 'Dvojklik pro menu'
+            : 'Dvojklik pro editaci · pravý klik pro menu'
+      }
     >
       {editing ? (
         <EditForm

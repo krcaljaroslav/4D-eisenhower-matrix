@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useRef } from 'react';
 
 type Props = {
   currentDueDate?: string;
@@ -8,160 +7,78 @@ type Props = {
   overdue?: boolean;
 };
 
-type Position = { top: number; left: number };
-
 /**
- * Trigger (📅 badge nebo `+ 📅`) + popover přes `createPortal` do
- * dokumentu vlastnícího trigger (popout window safe).
+ * Klik na badge → rovnou native date picker (žádný popover dialog).
+ * Pokud má task už due date, vedle se zobrazí × pro odstranění.
+ *
+ * Pattern: identický s 📅 tlačítkem v AddTaskInput. Konzistentní s tím,
+ * jak se due date nastavuje při vytváření tasku.
  */
 export function DueDatePicker({ currentDueDate, onChange, variant, overdue }: Props) {
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(currentDueDate ?? '');
-  const [pending, setPending] = useState(false);
-  const [pos, setPos] = useState<Position | null>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => setValue(currentDueDate ?? ''), [currentDueDate]);
-
-  const recomputePosition = useCallback(() => {
-    const el = triggerRef.current;
+  const openPicker = () => {
+    const el = dateInputRef.current;
     if (!el) return;
-    const win = el.ownerDocument.defaultView ?? window;
-    const rect = el.getBoundingClientRect();
-    const popoverWidth = 260;
-    const left = Math.min(rect.left, win.innerWidth - popoverWidth - 8);
-    setPos({ top: rect.bottom + 4, left: Math.max(8, left) });
-  }, []);
+    if (typeof el.showPicker === 'function') {
+      try {
+        el.showPicker();
+        return;
+      } catch {
+        // showPicker může selhat (např. element ne-visible v některých prohlížečích) — fallback
+      }
+    }
+    el.focus();
+  };
 
-  useLayoutEffect(() => {
-    if (open) recomputePosition();
-  }, [open, recomputePosition]);
-
-  useEffect(() => {
-    if (!open) return;
-    const doc = triggerRef.current?.ownerDocument ?? document;
-    const win = doc.defaultView ?? window;
-
-    const onDocClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (popoverRef.current?.contains(target)) return;
-      if (triggerRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    const onScroll = () => setOpen(false);
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    const t = setTimeout(() => {
-      doc.addEventListener('click', onDocClick);
-      doc.addEventListener('keydown', onKey);
-      win.addEventListener('scroll', onScroll, true);
-      win.addEventListener('resize', recomputePosition);
-    }, 0);
-    return () => {
-      clearTimeout(t);
-      doc.removeEventListener('click', onDocClick);
-      doc.removeEventListener('keydown', onKey);
-      win.removeEventListener('scroll', onScroll, true);
-      win.removeEventListener('resize', recomputePosition);
-    };
-  }, [open, recomputePosition]);
-
-  const save = async (newValue: string | null) => {
-    setPending(true);
-    try {
+  const handleDateChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value || null;
+    if (newValue !== (currentDueDate ?? null)) {
       await onChange(newValue);
-      setOpen(false);
-    } finally {
-      setPending(false);
     }
   };
 
-  const trigger =
-    variant === 'badge' && currentDueDate ? (
-      <button
-        ref={triggerRef}
-        type="button"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-        className={`em-badge em-badge-clickable ${overdue ? 'em-badge-overdue' : ''}`}
-        title="Klikni pro editaci termínu"
-      >
-        📅 {currentDueDate}
-      </button>
-    ) : (
-      <button
-        ref={triggerRef}
-        type="button"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-        className="em-badge em-badge-add"
-        title="Přidat termín"
-      >
-        + 📅
-      </button>
-    );
-
-  const doc = triggerRef.current?.ownerDocument ?? document;
-  const popover =
-    open && pos
-      ? createPortal(
-          <div
-            ref={popoverRef}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 1000 }}
-            className="em-popover"
-          >
-            <input
-              type="date"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && value) {
-                  e.preventDefault();
-                  void save(value);
-                }
-              }}
-              autoFocus
-              className="em-popover-input"
-            />
-            <button
-              type="button"
-              onClick={() => value && save(value)}
-              disabled={pending || !value}
-              className="em-btn-ok"
-            >
-              OK
-            </button>
-            {currentDueDate && (
-              <button
-                type="button"
-                onClick={() => save(null)}
-                disabled={pending}
-                className="em-btn-danger-link"
-                title="Odstranit termín"
-              >
-                Smazat
-              </button>
-            )}
-          </div>,
-          doc.body,
-        )
-      : null;
+  const isBadgeWithDate = variant === 'badge' && currentDueDate;
 
   return (
     <span className="em-inline-flex">
-      {trigger}
-      {popover}
+      <button
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          openPicker();
+        }}
+        className={`em-badge ${isBadgeWithDate ? 'em-badge-clickable' : 'em-badge-add'} ${
+          overdue ? 'em-badge-overdue' : ''
+        }`}
+        title={currentDueDate ? 'Klikni pro editaci termínu' : 'Přidat termín'}
+      >
+        {currentDueDate ? `📅 ${currentDueDate}` : '+ 📅'}
+      </button>
+      {isBadgeWithDate && (
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            void onChange(null);
+          }}
+          className="em-badge-clear"
+          title="Odstranit termín"
+        >
+          ×
+        </button>
+      )}
+      <input
+        ref={dateInputRef}
+        type="date"
+        value={currentDueDate ?? ''}
+        onChange={handleDateChange}
+        className="em-sr-only"
+        aria-hidden
+        tabIndex={-1}
+      />
     </span>
   );
 }
