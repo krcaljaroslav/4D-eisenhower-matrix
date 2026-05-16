@@ -18,6 +18,42 @@
 }
 
 /*
+ * === MOBILE LAYOUT OVERRIDE ===
+ * Na mobilu rigidní height:100% + tři vnořené overflow:auto kontejnery
+ * (root / em-app-body / em-quadrant-body) kolidovaly s virtuální klávesnicí —
+ * při psaní se layout rozbil (neprůhledný blok přes celý display).
+ *
+ * Fix: jeden přirozený scroll kontejner (sám root). Žádné vnořené overflow,
+ * žádné fixní výšky. Prohlížeč pak řeší scroll k focusnutému inputu sám.
+ */
+.eisenhower-matrix-root.em-mobile {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.em-mobile .em-app {
+  height: auto;
+}
+
+.em-mobile .em-app-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: var(--background-primary);
+}
+
+.em-mobile .em-app-body {
+  flex: none;
+  min-height: 0;
+  overflow: visible;
+}
+
+.em-mobile .em-quadrant-body {
+  max-height: none;
+  overflow: visible;
+}
+
+/*
  * Horní část (title, datum nav, controls, banner, filter) — fixed, nescrolluje.
  * Matrix sám si vlastní scroll dole.
  */

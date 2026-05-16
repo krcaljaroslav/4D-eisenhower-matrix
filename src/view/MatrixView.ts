@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf } from 'obsidian';
+import { ItemView, Platform, WorkspaceLeaf } from 'obsidian';
 import { createElement, StrictMode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { ObsidianTaskRepo } from '../obsidian-adapter/ObsidianTaskRepo.ts';
@@ -40,6 +40,11 @@ export class MatrixView extends ItemView {
     const container = this.containerEl.children[1] as HTMLElement;
     container.empty();
     container.addClass('eisenhower-matrix-root');
+    // Na mobilu vypneme rigidní height:100% + vnořené overflow scroll kontejnery
+    // (rvaly se s virtuální klávesnicí). Viz `.em-mobile` v styles.css.
+    if (Platform.isMobile) {
+      container.addClass('em-mobile');
+    }
 
     // Když uživatel změní settings (daily folder, excluded), repo by mělo
     // přepočítat. Zde se ale React nevidí — pošleme reload pomocí re-render.
