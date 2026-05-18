@@ -1,10 +1,12 @@
-**Čeština** · [English](README.en.md)
+**English** · [Čeština](README.cs.md)
 
 # Eisenhower Matrix — Obsidian plugin
 
-Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (DO / DECIDE / DELEGATE / DELETE / OPEN). Čte a zapisuje [Obsidian Tasks](https://publish.obsidian.md/tasks/Introduction) syntaxi — `#tagy`, `📅 due`, `🛫 start`, `✅ done`, priority emoji.
+Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (DO / DECIDE / DELEGATE / DELETE / OPEN). Reads and writes [Obsidian Tasks](https://publish.obsidian.md/tasks/Introduction) syntax — `#tags`, `📅 due`, `🛫 start`, `✅ done`, priority emoji.
 
-> Ranní dashboard pro rozhodnutí *co dělat teď*: ráno otevřu, vidím tasky rozdělené podle priority, odškrtnu hotové, případně přidám nové. Source-of-truth zůstávají MD soubory, plugin je jen vizuální vrstva nad nimi.
+> A morning dashboard for deciding *what to do now*: open it, see tasks split by priority, check off the done ones, add new ones. Markdown files stay the source of truth — the plugin is just a visual layer on top.
+
+> **Note:** the plugin UI is currently in Czech. English localization is on the roadmap. The screenshots and some labels below show Czech text.
 
 <table>
   <tr>
@@ -18,141 +20,141 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
   </tr>
 </table>
 
-## Co to umí
+## Features
 
-- **5-polová matice** — kvadrant určuje **první `#tag`** za checkboxem: `#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`. Cokoli jiného → OPEN.
-- **Cross-vault agregace** — sbírá tasky ze **všech `.md` souborů** ve vaultu (Dataview-like), ne jen z dnešní daily note.
-- **Plné CRUD** — přidání (formulář s text + tagy + due date + priorita), editace, odškrtnutí, přesun mezi kvadranty.
-- **Priorita** podle Obsidian Tasks konvence: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest
-- **Tag autocomplete** — při psaní tagů napovídá existující tagy z vault-u (žádné duplicity)
-- **Filtr** podle context tagu (OR logika + virtuální „Ostatní" chip)
-- **Datum navigace** (← / → / kalendář / Dnes) + den-cutoff banner po půlnoci
-- **3 s grace period** po odškrtnutí (zelený rámeček + odpočet — klikni znovu pro vrácení)
-- **Sticky header** + sbalitelná hlavička pro mobilní zobrazení
-- **Sortování v kvadrantu**: overdue → priorita desc → due date asc → alfabeticky
-- **Desktop i mobil** (Android testováno)
-- **Respektuje core „Daily notes"** — folder + template (s `{{date}}`, `{{title}}`, `{{time}}` substitucí)
+- **5-quadrant matrix** — the quadrant is determined by the **first `#tag`** after the checkbox: `#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`. Anything else → OPEN.
+- **Cross-vault aggregation** — collects tasks from **all `.md` files** in the vault (Dataview-like), not just today's daily note.
+- **Full CRUD** — add (form with text + tags + due date + priority), edit, toggle, move between quadrants.
+- **Priority** following the Obsidian Tasks convention: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest
+- **Tag autocomplete** — suggests existing vault tags while typing (avoids duplicates).
+- **Filter** by context tag (OR logic + a virtual "Other" chip).
+- **Date navigation** (← / → / calendar / Today) + a day-cutoff banner after midnight.
+- **3 s grace period** after checking a task off (green border + countdown — click again to undo).
+- **Sticky header** + collapsible header for mobile.
+- **In-quadrant sorting**: overdue → priority desc → due date asc → alphabetical.
+- **Desktop and mobile** (tested on Android).
+- **Respects the core "Daily notes" plugin** — folder + template (with `{{date}}`, `{{title}}`, `{{time}}` substitution).
 
-## Instalace
+## Installation
 
-### Přes BRAT (doporučeno)
+### Via BRAT (recommended)
 
-[BRAT](https://github.com/TfTHacker/obsidian42-brat) je Obsidian community plugin pro instalaci pluginů přímo z GitHubu (s auto-update).
+[BRAT](https://github.com/TfTHacker/obsidian42-brat) is an Obsidian community plugin for installing plugins straight from GitHub (with auto-update).
 
-1. Settings → Community plugins → Browse → vyhledej **BRAT** → Install + Enable
-2. `Ctrl+P` (na mobilu: 3 tečky → Command palette) → **„BRAT: Add a beta plugin for testing"**
-3. Vlož URL: `https://github.com/krcaljaroslav/4D-eisenhower-matrix`
+1. Settings → Community plugins → Browse → search for **BRAT** → Install + Enable
+2. `Ctrl+P` (mobile: 3-dot menu → Command palette) → **"BRAT: Add a beta plugin for testing"**
+3. Paste the URL: `https://github.com/krcaljaroslav/4D-eisenhower-matrix`
 4. Add Plugin
 5. Settings → Community plugins → enable **Eisenhower Matrix**
-6. Otevři přes ribbon ikonu (mřížka v levém panelu) nebo `Ctrl+P` → „Open Eisenhower Matrix"
+6. Open via the ribbon icon (grid icon in the left sidebar) or `Ctrl+P` → "Open Eisenhower Matrix"
 
-Update se objeví automaticky do 15 minut po vydání nového [releasu](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases). Nebo manuálně přes `BRAT: Check for updates to all beta plugins`.
+Updates appear automatically within 15 minutes of a new [release](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases), or manually via `BRAT: Check for updates to all beta plugins`.
 
-### Manuálně (bez BRAT)
+### Manual (without BRAT)
 
-Stáhni `main.js`, `manifest.json`, `styles.css` z [posledního releasu](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases/latest) a hoď je do `<vault>/.obsidian/plugins/4d-eisenhower-matrix/`. Pak Settings → Community plugins → enable.
+Download `main.js`, `manifest.json`, `styles.css` from the [latest release](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases/latest) and drop them into `<vault>/.obsidian/plugins/4d-eisenhower-matrix/`. Then Settings → Community plugins → enable.
 
-## Syntaxe tasků
+## Task syntax
 
-Plugin čte/zapisuje běžnou Obsidian Tasks syntaxi:
+The plugin reads/writes standard Obsidian Tasks syntax:
 
 ```markdown
-- [ ] #DO #Osobní ⏫ 📅 2026-05-20 🛫 2026-05-15 Důležitý call s Alicí
-- [x] #DECIDE Dlouhodobé plánování ✅ 2026-05-10
-- [ ] task bez quadrant tagu  ← spadne do OPEN kvadrantu
+- [ ] #DO #Personal ⏫ 📅 2026-05-20 🛫 2026-05-15 Important call with Alice
+- [x] #DECIDE Long-term planning ✅ 2026-05-10
+- [ ] task without a quadrant tag  ← lands in the OPEN quadrant
 ```
 
-Kvadrantové tagy (první token po `- [ ]`):
+Quadrant tags (the first token after `- [ ]`):
 
-| Tag | Kvadrant | Význam |
-|-----|----------|--------|
-| `#DO` | 🔴 DO | Důležité + Urgentní |
-| `#DECIDE` | 🔵 DECIDE | Důležité + Méně urgentní |
-| `#DELEGATE` | 🟢 DELEGATE | Méně důležité + Urgentní |
-| `#DELETE` | 🟡 DELETE | Méně důležité + Méně urgentní |
-| *(jiný / žádný)* | ⚫ OPEN | Nezařazené |
+| Tag | Quadrant | Meaning |
+|-----|----------|---------|
+| `#DO` | 🔴 DO | Important + Urgent |
+| `#DECIDE` | 🔵 DECIDE | Important + Less Urgent |
+| `#DELEGATE` | 🟢 DELEGATE | Less Important + Urgent |
+| `#DELETE` | 🟡 DELETE | Less Important + Less Urgent |
+| *(other / none)* | ⚫ OPEN | Uncategorized |
 
-Priorita ([Obsidian Tasks konvence](https://publish.obsidian.md/tasks/Getting+Started/Priorities)):
+Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+Started/Priorities)):
 
-| Emoji | Úroveň |
-|-------|--------|
-| 🔺 | Nejvyšší |
-| ⏫ | Vysoká |
-| 🔼 | Střední |
-| 🔽 | Nízká |
-| ⏬ | Nejnižší |
+| Emoji | Level |
+|-------|-------|
+| 🔺 | Highest |
+| ⏫ | High |
+| 🔼 | Medium |
+| 🔽 | Low |
+| ⏬ | Lowest |
 
-## Ovládání
+## Controls
 
-| Akce | Jak |
-|------|-----|
-| Odškrtnout task | Klik na checkbox · 3 s grace period (klik znovu = vrátit) |
-| Přidat task | Klik `+` v headeru kvadrantu → text + #tagy + 📅 + ⏫ → Enter |
-| Editovat task | **Desktop:** dvojklik na kartu. **Mobil:** long-press / dvojklep → menu → Editovat |
-| Změnit termín samostatně | Klik na 📅 badge na kartě |
-| Přesun mezi kvadranty | **Desktop:** drag karty na cílový kvadrant. **Mobil:** long-press / dvojklep → menu → „Přesunout do…" |
-| Otevřít source soubor | **Desktop:** pravý klik na kartu. **Mobil:** long-press / dvojklep. → menu (current pane / nová záložka / split / okno) — kurzor přistane na řádku tasku |
-| Filtr podle tagu | Klik na chip ve filter baru (multi-select OR) |
-| Předchozí / další den | Šipky ← → v headeru, kalendář, nebo „Dnes" |
-| Sbalit kvadrant | Klik na šipku ▼/▶ vedle názvu kvadrantu |
-| Sbalit celou hlavičku | ▲ vpravo nahoře (užitečné na mobilu) |
-| Zobrazit hotové tasky | Toggle „Hotové" v headeru |
+| Action | How |
+|--------|-----|
+| Toggle a task | Click the checkbox · 3 s grace period (click again to undo) |
+| Add a task | Click `+` in the quadrant header → text + #tags + 📅 + ⏫ → Enter |
+| Edit a task | **Desktop:** double-click the card. **Mobile:** long-press / double-tap → menu → Edit |
+| Change due date alone | Click the 📅 badge on the card |
+| Move between quadrants | **Desktop:** drag the card onto the target quadrant. **Mobile:** long-press / double-tap → menu → "Move to…" |
+| Open the source file | **Desktop:** right-click the card. **Mobile:** long-press / double-tap. → menu (current pane / new tab / split / window) — the cursor lands on the task's line |
+| Filter by tag | Click a chip in the filter bar (multi-select, OR) |
+| Previous / next day | The ← → arrows in the header, the calendar, or "Today" |
+| Collapse a quadrant | Click the ▼/▶ arrow next to the quadrant name |
+| Collapse the whole header | The ▲ button top-right (handy on mobile) |
+| Show completed tasks | The "Done" toggle in the header |
 
-### Pořadí v kvadrantu
+### In-quadrant order
 
-Deterministické, nelze ručně přeskupit:
-1. **Overdue** (📅 < dnes) — nahoře
-2. **Priorita desc** — 🔺 → ⏫ → 🔼 → 🔽 → ⏬ → bez priority
-3. **Due date asc** — nejbližší termín první
-4. **Alfabeticky** podle textu
+Deterministic — cannot be reordered manually:
+1. **Overdue** (📅 < today) — at the top
+2. **Priority desc** — 🔺 → ⏫ → 🔼 → 🔽 → ⏬ → no priority
+3. **Due date asc** — nearest deadline first
+4. **Alphabetical** by text
 
-Manuální páka přeskupování je **priorita** — nastav ji a task se vyhoupne nahoru.
+The manual lever for reordering is **priority** — set it and the task jumps up.
 
-## Nastavení
+## Settings
 
 `Settings → Eisenhower Matrix`:
 
-- **Daily folder** — kam ukládat nové daily notes. Prázdné = respektuj core plugin „Daily notes" config. Override = vlastní cesta (s folder suggesterem).
-- **Vyloučené složky** — tasky z těchto složek se ignorují. Default `_templates`, `1_Agents`. UI s + / × tlačítky a folder suggesterem.
+- **Daily folder** — where new daily notes are created. Empty = respect the core "Daily notes" plugin config. Override = a custom path (with a folder suggester).
+- **Excluded folders** — tasks from these folders are ignored. Default: `_templates`, `1_Agents`. UI with + / × buttons and a folder suggester.
 
-## Daily note integrace
+## Daily note integration
 
-Plugin hledá v daily souboru sekci `# Dnes`. Nové tasky vkládá pod tuto sekci.
+The plugin looks for a `# Dnes` ("Today" in Czech) heading in the daily note. New tasks are inserted under that heading.
 
-Pokud daily note pro daný den neexistuje a přidáš první task, plugin ji **vytvoří automaticky**:
-1. Pokud má core plugin „Daily notes" nastavený **template**, použije ho (s expanzí `{{date}}`, `{{title}}`, `{{time}}`)
-2. Jinak fallback na minimální scaffold (frontmatter + `# Dnes` heading)
+If a daily note for the given day doesn't exist and you add the first task, the plugin **creates it automatically**:
+1. If the core "Daily notes" plugin has a **template** configured, it uses that (expanding `{{date}}`, `{{title}}`, `{{time}}`).
+2. Otherwise it falls back to a minimal scaffold (frontmatter + a `# Dnes` heading).
 
-> Aktuálně je hardcoded heading `# Dnes` (česky). Pokud chceš jiný (např. `# Today`), [otevři issue](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) — udělám konfigurovatelné.
+> The section heading is currently hardcoded to `# Dnes` (Czech). If you'd like a different one (e.g. `# Today`), [open an issue](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) — it can be made configurable.
 
 ## Mobile
 
-Funguje na Androidu (`isDesktopOnly: false`; iOS nezkoušeno, ale mělo by fungovat).
+Works on Android (`isDesktopOnly: false`; iOS untested but should work).
 
-- **Long-press nebo dvojklep** na kartu → context menu (Editovat · Otevřít soubor · **Přesunout do…**)
-- **Přesun mezi kvadranty** se na mobilu dělá přes menu („Přesunout → DECIDE" atd.). Touch-drag je v Obsidian mobile webview nespolehlivý, proto menu — dva klepy, deterministické.
-- **Sbalená hlavička** (▲ tlačítko) — uvolní vertikální místo pro matici
+- **Long-press or double-tap** a card → context menu (Edit · Open file · **Move to…**)
+- **Moving between quadrants** on mobile is done via the menu ("Move → DECIDE" etc.). Touch-drag is unreliable inside the Obsidian mobile webview, so the menu is used instead — two taps, deterministic.
+- **Collapsed header** (the ▲ button) — frees up vertical space for the matrix.
 
 ## Roadmap
 
-- [ ] Konfigurovatelný heading sekce (`# Dnes` → user choice)
-- [ ] Quick-add task přes Command Palette (bez otvírání view)
-- [ ] Klávesové zkratky uvnitř view (J/K navigace, X toggle, N nový task)
-- [ ] Plný moment.js syntax v daily templatech (zatím jen `{{date}}`/`{{title}}`/`{{time}}`)
-- [ ] Anglická lokalizace UI (zatím česky)
+- [ ] Configurable section heading (`# Dnes` → user choice)
+- [ ] Quick-add task via the Command Palette (without opening the view)
+- [ ] Keyboard shortcuts inside the view (J/K navigation, X toggle, N new task)
+- [ ] Full moment.js syntax in daily templates (currently only `{{date}}` / `{{title}}` / `{{time}}`)
+- [ ] English UI localization (currently Czech)
 
-Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues).
+Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues).
 
-## Známé limity
+## Known limitations
 
-- UI je momentálně **česky** (Sbalit vše, Hotové, Žádné tasky, atd.). Anglická lokalizace je na roadmap.
-- Daily heading je hardcoded `# Dnes`.
-- Manuální pořadí napříč soubory (jeden task v daily, jiný v projektu) není podporováno — sort je deterministický.
+- The UI is currently in **Czech** (Sbalit vše = Collapse all, Hotové = Done, Žádné tasky = No tasks, etc.). English localization is on the roadmap.
+- The daily heading is hardcoded to `# Dnes`.
+- Manual ordering across files (one task in a daily note, another in a project) is not supported — the sort is deterministic.
 
-## Bugs / přispívání
+## Bugs / contributing
 
-[Issues](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) · Pull requesty vítané.
+[Issues](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) · Pull requests welcome.
 
-## Licence
+## License
 
 [MIT](LICENSE)
