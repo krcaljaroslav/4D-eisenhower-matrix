@@ -10,6 +10,7 @@ name: Release
 #
 # Workflow pak:
 #   - Spustí npm install + npm run build
+#   - Vygeneruje build-provenance attestace pro release assety
 #   - Vytvoří GitHub Release s tagem
 #   - Připojí main.js + manifest.json + styles.css jako assety
 #
@@ -22,6 +23,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -52,6 +55,16 @@ jobs:
             exit 1
           fi
           echo "✓ Tag $TAG matches manifest version"
+
+      - name: Attest build provenance
+        # Kryptografický build-provenance podpis release assetů.
+        # Doporučeno Obsidian plugin review.
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
 
       - name: Create release
         env:
