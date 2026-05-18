@@ -52,7 +52,7 @@ Updates appear automatically within 15 minutes of a new [release](https://github
 
 ### Manual (without BRAT)
 
-Download `main.js`, `manifest.json`, `styles.css` from the [latest release](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases/latest) and drop them into `<vault>/.obsidian/plugins/4d-eisenhower-matrix/`. Then Settings → Community plugins → enable.
+Download `main.js`, `manifest.json`, `styles.css` from the [latest release](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases/latest) and drop them into `<vault>/.obsidian/plugins/four-d-eisenhower-matrix/`. Then Settings → Community plugins → enable.
 
 ## Task syntax
 

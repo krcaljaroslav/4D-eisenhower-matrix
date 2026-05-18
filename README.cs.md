@@ -52,7 +52,7 @@ Update se objeví automaticky do 15 minut po vydání nového [releasu](https://
 
 ### Manuálně (bez BRAT)
 
-Stáhni `main.js`, `manifest.json`, `styles.css` z [posledního releasu](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases/latest) a hoď je do `<vault>/.obsidian/plugins/4d-eisenhower-matrix/`. Pak Settings → Community plugins → enable.
+Stáhni `main.js`, `manifest.json`, `styles.css` z [posledního releasu](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases/latest) a hoď je do `<vault>/.obsidian/plugins/four-d-eisenhower-matrix/`. Pak Settings → Community plugins → enable.
 
 ## Syntaxe tasků
 
