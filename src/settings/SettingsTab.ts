@@ -15,7 +15,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl('h2', { text: 'Eisenhower Matrix — nastavení' });
+    // Pozn.: žádný plugin-name nadpis — Obsidian ho v settings renderuje sám.
 
     // === Daily folder override ===
     const coreFolder = getDailyNotesFolder(this.app, '');
@@ -45,7 +45,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('Resetovat na výchozí')
       .setDesc(
-        'Smaže overrides — daily folder se vrátí na core config, excluded folders na _templates + 1_Agents.',
+        'Smaže overrides — daily folder se vrátí na core config, vyloučené složky se vyprázdní.',
       )
       .addButton((btn) =>
         btn
@@ -53,7 +53,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
           .setWarning()
           .onClick(async () => {
             this.plugin.settings.dailyFolderOverride = '';
-            this.plugin.settings.excludedFolders = ['_templates', '1_Agents'];
+            this.plugin.settings.excludedFolders = [];
             await this.plugin.saveSettings();
             this.plugin.notifyRepoConfigChanged();
             this.display();
@@ -66,9 +66,10 @@ export class MatrixSettingsTab extends PluginSettingTab {
    * Vzor: native Obsidian "Vyloučené soubory" dialog.
    */
   private renderExcludedFoldersSection(parent: HTMLElement): void {
+    new Setting(parent).setName('Vyloučené složky').setHeading();
+
     const section = parent.createDiv({ cls: 'em-settings-excluded' });
 
-    section.createEl('h3', { text: 'Vyloučené složky' });
     section.createEl('p', {
       text: 'Tasky z těchto složek se v matici nezobrazují. Klikni × pro odebrání, nebo přidej novou složku dole.',
       cls: 'setting-item-description',

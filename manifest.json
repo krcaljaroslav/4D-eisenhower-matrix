@@ -1,9 +1,9 @@
 {
   "id": "4d-eisenhower-matrix",
-  "name": "Eisenhower Matrix",
-  "version": "0.1.12",
+  "name": "4D Eisenhower Matrix",
+  "version": "0.1.13",
   "minAppVersion": "1.5.0",
-  "description": "Visualize your tasks across markdown files in a 5-quadrant Eisenhower matrix (DO / DECIDE / DELEGATE / DELETE / OPEN). Reads and writes Obsidian Tasks syntax (#tags + 📅🛫✅ + priority emoji).",
+  "description": "Visualize tasks across your vault in a 5-quadrant Eisenhower matrix (DO / DECIDE / DELEGATE / DELETE / OPEN). Reads and writes standard task syntax — tags, due/start/done dates, and priority emoji.",
   "author": "Jaroslav Krčál",
   "authorUrl": "https://github.com/krcaljaroslav",
   "isDesktopOnly": false

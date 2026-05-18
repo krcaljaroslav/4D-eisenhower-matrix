@@ -28,7 +28,7 @@ export class ObsidianTaskRepo {
 
   constructor(
     private app: App,
-    excludedFolders: string[] = ['_templates', '1_Agents'],
+    excludedFolders: string[] = [],
     dailyFolderOverride: string = '',
   ) {
     this.excludedFolders = excludedFolders;

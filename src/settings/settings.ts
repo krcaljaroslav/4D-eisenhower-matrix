@@ -36,7 +36,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   },
   showCompleted: false,
   lastOpenedDate: null,
-  excludedFolders: ['_templates', '1_Agents'],
+  // Prázdné — uživatel si vyloučené složky nastaví sám (v Settings).
+  // Generic plugin nemá hádat vault-specifické složky.
+  excludedFolders: [],
   dailyFolderOverride: '',
   headerCollapsed: false,
 };

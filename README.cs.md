@@ -1,6 +1,6 @@
 [English](README.md) · **Čeština**
 
-# Eisenhower Matrix — Obsidian plugin
+# 4D Eisenhower Matrix — Obsidian plugin
 
 Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (DO / DECIDE / DELEGATE / DELETE / OPEN). Čte a zapisuje [Obsidian Tasks](https://publish.obsidian.md/tasks/Introduction) syntaxi — `#tagy`, `📅 due`, `🛫 start`, `✅ done`, priority emoji.
 
@@ -43,8 +43,8 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 2. `Ctrl+P` (na mobilu: 3 tečky → Command palette) → **„BRAT: Add a beta plugin for testing"**
 3. Vlož URL: `https://github.com/krcaljaroslav/4D-eisenhower-matrix`
 4. Add Plugin
-5. Settings → Community plugins → enable **Eisenhower Matrix**
-6. Otevři přes ribbon ikonu (mřížka v levém panelu) nebo `Ctrl+P` → „Open Eisenhower Matrix"
+5. Settings → Community plugins → enable **4D Eisenhower Matrix**
+6. Otevři přes ribbon ikonu (mřížka v levém panelu) nebo `Ctrl+P` → „Open matrix"
 
 Update se objeví automaticky do 15 minut po vydání nového [releasu](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases). Nebo manuálně přes `BRAT: Check for updates to all beta plugins`.
 
@@ -110,10 +110,10 @@ Manuální páka přeskupování je **priorita** — nastav ji a task se vyhoupn
 
 ## Nastavení
 
-`Settings → Eisenhower Matrix`:
+`Settings → 4D Eisenhower Matrix`:
 
 - **Daily folder** — kam ukládat nové daily notes. Prázdné = respektuj core plugin „Daily notes" config. Override = vlastní cesta (s folder suggesterem).
-- **Vyloučené složky** — tasky z těchto složek se ignorují. Default `_templates`, `1_Agents`. UI s + / × tlačítky a folder suggesterem.
+- **Vyloučené složky** — tasky z těchto složek se ignorují. Výchozí: žádné — vyloučené složky si nastav sám. UI s + / × tlačítky a folder suggesterem.
 
 ## Daily note integrace
 

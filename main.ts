@@ -13,18 +13,17 @@ export default class EisenhowerMatrixPlugin extends Plugin {
   private repoConfigCallbacks: Set<() => void> = new Set();
 
   async onload(): Promise<void> {
-    console.log('[Eisenhower Matrix] loading plugin');
     await this.loadSettings();
 
     this.registerView(VIEW_TYPE_MATRIX, (leaf) => new MatrixView(leaf, this));
 
-    this.addRibbonIcon('layout-grid', 'Open Eisenhower Matrix', () => {
+    this.addRibbonIcon('layout-grid', 'Open Eisenhower matrix', () => {
       void this.activateView();
     });
 
     this.addCommand({
-      id: 'open-eisenhower-matrix',
-      name: 'Open Eisenhower Matrix',
+      id: 'open',
+      name: 'Open matrix',
       callback: () => {
         void this.activateView();
       },
@@ -34,7 +33,7 @@ export default class EisenhowerMatrixPlugin extends Plugin {
   }
 
   async onunload(): Promise<void> {
-    console.log('[Eisenhower Matrix] unloading plugin');
+    // Obsidian uvolní view / ribbon / command / settings tab automaticky.
   }
 
   async loadSettings(): Promise<void> {

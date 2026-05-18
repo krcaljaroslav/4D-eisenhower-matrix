@@ -1,6 +1,6 @@
 **English** · [Čeština](README.cs.md)
 
-# Eisenhower Matrix — Obsidian plugin
+# 4D Eisenhower Matrix — Obsidian plugin
 
 Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (DO / DECIDE / DELEGATE / DELETE / OPEN). Reads and writes [Obsidian Tasks](https://publish.obsidian.md/tasks/Introduction) syntax — `#tags`, `📅 due`, `🛫 start`, `✅ done`, priority emoji.
 
@@ -45,8 +45,8 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 2. `Ctrl+P` (mobile: 3-dot menu → Command palette) → **"BRAT: Add a beta plugin for testing"**
 3. Paste the URL: `https://github.com/krcaljaroslav/4D-eisenhower-matrix`
 4. Add Plugin
-5. Settings → Community plugins → enable **Eisenhower Matrix**
-6. Open via the ribbon icon (grid icon in the left sidebar) or `Ctrl+P` → "Open Eisenhower Matrix"
+5. Settings → Community plugins → enable **4D Eisenhower Matrix**
+6. Open via the ribbon icon (grid icon in the left sidebar) or `Ctrl+P` → "Open matrix"
 
 Updates appear automatically within 15 minutes of a new [release](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases), or manually via `BRAT: Check for updates to all beta plugins`.
 
@@ -112,10 +112,10 @@ The manual lever for reordering is **priority** — set it and the task jumps up
 
 ## Settings
 
-`Settings → Eisenhower Matrix`:
+`Settings → 4D Eisenhower Matrix`:
 
 - **Daily folder** — where new daily notes are created. Empty = respect the core "Daily notes" plugin config. Override = a custom path (with a folder suggester).
-- **Excluded folders** — tasks from these folders are ignored. Default: `_templates`, `1_Agents`. UI with + / × buttons and a folder suggester.
+- **Excluded folders** — tasks from these folders are ignored. Default: none — add the folders you want excluded yourself. UI with + / × buttons and a folder suggester.
 
 ## Daily note integration
 
