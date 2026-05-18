@@ -1,5 +1,5 @@
 {
-  "name": "obsidian-eisenhower-matrix",
+  "name": "4d-eisenhower-matrix",
   "version": "0.1.0",
   "description": "Obsidian plugin: 5-quadrant Eisenhower matrix for tasks across the vault.",
   "main": "main.js",

@@ -39,16 +39,16 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 
 1. Settings → Community plugins → Browse → vyhledej **BRAT** → Install + Enable
 2. `Ctrl+P` (na mobilu: 3 tečky → Command palette) → **„BRAT: Add a beta plugin for testing"**
-3. Vlož URL: `https://github.com/krcaljaroslav/obsidian-eisenhower-matrix`
+3. Vlož URL: `https://github.com/krcaljaroslav/4D-eisenhower-matrix`
 4. Add Plugin
 5. Settings → Community plugins → enable **Eisenhower Matrix**
 6. Otevři přes ribbon ikonu (mřížka v levém panelu) nebo `Ctrl+P` → „Open Eisenhower Matrix"
 
-Update se objeví automaticky do 15 minut po vydání nového [releasu](https://github.com/krcaljaroslav/obsidian-eisenhower-matrix/releases). Nebo manuálně přes `BRAT: Check for updates to all beta plugins`.
+Update se objeví automaticky do 15 minut po vydání nového [releasu](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases). Nebo manuálně přes `BRAT: Check for updates to all beta plugins`.
 
 ### Manuálně (bez BRAT)
 
-Stáhni `main.js`, `manifest.json`, `styles.css` z [posledního releasu](https://github.com/krcaljaroslav/obsidian-eisenhower-matrix/releases/latest) a hoď je do `<vault>/.obsidian/plugins/eisenhower-matrix/`. Pak Settings → Community plugins → enable.
+Stáhni `main.js`, `manifest.json`, `styles.css` z [posledního releasu](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases/latest) a hoď je do `<vault>/.obsidian/plugins/4d-eisenhower-matrix/`. Pak Settings → Community plugins → enable.
 
 ## Syntaxe tasků
 
@@ -121,7 +121,7 @@ Pokud daily note pro daný den neexistuje a přidáš první task, plugin ji **v
 1. Pokud má core plugin „Daily notes" nastavený **template**, použije ho (s expanzí `{{date}}`, `{{title}}`, `{{time}}`)
 2. Jinak fallback na minimální scaffold (frontmatter + `# Dnes` heading)
 
-> Aktuálně je hardcoded heading `# Dnes` (česky). Pokud chceš jiný (např. `# Today`), [otevři issue](https://github.com/krcaljaroslav/obsidian-eisenhower-matrix/issues) — udělám konfigurovatelné.
+> Aktuálně je hardcoded heading `# Dnes` (česky). Pokud chceš jiný (např. `# Today`), [otevři issue](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) — udělám konfigurovatelné.
 
 ## Mobile
 
@@ -140,7 +140,7 @@ iOS nezkoušeno, ale `isDesktopOnly: false` v manifestu by mělo fungovat.
 - [ ] Plný moment.js syntax v daily templatech (zatím jen `{{date}}`/`{{title}}`/`{{time}}`)
 - [ ] Anglická lokalizace UI (zatím česky)
 
-Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/obsidian-eisenhower-matrix/issues).
+Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues).
 
 ## Známé limity
 
@@ -150,7 +150,7 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/obsidian
 
 ## Bugs / přispívání
 
-[Issues](https://github.com/krcaljaroslav/obsidian-eisenhower-matrix/issues) · Pull requesty vítané.
+[Issues](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) · Pull requesty vítané.
 
 ## Licence
 
