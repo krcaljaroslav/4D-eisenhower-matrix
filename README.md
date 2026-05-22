@@ -27,6 +27,8 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 - **Full CRUD** — add (form with text + tags + due date + priority), edit, toggle, move between quadrants.
 - **Priority** following the Obsidian Tasks convention: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest
 - **Tag autocomplete** — suggests existing vault tags while typing (avoids duplicates).
+- **Markdown formatting** — basic inline Markdown in task text (bold, italic, code, strikethrough).
+- **Compact mode** — a header toggle that shrinks every card to two lines (text + priority/due date).
 - **Filter** by context tag (OR logic + a virtual "Other" chip).
 - **Date navigation** (← / → / calendar / Today) + a day-cutoff banner after midnight.
 - **3 s grace period** after checking a task off (green border + countdown — click again to undo).
@@ -99,6 +101,7 @@ Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+
 | Collapse a quadrant | Click the ▼/▶ arrow next to the quadrant name |
 | Collapse the whole header | The ▲ button top-right (handy on mobile) |
 | Show completed tasks | The "Done" toggle in the header |
+| Compact view | The "Compact" toggle in the header — 2-line cards |
 
 ### In-quadrant order
 

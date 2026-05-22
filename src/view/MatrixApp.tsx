@@ -118,6 +118,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const [headerCollapsed, setHeaderCollapsed] = useState<boolean>(
     plugin.settings.headerCollapsed,
   );
+  const [compactMode, setCompactMode] = useState<boolean>(plugin.settings.compactMode);
   const [dayChangedBanner, setDayChangedBanner] = useState<string | null>(() => {
     const last = plugin.settings.lastOpenedDate;
     return last && last !== today ? last : null;
@@ -154,6 +155,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     plugin.settings.headerCollapsed = headerCollapsed;
     void plugin.saveSettings();
   }, [headerCollapsed, plugin]);
+
+  useEffect(() => {
+    plugin.settings.compactMode = compactMode;
+    void plugin.saveSettings();
+  }, [compactMode, plugin]);
 
   // === Data fetching ===
   const refetchTimerRef = useRef<number | null>(null);
@@ -526,6 +532,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
               />
               <span>Done</span>
             </label>
+            <label className="em-toggle" title="Compact 2-line task cards">
+              <input
+                type="checkbox"
+                checked={compactMode}
+                onChange={(e) => setCompactMode(e.target.checked)}
+              />
+              <span>Compact</span>
+            </label>
             <button
               type="button"
               onClick={() => setHeaderCollapsed(true)}
@@ -605,6 +619,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           today={today}
           collapsed={collapsed}
           graceMap={graceMap}
+          compact={compactMode}
           activeTaskId={
             activeTask ? taskKey(activeTask.sourceFile, activeTask.lineIndex) : null
           }

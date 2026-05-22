@@ -28,6 +28,12 @@ export type PluginSettings = {
    * Užitečné na mobilu, kde header zabírá moc místa. Stav persistovaný.
    */
   headerCollapsed: boolean;
+  /**
+   * Kompaktní zobrazení tasků — každá karta jen 2 řádky (text na prvním,
+   * priorita + due date na druhém). Tagy / cesta / start/done badge se
+   * skryjí, editace zůstává plná. Přepíná se v hlavičce. Persistované.
+   */
+  compactMode: boolean;
 };
 
 export const DEFAULT_SETTINGS: PluginSettings = {
@@ -47,4 +53,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   dailyFolderOverride: '',
   dailySectionHeading: '# Dnes',
   headerCollapsed: false,
+  compactMode: false,
 };

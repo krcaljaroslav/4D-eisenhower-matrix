@@ -6,6 +6,7 @@ import { PRIORITY_META, QUADRANTS, QUADRANT_META } from '../core/types.ts';
 import { isOverdue } from '../core/taskUtils.ts';
 import { DueDatePicker } from './DueDatePicker.tsx';
 import { PriorityPicker } from './PriorityPicker.tsx';
+import { renderInlineMarkdown } from './inlineMarkdown.tsx';
 
 export const GRACE_MS = 3000;
 
@@ -14,6 +15,7 @@ type Props = {
   today: string;
   graceExpiresAt?: number;
   isActiveDrag: boolean;
+  compact: boolean;
   onToggle: () => void;
   onSetDueDate: (newDueDate: string | null) => Promise<void>;
   onUpdateTask: (
@@ -31,6 +33,7 @@ export function TaskCard({
   today,
   graceExpiresAt,
   isActiveDrag,
+  compact,
   onToggle,
   onSetDueDate,
   onUpdateTask,
@@ -129,6 +132,43 @@ export function TaskCard({
     }
   };
 
+  const taskText = task.text ? (
+    renderInlineMarkdown(task.text)
+  ) : (
+    <em className="em-empty-text">(empty text)</em>
+  );
+
+  const checkbox = (
+    <input
+      type="checkbox"
+      checked={task.checked}
+      onChange={onToggle}
+      onPointerDown={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+      className="em-task-checkbox"
+      aria-label={task.checked ? 'Mark as not done (undo)' : 'Mark as done'}
+    />
+  );
+
+  const priorityBadge = task.priority ? (
+    <span
+      className="em-badge"
+      style={{ color: PRIORITY_META[task.priority].tone }}
+      title={`Priority: ${PRIORITY_META[task.priority].label}`}
+    >
+      {PRIORITY_META[task.priority].emoji} {PRIORITY_META[task.priority].label}
+    </span>
+  ) : null;
+
+  const dueDatePicker = (
+    <DueDatePicker
+      currentDueDate={task.dueDate}
+      onChange={onSetDueDate}
+      variant={task.dueDate ? 'badge' : 'add'}
+      overdue={overdue}
+    />
+  );
+
   return (
     <li
       ref={setNodeRef}
@@ -157,23 +197,22 @@ export function TaskCard({
           onUpdate={onUpdateTask}
           createTagSuggest={createTagSuggest}
         />
+      ) : compact ? (
+        <div className="em-task-row">
+          {checkbox}
+          <div className="em-task-body em-task-body-compact">
+            <p className="em-task-text em-task-text-compact">{taskText}</p>
+            <div className="em-task-badges">
+              {priorityBadge}
+              {dueDatePicker}
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="em-task-row">
-          <input
-            type="checkbox"
-            checked={task.checked}
-            onChange={onToggle}
-            onPointerDown={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => e.stopPropagation()}
-            className="em-task-checkbox"
-            aria-label={
-              task.checked ? 'Mark as not done (undo)' : 'Mark as done'
-            }
-          />
+          {checkbox}
           <div className="em-task-body">
-            <p className="em-task-text">
-              {task.text || <em className="em-empty-text">(empty text)</em>}
-            </p>
+            <p className="em-task-text">{taskText}</p>
             {!task.isFromDnes && (
               <p className="em-task-source" title={task.sourceFile}>
                 📁 {shortenPath(task.sourceFile)}
@@ -185,21 +224,8 @@ export function TaskCard({
                   {tag}
                 </span>
               ))}
-              {task.priority && (
-                <span
-                  className="em-badge"
-                  style={{ color: PRIORITY_META[task.priority].tone }}
-                  title={`Priority: ${PRIORITY_META[task.priority].label}`}
-                >
-                  {PRIORITY_META[task.priority].emoji} {PRIORITY_META[task.priority].label}
-                </span>
-              )}
-              <DueDatePicker
-                currentDueDate={task.dueDate}
-                onChange={onSetDueDate}
-                variant={task.dueDate ? 'badge' : 'add'}
-                overdue={overdue}
-              />
+              {priorityBadge}
+              {dueDatePicker}
               {task.startDate && <span className="em-badge">🛫 {task.startDate}</span>}
               {task.doneDate && <span className="em-badge">✅ {task.doneDate}</span>}
             </div>
@@ -398,7 +424,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
 export function TaskCardOverlay({ task }: { task: Task }) {
   return (
     <div className="em-task em-task-overlay">
-      <p className="em-task-text">{task.text}</p>
+      <p className="em-task-text">{renderInlineMarkdown(task.text)}</p>
       {(task.contextTags.length > 0 || task.priority) && (
         <div className="em-task-badges">
           {task.contextTags.map((tag) => (

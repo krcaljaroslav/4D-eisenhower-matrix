@@ -1129,3 +1129,25 @@ button.em-priority {
   background-color: var(--interactive-accent);
   color: var(--text-on-accent);
 }
+
+/* === Inline markdown v textu tasku === */
+.em-task-text code {
+  font-family: var(--font-monospace);
+  font-size: 0.88em;
+  padding: 0 4px;
+  border-radius: var(--radius-s);
+  background-color: var(--background-modifier-border);
+}
+
+/* === Kompaktní režim — 2řádkové karty ===
+   Řádek 1 = text ořezaný „…" na šířku karty, řádek 2 = priorita +
+   due date. Tagy / cesta / start-done badge jsou v compact skryté. */
+.em-task-text-compact {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.em-task-body-compact {
+  gap: var(--size-2-1);
+}
