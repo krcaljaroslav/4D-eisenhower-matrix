@@ -280,6 +280,12 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      // Když je otevřený tag-autocomplete popup, nech Enter jemu — jinak
+      // by se uložil stav PŘED výběrem návrhu (výběr tagu by se ztratil).
+      const doc = (e.currentTarget as HTMLElement).ownerDocument;
+      if (doc.querySelector('.suggestion-container')) {
+        return;
+      }
       e.preventDefault();
       void save();
     } else if (e.key === 'Escape') {

@@ -302,15 +302,28 @@
   color: var(--text-normal);
 }
 
+/* Aktivní filtr-chip — záměrně NEspoléhá na výplň accent barvou:
+   některé komunitní themes (Wasp ap.) rozbíjejí --text-on-accent
+   kontrast a vybraný chip pak splývá. Rozlišovací znaky jsou proto
+   theme-proof: ✓ glyf + tučné písmo + 2px accent rámeček, text
+   zůstává v --text-normal (čitelný na --background-primary všude). */
 .em-chip-active {
-  background-color: var(--interactive-accent);
-  color: var(--text-on-accent);
+  color: var(--text-normal);
   border-color: var(--interactive-accent);
+  border-width: 2px;
+  /* 2px rámeček místo 1px → kompenzuj padding, ať chip nemění velikost */
+  padding: 1px calc(var(--size-2-2) - 1px);
+  font-weight: var(--font-bold);
 }
 
 .em-chip-active:hover {
-  background-color: var(--interactive-accent-hover);
-  color: var(--text-on-accent);
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.em-chip-check {
+  font-weight: var(--font-bold);
+  margin-right: 1px;
 }
 
 .em-chip-untagged {

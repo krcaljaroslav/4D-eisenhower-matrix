@@ -44,6 +44,11 @@ export function FilterBar({
             aria-pressed={isSelected}
             title={isUntagged ? 'Tasks without a context tag' : undefined}
           >
+            {isSelected && (
+              <span className="em-chip-check" aria-hidden="true">
+                ✓
+              </span>
+            )}
             <span>{chipLabel(tag)}</span>
             <span className="em-chip-count">{count}</span>
           </button>

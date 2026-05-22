@@ -77,6 +77,11 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }:
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      // Když je otevřený tag-autocomplete popup, nech Enter jemu — jinak
+      // by se task uložil se stavem PŘED výběrem návrhu (= výběr by se ztratil).
+      if (e.currentTarget.ownerDocument.querySelector('.suggestion-container')) {
+        return;
+      }
       e.preventDefault();
       void submit();
     } else if (e.key === 'Escape') {
