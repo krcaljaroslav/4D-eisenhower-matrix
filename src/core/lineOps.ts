@@ -33,8 +33,11 @@ export function toggleLine(line: string, todayISO: string): ToggleResult {
   const m = TASK_LINE_RE.exec(line);
   if (!m) throw new Error(`Not a task line: "${line}"`);
 
-  const wasChecked = m[2].toLowerCase() === 'x';
-  const willBeChecked = !wasChecked;
+  // „Finished" = done [x] nebo canceled [-]. Klik na fajfku v takovém
+  // stavu task otevře zpátky na [ ] (= přirozený undo během grace).
+  // Z jakéhokoli jiného stavu se klikem dostaneme na [x] (mark done).
+  const wasFinished = m[2] === '-' || m[2].toLowerCase() === 'x';
+  const willBeChecked = !wasFinished;
   const newCheckboxChar = willBeChecked ? 'x' : ' ';
 
   let rest = m[3].replace(DONE_DATE_RE, '').replace(/\s+$/, '');

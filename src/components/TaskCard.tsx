@@ -76,22 +76,6 @@ export function TaskCard({
       item.setTitle('Edit').setIcon('pencil').onClick(enterEdit),
     );
     menu.addSeparator();
-    // Status (6 Basic stavů) — aktuální je zatržený.
-    for (const s of TASK_STATUSES) {
-      const isCurrent =
-        s.char === task.status ||
-        (s.char === 'x' && task.status.toLowerCase() === 'x');
-      menu.addItem((item) =>
-        item
-          .setTitle(`Mark as ${s.label}`)
-          .setIcon(s.icon)
-          .setChecked(isCurrent)
-          .onClick(() => {
-            if (!isCurrent) void onSetStatus(s.char);
-          }),
-      );
-    }
-    menu.addSeparator();
     menu.addItem((item) =>
       item
         .setTitle('Open file')
@@ -126,6 +110,23 @@ export function TaskCard({
           .setTitle(`Move to ${QUADRANT_META[q].label}`)
           .setIcon('arrow-right')
           .onClick(() => onMoveQuadrant(q)),
+      );
+    }
+    // Status (6 Basic stavů) — sekce úmyslně až dole, ať nepřebírá pozornost
+    // od běžnějších voleb (Edit / Open / Move). Aktuální je zatržený.
+    menu.addSeparator();
+    for (const s of TASK_STATUSES) {
+      const isCurrent =
+        s.char === task.status ||
+        (s.char === 'x' && task.status.toLowerCase() === 'x');
+      menu.addItem((item) =>
+        item
+          .setTitle(`Mark as ${s.label}`)
+          .setIcon(s.icon)
+          .setChecked(isCurrent)
+          .onClick(() => {
+            if (!isCurrent) void onSetStatus(s.char);
+          }),
       );
     }
     return menu;

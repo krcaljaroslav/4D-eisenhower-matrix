@@ -227,21 +227,27 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   }, [graceMap.size]);
 
   // === Local optimistic mutations ===
-  const applyLocalToggle = useCallback(
-    (sourceFile: string, lineIndex: number, nextChecked: boolean) => {
+  // Optimisticky nastav status tasku + zařiď grace pro "closed" stavy
+  // ([x] done a [-] canceled). Voláno z toggle (klik na box) i setStatus
+  // (menu "Mark as …") — oba sdílejí stejné chování undo-grace.
+  const applyLocalStatus = useCallback(
+    (sourceFile: string, lineIndex: number, newStatus: string) => {
       const key = taskKey(sourceFile, lineIndex);
+      const isChecked = newStatus.toLowerCase() === 'x';
+      const isClosed = isClosedStatus(newStatus);
       setTasks((prev) =>
         prev.map((t) =>
           t.sourceFile === sourceFile && t.lineIndex === lineIndex
             ? {
                 ...t,
-                checked: nextChecked,
-                doneDate: nextChecked ? today : undefined,
+                status: newStatus,
+                checked: isChecked,
+                doneDate: isChecked ? today : undefined,
               }
             : t,
         ),
       );
-      if (nextChecked) {
+      if (isClosed) {
         setGraceMap((prev) => {
           const next = new Map(prev);
           next.set(key, Date.now() + GRACE_MS);
@@ -262,16 +268,17 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   // === Write callbacks ===
   const handleToggle = useCallback(
     async (task: Task) => {
-      const nextChecked = !task.checked;
-      applyLocalToggle(task.sourceFile, task.lineIndex, nextChecked);
+      // Z [x]/[-] zpátky na [ ], jinak na [x] — zrcadlí toggleLine v core.
+      const newStatus = isClosedStatus(task.status) ? ' ' : 'x';
+      applyLocalStatus(task.sourceFile, task.lineIndex, newStatus);
       try {
         await repo.toggleTask(task.sourceFile, task.lineIndex, today);
       } catch (e) {
-        applyLocalToggle(task.sourceFile, task.lineIndex, task.checked);
+        applyLocalStatus(task.sourceFile, task.lineIndex, task.status);
         showError(`Toggle failed: ${String((e as Error).message ?? e)}`);
       }
     },
-    [repo, today, applyLocalToggle],
+    [repo, today, applyLocalStatus],
   );
 
   const handleSetDueDate = useCallback(
@@ -287,13 +294,18 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
   const handleSetStatus = useCallback(
     async (task: Task, newStatus: string) => {
+      const previousStatus = task.status;
+      // Stejný optimistic flow jako u toggle — pro [x]/[-] nastartuje
+      // 3s grace s undo, ostatní stavy se promítnou rovnou.
+      applyLocalStatus(task.sourceFile, task.lineIndex, newStatus);
       try {
         await repo.setStatus(task.sourceFile, task.lineIndex, newStatus, today);
       } catch (e) {
+        applyLocalStatus(task.sourceFile, task.lineIndex, previousStatus);
         showError(`Changing status failed: ${String((e as Error).message ?? e)}`);
       }
     },
-    [repo, today],
+    [repo, today, applyLocalStatus],
   );
 
   const handleUpdate = useCallback(

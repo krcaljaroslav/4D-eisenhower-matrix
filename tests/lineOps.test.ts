@@ -22,6 +22,16 @@ describe('toggleLine', () => {
     expect(r.checked).toBe(false);
     expect(r.newLine).toBe('- [ ] #DO done');
   });
+  it('canceled [-] → toggle reopens to [ ]', () => {
+    const r = toggleLine('- [-] #DO scratched', '2026-05-21');
+    expect(r.checked).toBe(false);
+    expect(r.newLine).toBe('- [ ] #DO scratched');
+  });
+  it('incomplete [/] → toggle marks done', () => {
+    const r = toggleLine('- [/] #DO doing', '2026-05-21');
+    expect(r.checked).toBe(true);
+    expect(r.newLine).toBe('- [x] #DO doing ✅ 2026-05-21');
+  });
   it('throws on non-task line', () => {
     expect(() => toggleLine('# Heading', '2026-05-14')).toThrow(/Not a task line/);
   });
