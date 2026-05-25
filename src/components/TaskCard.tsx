@@ -61,7 +61,10 @@ export function TaskCard({
   });
 
   const now = Date.now();
-  const inGrace = task.checked && graceExpiresAt !== undefined && graceExpiresAt > now;
+  // Grace platí pro libovolný „closed" stav ([x] i [-]) — applyLocalStatus
+  // přidává klíč do graceMap jen pro tyhle stavy, takže existence
+  // graceExpiresAt > now implikuje, že má smysl ukázat zelený pruh + undo.
+  const inGrace = graceExpiresAt !== undefined && graceExpiresAt > now;
   const graceRemaining = inGrace ? Math.max(0, graceExpiresAt! - now) : 0;
   const gracePct = inGrace ? (graceRemaining / GRACE_MS) * 100 : 0;
 
