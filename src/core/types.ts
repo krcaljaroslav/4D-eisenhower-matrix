@@ -39,11 +39,14 @@ export const TASK_STATUSES: {
   icon: string;
   closed?: boolean;
 }[] = [
-  { char: ' ', label: 'To-do', icon: 'circle' },
-  { char: '/', label: 'Incomplete', icon: 'circle-dot' },
-  { char: 'x', label: 'Done', icon: 'check', closed: true },
-  { char: '-', label: 'Canceled', icon: 'ban', closed: true },
-  { char: '>', label: 'Forwarded', icon: 'chevron-right' },
+  // Záměrně hranaté Lucide ikony pro to-do / incomplete / done — vizuálně
+  // odpovídají Things theme. canceled / forwarded / scheduling jsou
+  // záměrně bez rámečku (jen dash / triangle / calendar) — taky Things.
+  { char: ' ', label: 'To-do', icon: 'square' },
+  { char: '/', label: 'Incomplete', icon: 'square-dot' },
+  { char: 'x', label: 'Done', icon: 'square-check-big', closed: true },
+  { char: '-', label: 'Canceled', icon: 'minus', closed: true },
+  { char: '>', label: 'Forwarded', icon: 'play' },
   { char: '<', label: 'Scheduling', icon: 'calendar' },
 ];
 

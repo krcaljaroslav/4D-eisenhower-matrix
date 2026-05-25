@@ -1189,11 +1189,11 @@ button.em-priority {
   color: var(--text-normal);
 }
 
-/* Done [x]/[X] — vyplněný accent, ikona check v --text-on-accent. */
+/* Done [x]/[X] — ikona „square-check-big" je sama o sobě hranatá s fajfkou
+   (Things-style); jen ji obarvíme accent barvou, ať done vizuálně vyniká. */
 .em-task-status[data-task='x'],
 .em-task-status[data-task='X'] {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
+  color: var(--interactive-accent);
 }
 
 .em-task-status-icon {
@@ -1204,8 +1204,8 @@ button.em-priority {
 }
 
 .em-task-status-icon .svg-icon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 
 /* === Markdown nadpisy v textu tasku === */
