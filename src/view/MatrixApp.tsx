@@ -606,7 +606,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       <div className="em-app">
         {headerCollapsed ? (
           <div className="em-app-header em-app-header-compact">
-            <span className="em-compact-info">⚡ {tasks.length} tasks</span>
+            <span className="em-compact-info">⚡ {totalUnfiltered} tasks</span>
             <div className="em-header-right">
               {viewControls}
               <button
@@ -652,7 +652,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           {loading && <span className="em-loading"> · loading…</span>}
           {!loading && (
             <span className="em-stats">
-              {' '}· {tasks.length} tasks · {scannedFiles} files scanned
+              {' '}· {totalUnfiltered} tasks · {scannedFiles} files scanned
             </span>
           )}
         </p>
