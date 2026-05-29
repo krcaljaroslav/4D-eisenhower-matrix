@@ -340,9 +340,17 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       quadrant: Quadrant;
       dueDate: string | null;
       priority: Priority | null;
+      status?: string;
     }) => {
       try {
-        await repo.addTask(date, input.text, input.quadrant, input.dueDate, input.priority);
+        await repo.addTask(
+          date,
+          input.text,
+          input.quadrant,
+          input.dueDate,
+          input.priority,
+          input.status ?? ' ',
+        );
       } catch (e) {
         showError(`Adding task failed: ${String((e as Error).message ?? e)}`);
         throw e;

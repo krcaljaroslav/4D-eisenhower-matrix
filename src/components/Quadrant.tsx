@@ -105,11 +105,12 @@ export function Quadrant({
             <button
               type="button"
               onClick={onToggleKanban}
-              className={`em-kanban-btn ${kanbanActive ? 'em-kanban-btn-active' : ''}`}
+              className={`em-kanban-btn em-kanban-btn-labeled ${kanbanActive ? 'em-kanban-btn-active' : ''}`}
               title={kanbanActive ? 'Back to grid' : 'Kanban view (status columns)'}
               aria-label={kanbanActive ? 'Back to grid' : 'Kanban view'}
             >
               <Icon name="square-kanban" className="em-kanban-icon" />
+              <span>Kanban</span>
             </button>
           )}
           <span className="em-quadrant-count">{tasks.length}</span>

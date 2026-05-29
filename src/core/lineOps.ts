@@ -84,6 +84,7 @@ export function buildTaskLine(
   todayISO: string,
   dueDate?: string | null,
   priority?: Priority | null,
+  status: string = ' ',
 ): string {
   const trimmed = text.trim();
 
@@ -101,7 +102,9 @@ export function buildTaskLine(
   const tagsPart = contextTags.length > 0 ? contextTags.join(' ') + ' ' : '';
   const priorityPart = priority ? `${PRIORITY_EMOJI[priority]} ` : '';
   const duePart = dueDate ? `📅 ${dueDate} ` : '';
-  return `- [ ] ${prefix}${tagsPart}${priorityPart}${duePart}🛫 ${todayISO} ${remaining}`.trimEnd();
+  // Pokud se task rovnou zakládá jako "done" ([x]), doplň ✅ today (jako toggle).
+  const donePart = status.toLowerCase() === 'x' ? ` ✅ ${todayISO}` : '';
+  return `- [${status}] ${prefix}${tagsPart}${priorityPart}${duePart}🛫 ${todayISO} ${remaining}${donePart}`.trimEnd();
 }
 
 // ============================================================
@@ -263,6 +266,7 @@ export function appendTaskUnderHeading(
   todayISO: string,
   dueDate?: string | null,
   priority?: Priority | null,
+  status: string = ' ',
 ): AppendResult {
   const eol = content.includes('\r\n') ? '\r\n' : '\n';
   const lines = content.split(/\r?\n/);
@@ -289,7 +293,7 @@ export function appendTaskUnderHeading(
     }
   }
 
-  const newLine = buildTaskLine(quadrant, text, todayISO, dueDate, priority);
+  const newLine = buildTaskLine(quadrant, text, todayISO, dueDate, priority, status);
   lines.splice(insertAt, 0, newLine);
 
   return {

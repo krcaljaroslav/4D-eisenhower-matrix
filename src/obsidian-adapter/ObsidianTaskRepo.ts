@@ -221,6 +221,7 @@ export class ObsidianTaskRepo {
     quadrant: Quadrant,
     dueDate?: string | null,
     priority?: Priority | null,
+    status: string = ' ',
   ): Promise<{ sourceFile: string; lineIndex: number; newLine: string }> {
     const file = await ensureDailyExists(
       this.app,
@@ -240,6 +241,7 @@ export class ObsidianTaskRepo {
         date,
         dueDate,
         priority,
+        status,
       );
       lineIndex = result.lineIndex;
       newLine = result.newLine;

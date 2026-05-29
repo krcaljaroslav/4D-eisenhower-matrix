@@ -1253,6 +1253,13 @@ button.em-priority {
 .em-kanban-btn-active {
   color: var(--interactive-accent);
 }
+/* Kanban toggle s textovým štítkem „Kanban" vedle ikony. */
+.em-kanban-btn-labeled {
+  width: auto;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: var(--font-ui-smaller);
+}
 /* Tlačítko „Back" v rozbaleném (hlavním) kvadrantu — accent pill + štítek
    + mřížková ikona, ať je jasné, že vrací do 4D zobrazení. */
 .em-kanban-back {

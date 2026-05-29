@@ -5,11 +5,14 @@ import { PriorityPicker } from './PriorityPicker.tsx';
 
 type Props = {
   quadrant: Quadrant;
+  /** Status nově vytvořeného tasku (Kanban sloupec). Default ' ' = to-do. */
+  status?: string;
   onSubmit: (input: {
     text: string;
     quadrant: Quadrant;
     dueDate: string | null;
     priority: Priority | null;
+    status?: string;
   }) => Promise<void>;
   onCancel: () => void;
   createTagSuggest: (inputEl: HTMLInputElement) => void;
@@ -23,7 +26,7 @@ function normalizeTagsInput(raw: string): string[] {
     .map((t) => (t.startsWith('#') ? t : `#${t}`));
 }
 
-export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }: Props) {
+export function AddTaskInput({ quadrant, status, onSubmit, onCancel, createTagSuggest }: Props) {
   const [text, setText] = useState('');
   const [tagsRaw, setTagsRaw] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -65,6 +68,7 @@ export function AddTaskInput({ quadrant, onSubmit, onCancel, createTagSuggest }:
         quadrant,
         dueDate: dueDate || null,
         priority,
+        status,
       });
       setText('');
       setTagsRaw('');

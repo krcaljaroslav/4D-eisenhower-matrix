@@ -63,6 +63,16 @@ describe('buildTaskLine', () => {
       '- [ ] 🛫 2026-05-14 misplaced',
     );
   });
+  it('builds with a non-default status ([/] in progress)', () => {
+    expect(buildTaskLine('DO', 'doing', '2026-05-14', null, null, '/')).toBe(
+      '- [/] #DO 🛫 2026-05-14 doing',
+    );
+  });
+  it('builds done status [x] with ✅ today appended', () => {
+    expect(buildTaskLine('DECIDE', 'finished', '2026-05-14', null, null, 'x')).toBe(
+      '- [x] #DECIDE 🛫 2026-05-14 finished ✅ 2026-05-14',
+    );
+  });
 });
 
 describe('moveLineQuadrant', () => {

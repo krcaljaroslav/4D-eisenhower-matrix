@@ -1,10 +1,11 @@
 import { useDroppable } from '@dnd-kit/core';
 import type { PaneType } from 'obsidian';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Priority, Quadrant as QuadrantKind, Task } from '../core/types.ts';
 import { QUADRANTS, QUADRANT_META } from '../core/types.ts';
 import { TaskCard } from './TaskCard.tsx';
 import { Quadrant } from './Quadrant.tsx';
+import { AddTaskInput } from './AddTaskInput.tsx';
 import { Icon } from './Icon.tsx';
 
 // 4 status-sloupce. Forwarded [>] se zobrazí ve Scheduled, canceled [-] v Done
@@ -52,6 +53,7 @@ type Props = {
     quadrant: QuadrantKind;
     dueDate: string | null;
     priority: Priority | null;
+    status?: string;
   }) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
   onMoveQuadrant: (task: Task, target: QuadrantKind) => void;
@@ -124,8 +126,11 @@ export function KanbanView(props: Props) {
             <KanbanColumn
               key={col.key}
               col={col}
+              quadrant={kanbanQuadrant}
               tasks={expandedTasks.filter((t) => columnKeyForStatus(t.status) === col.key)}
               renderCard={renderCard}
+              onAddTask={props.onAddTask}
+              createTagSuggest={props.createTagSuggest}
             />
           ))}
         </div>
@@ -162,13 +167,20 @@ export function KanbanView(props: Props) {
 
 function KanbanColumn({
   col,
+  quadrant,
   tasks,
   renderCard,
+  onAddTask,
+  createTagSuggest,
 }: {
   col: { key: string; label: string; statusChar: string; icon: string };
+  quadrant: QuadrantKind;
   tasks: Task[];
   renderCard: (t: Task) => ReactNode;
+  onAddTask: Props['onAddTask'];
+  createTagSuggest: Props['createTagSuggest'];
 }) {
+  const [adding, setAdding] = useState(false);
   const { setNodeRef, isOver } = useDroppable({ id: `kanban-status:${col.statusChar}` });
   return (
     <div
@@ -178,9 +190,30 @@ function KanbanColumn({
       <header className="em-kanban-col-header">
         <Icon name={col.icon} className="em-kanban-icon" />
         <span className="em-kanban-col-label">{col.label}</span>
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="em-quadrant-add"
+          title={`Add task (${col.label})`}
+          aria-label={`Add task to ${col.label}`}
+        >
+          +
+        </button>
         <span className="em-quadrant-count">{tasks.length}</span>
       </header>
-      {tasks.length === 0 ? (
+      {adding && (
+        <AddTaskInput
+          quadrant={quadrant}
+          status={col.statusChar}
+          onSubmit={async (input) => {
+            await onAddTask(input);
+            setAdding(false);
+          }}
+          onCancel={() => setAdding(false)}
+          createTagSuggest={createTagSuggest}
+        />
+      )}
+      {tasks.length === 0 && !adding ? (
         <p className="em-empty">No tasks</p>
       ) : (
         <ul className="em-task-list">{tasks.map(renderCard)}</ul>
