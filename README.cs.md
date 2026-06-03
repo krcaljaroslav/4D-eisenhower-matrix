@@ -6,56 +6,44 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 
 > Ranní dashboard pro rozhodnutí *co dělat teď*: ráno otevřu, vidím tasky rozdělené podle priority, odškrtnu hotové, případně přidám nové. Source-of-truth zůstávají MD soubory, plugin je jen vizuální vrstva nad nimi.
 
-<table>
-  <tr>
-    <td><img src="docs/Light.png" alt="Light theme" /></td>
-    <td><img src="docs/Dark.png" alt="Dark theme" /></td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center"><img src="docs/Dark_Kanban.png" alt="Kanban zobrazení — status sloupce" /></td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center"><img src="docs/Mobile.png" alt="Mobile" width="320" /></td>
-  </tr>
-</table>
+<img src="docs/Light.png" alt="Light theme — grid view" width="100%" />
+
+<img src="docs/Dark.png" alt="Dark theme — grid view" width="100%" />
+
+<img src="docs/Dark_Kanban.png" alt="Kanban zobrazení — status sloupce" width="100%" />
+
+<p align="center"><img src="docs/Mobile.png" alt="Mobile" width="360" /></p>
 
 ## Co to umí
 
-- **5-polová matice** — kvadrant určuje **první `#tag`** za checkboxem: `#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`. Cokoli jiného → OPEN.
-- **Cross-vault agregace** — sbírá tasky ze **všech `.md` souborů** ve vaultu (Dataview-like), ne jen z dnešní daily note.
-- **Plné CRUD** — přidání (formulář s text + tagy + due date + priorita), editace, odškrtnutí, přesun mezi kvadranty.
-- **Priorita** podle Obsidian Tasks konvence: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest
-- **Tag autocomplete** — při psaní tagů napovídá existující tagy z vault-u (žádné duplicity)
-- **Markdown formátování** — základní inline Markdown v textu tasku (tučné, kurzíva, kód, přeškrtnuté); úvodní `# ` … `###### ` se vykreslí jako nadpis
-- **6 stavů tasku** — `[ ]` to-do, `[/]` incomplete, `[x]` done, `[-]` canceled, `[>]` forwarded, `[<]` scheduling (Things-style). Pravý klik → *Mark as…*. Toggle „Done" skrývá hotové stavy (`[x]` + `[-]`)
-- **Kompaktní režim** — přepínač v hlavičce zmenší každou kartu na dva řádky textu + priorita/due date
-- **Kanban zobrazení (desktop)** — přepínač u každého kvadrantu: rozbalí ho na celou šířku se sloupci To-do / In progress / Scheduled / Done. Drag karet mezi sloupci mění stav, drag na jiný kvadrant ho přesune.
-- **Filtr** podle context tagu (OR logika + virtuální „Ostatní" chip)
-- **Datum navigace** (← / → / kalendář / Dnes) + den-cutoff banner po půlnoci
-- **3 s grace period** po odškrtnutí (zelený rámeček + odpočet — klikni znovu pro vrácení)
-- **Sticky header** + sbalitelná hlavička pro mobilní zobrazení
-- **Sortování v kvadrantu**: overdue → priorita desc → due date asc → alfabeticky
-- **Desktop i mobil** (Android testováno)
-- **Respektuje core „Daily notes"** — folder + template (s `{{date}}`, `{{title}}`, `{{time}}` substitucí)
+| Funkce | Co dělá |
+|--------|---------|
+| **5-polová matice** | DO / DECIDE / DELEGATE / DELETE + záchytný **OPEN**. Kvadrant určuje první `#tag` za checkboxem (`#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`); cokoli jiného spadne do OPEN. |
+| **Kanban zobrazení** *(desktop)* | Rozbalí libovolný kvadrant na celou šířku se sloupci **To-do · In progress · Scheduled · Done**. Drag karet mezi sloupci mění stav, na jiný kvadrant je přesune, nebo task rovnou přidáš do sloupce. |
+| **Cross-vault agregace** | Sbírá tasky ze **všech `.md` souborů** ve vaultu (Dataview-like), ne jen z dnešní daily note — jeden board nad celým druhým mozkem. |
+| **6 stavů tasku** | Things-style `[ ]` to-do · `[/]` in progress · `[x]` done · `[-]` canceled · `[>]` forwarded · `[<]` scheduling. Každá karta má status box; libovolný stav nastavíš pravým klikem → *Mark as…*. |
+| **Plné CRUD** | Přidání (text + tagy + due date + priorita), inline editace, odškrtnutí, přesun mezi kvadranty — vše se zapíše přímo do Markdownu. |
+| **Priorita** | Obsidian Tasks konvence: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest. Zároveň páka na řazení — zvýším prioritu a task vyskočí nahoru. |
+| **Due / start / done data** | Čte a zapisuje `📅 due`, `🛫 start`, `✅ done`. Overdue tasky jsou zvýrazněné a plavou nahoru ve svém kvadrantu. |
+| **Markdown v textu tasku** | Inline **tučné**, *kurzíva*, `kód`, ~~přeškrtnuté~~; úvodní `#`…`######` vykreslí task jako nadpis. |
+| **Tag autocomplete** | Při psaní napovídá existující tagy z vault-u, ať netvoříš skoro-duplicity. |
+| **Filtr podle tagu** | Context-tag chipy ve filter baru (multi-select, OR logika) + virtuální „Other" chip pro tasky bez tagu. |
+| **Datum navigace** | ← / → / kalendář / Dnes + den-cutoff banner po půlnoci s nabídkou skoku na dnešek. |
+| **Undo grace period** | 3sekundové okno se zeleným odpočtem po odškrtnutí/zrušení tasku — klik znovu = vrátit. |
+| **Kompaktní režim** | Přepínač v hlavičce zmenší každou kartu na dva řádky (text + priorita/due date) pro hustší přehled. |
+| **Zobrazit / skrýt hotové** | Přepínač „Done" odhalí nebo skryje hotové tasky (`[x]` + `[-]`); počítadlo tasků se přizpůsobí. |
+| **Sbalitelné UI** | Sbal jednotlivé kvadranty nebo celou hlavičku pro víc místa — užitečné na mobilu. |
+| **Deterministické řazení** | V kvadrantu: overdue → priorita → due date → abecedně. Žádné nechtěné přeskupení dragem. |
+| **Daily note integrace** | Nové tasky jdou pod **konfigurovatelný nadpis sekce**; pokud dnešní daily note chybí, vytvoří se automaticky podle tvého core „Daily notes" template (`{{date}}`, `{{title}}`, `{{time}}`). |
+| **Vyloučené složky** | Odkloní matici od šablon, archivů nebo čehokoli, co nechceš skenovat. |
+| **Desktop i mobil** | Funguje na desktopu i Androidu (`isDesktopOnly: false`); responzivní layout s ovládáním pro dotyk. |
+| **Theme-aware** | Postavené čistě na Obsidian CSS proměnných — přizpůsobí se světlému/tmavému theme i accent barvě. |
 
 ## Instalace
 
-### Přes BRAT (doporučeno)
+**Settings → Community plugins → Browse → vyhledej „4D Eisenhower Matrix" → Install → Enable.**
 
-[BRAT](https://github.com/TfTHacker/obsidian42-brat) je Obsidian community plugin pro instalaci pluginů přímo z GitHubu (s auto-update).
-
-1. Settings → Community plugins → Browse → vyhledej **BRAT** → Install + Enable
-2. `Ctrl+P` (na mobilu: 3 tečky → Command palette) → **„BRAT: Add a beta plugin for testing"**
-3. Vlož URL: `https://github.com/krcaljaroslav/4D-eisenhower-matrix`
-4. Add Plugin
-5. Settings → Community plugins → enable **4D Eisenhower Matrix**
-6. Otevři přes ribbon ikonu (mřížka v levém panelu) nebo `Ctrl+P` → „Open matrix"
-
-Update se objeví automaticky do 15 minut po vydání nového [releasu](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases). Nebo manuálně přes `BRAT: Check for updates to all beta plugins`.
-
-### Manuálně (bez BRAT)
-
-Stáhni `main.js`, `manifest.json`, `styles.css` z [posledního releasu](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases/latest) a hoď je do `<vault>/.obsidian/plugins/four-d-eisenhower-matrix/`. Pak Settings → Community plugins → enable.
+Pak otevři přes ribbon ikonu (mřížka v levém panelu) nebo command palette → *Open matrix*.
 
 ## Syntaxe tasků
 

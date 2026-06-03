@@ -6,56 +6,44 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 
 > A morning dashboard for deciding *what to do now*: open it, see tasks split by priority, check off the done ones, add new ones. Markdown files stay the source of truth — the plugin is just a visual layer on top.
 
-<table>
-  <tr>
-    <td><img src="docs/Light.png" alt="Light theme" /></td>
-    <td><img src="docs/Dark.png" alt="Dark theme" /></td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center"><img src="docs/Dark_Kanban.png" alt="Kanban view — status columns" /></td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center"><img src="docs/Mobile.png" alt="Mobile" width="320" /></td>
-  </tr>
-</table>
+<img src="docs/Light.png" alt="Light theme — grid view" width="100%" />
+
+<img src="docs/Dark.png" alt="Dark theme — grid view" width="100%" />
+
+<img src="docs/Dark_Kanban.png" alt="Kanban view — status columns" width="100%" />
+
+<p align="center"><img src="docs/Mobile.png" alt="Mobile" width="360" /></p>
 
 ## Features
 
-- **5-quadrant matrix** — the quadrant is determined by the **first `#tag`** after the checkbox: `#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`. Anything else → OPEN.
-- **Cross-vault aggregation** — collects tasks from **all `.md` files** in the vault (Dataview-like), not just today's daily note.
-- **Full CRUD** — add (form with text + tags + due date + priority), edit, toggle, move between quadrants.
-- **Priority** following the Obsidian Tasks convention: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest
-- **Tag autocomplete** — suggests existing vault tags while typing (avoids duplicates).
-- **Markdown formatting** — basic inline Markdown in task text (bold, italic, code, strikethrough); a leading `# ` … `###### ` prefix renders as a heading.
-- **6 task statuses** — Things-style `[ ]` to-do, `[/]` incomplete, `[x]` done, `[-]` canceled, `[>]` forwarded, `[<]` scheduling. Set via right-click → *Mark as…*. The "Done" toggle hides finished states (`[x]` + `[-]`).
-- **Compact mode** — a header toggle that shrinks every card to two lines of text + priority/due date.
-- **Kanban view (desktop)** — a per-quadrant toggle: expand any quadrant to full width with To-do / In progress / Scheduled / Done status columns. Drag cards between columns to change status, or onto another quadrant to move them.
-- **Filter** by context tag (OR logic + a virtual "Other" chip).
-- **Date navigation** (← / → / calendar / Today) + a day-cutoff banner after midnight.
-- **3 s grace period** after checking a task off (green border + countdown — click again to undo).
-- **Sticky header** + collapsible header for mobile.
-- **In-quadrant sorting**: overdue → priority desc → due date asc → alphabetical.
-- **Desktop and mobile** (tested on Android).
-- **Respects the core "Daily notes" plugin** — folder + template (with `{{date}}`, `{{title}}`, `{{time}}` substitution).
+| Feature | What it does |
+|---------|--------------|
+| **5-quadrant matrix** | DO / DECIDE / DELEGATE / DELETE plus a catch-all **OPEN**. The quadrant is the first `#tag` after the checkbox (`#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`); anything else lands in OPEN. |
+| **Kanban view** *(desktop)* | Expand any quadrant to full width with **To-do · In progress · Scheduled · Done** status columns. Drag cards between columns to change status, onto another quadrant to move them, or add a task straight into a column. |
+| **Cross-vault aggregation** | Collects tasks from **every `.md` file** in the vault (Dataview-like), not just today's daily note — one board for your whole second brain. |
+| **6 task statuses** | Things-style `[ ]` to-do · `[/]` in progress · `[x]` done · `[-]` canceled · `[>]` forwarded · `[<]` scheduling. Each card shows a status box; set any state via right-click → *Mark as…*. |
+| **Full CRUD** | Add (text + tags + due date + priority), edit inline, toggle done, move between quadrants — every change is written straight back to your Markdown. |
+| **Priority** | Obsidian Tasks convention: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest. It's also the manual lever for ordering — raise a priority and the task jumps up. |
+| **Due / start / done dates** | Reads and writes `📅 due`, `🛫 start`, `✅ done`. Overdue tasks are highlighted and float to the top of their quadrant. |
+| **Markdown in task text** | Inline **bold**, *italic*, `code`, ~~strikethrough~~; a leading `#`…`######` renders the task as a heading. |
+| **Tag autocomplete** | Suggests existing vault tags as you type, so you don't create near-duplicates. |
+| **Filter by tag** | Context-tag chips in the filter bar (multi-select, OR logic) + a virtual "Other" chip for untagged tasks. |
+| **Date navigation** | ← / → / calendar / Today, plus a day-cutoff banner offering to jump to today after midnight. |
+| **Undo grace period** | A 3-second window with a green countdown bar after you complete or cancel a task — click again to undo. |
+| **Compact mode** | Header toggle that shrinks every card to two lines (text + priority/due date) for a denser overview. |
+| **Show / hide done** | The "Done" toggle reveals or hides finished tasks (`[x]` + `[-]`); the task counter follows the toggle. |
+| **Collapsible UI** | Collapse individual quadrants or the whole header to free up space — handy on mobile. |
+| **Deterministic sorting** | Within a quadrant: overdue → priority → due date → alphabetical. No accidental drag-reordering. |
+| **Daily note integration** | New tasks go under a **configurable section heading**; if today's daily note is missing it's created automatically, honoring your core "Daily notes" template (`{{date}}`, `{{title}}`, `{{time}}`). |
+| **Excluded folders** | Point the matrix away from templates, archives or anything you don't want scanned. |
+| **Desktop & mobile** | Works on desktop and Android (`isDesktopOnly: false`); responsive layout with touch-friendly controls. |
+| **Theme-aware** | Built entirely on Obsidian CSS variables, so it adapts to your light/dark theme and accent colour. |
 
 ## Installation
 
-### Via BRAT (recommended)
+**Settings → Community plugins → Browse → search "4D Eisenhower Matrix" → Install → Enable.**
 
-[BRAT](https://github.com/TfTHacker/obsidian42-brat) is an Obsidian community plugin for installing plugins straight from GitHub (with auto-update).
-
-1. Settings → Community plugins → Browse → search for **BRAT** → Install + Enable
-2. `Ctrl+P` (mobile: 3-dot menu → Command palette) → **"BRAT: Add a beta plugin for testing"**
-3. Paste the URL: `https://github.com/krcaljaroslav/4D-eisenhower-matrix`
-4. Add Plugin
-5. Settings → Community plugins → enable **4D Eisenhower Matrix**
-6. Open via the ribbon icon (grid icon in the left sidebar) or `Ctrl+P` → "Open matrix"
-
-Updates appear automatically within 15 minutes of a new [release](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases), or manually via `BRAT: Check for updates to all beta plugins`.
-
-### Manual (without BRAT)
-
-Download `main.js`, `manifest.json`, `styles.css` from the [latest release](https://github.com/krcaljaroslav/4D-eisenhower-matrix/releases/latest) and drop them into `<vault>/.obsidian/plugins/four-d-eisenhower-matrix/`. Then Settings → Community plugins → enable.
+Then open it via the ribbon icon (grid, in the left sidebar) or the command palette → *Open matrix*.
 
 ## Task syntax
 
