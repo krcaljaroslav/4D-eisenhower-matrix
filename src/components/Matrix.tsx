@@ -37,10 +37,12 @@ type Props = {
 export function Matrix(props: Props) {
   const tasksByQuadrant = useMemo(() => {
     const map: Record<QuadrantKind, Task[]> = {
-      DO: [],
-      DECIDE: [],
+      DO_IMMEDIATELY: [],
+      DO_REDUCED: [],
+      DELEGATE_PRIORITY: [],
       DELEGATE: [],
-      DELETE: [],
+      SCHEDULE: [],
+      DEFER: [],
       OPEN: [],
     };
     for (const t of props.tasks) {

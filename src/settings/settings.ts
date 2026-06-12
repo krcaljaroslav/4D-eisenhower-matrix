@@ -45,10 +45,12 @@ export type PluginSettings = {
 export const DEFAULT_SETTINGS: PluginSettings = {
   selectedTags: [],
   collapsedQuadrants: {
-    DO: false,
-    DECIDE: false,
+    DO_IMMEDIATELY: false,
+    DO_REDUCED: false,
+    DELEGATE_PRIORITY: false,
     DELEGATE: false,
-    DELETE: false,
+    SCHEDULE: false,
+    DEFER: false,
     OPEN: false,
   },
   showCompleted: false,

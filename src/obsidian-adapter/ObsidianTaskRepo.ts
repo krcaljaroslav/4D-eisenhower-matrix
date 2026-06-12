@@ -105,12 +105,27 @@ export class ObsidianTaskRepo {
     const dates = new Set<string>();
     const files = this.app.vault.getMarkdownFiles();
     for (const f of files) {
-      const fileDir = f.parent?.path ?? '';
-      const inFolder =
-        folder === '' ? (fileDir === '' || fileDir === '/') : fileDir === folder;
-      if (!inFolder) continue;
-      const m = DATE_FILE_RE.exec(f.name);
-      if (m) dates.add(m[1]);
+      let relPath = f.path;
+      if (folder !== '') {
+        if (!relPath.startsWith(folder + '/')) continue;
+        relPath = relPath.substring(folder.length + 1);
+      }
+      const parts = relPath.split('/');
+      if (parts.length === 1) {
+        // Flat style: filename must be YYYY-MM-DD.md
+        const m = DATE_FILE_RE.exec(parts[0]);
+        if (m) dates.add(m[1]);
+      } else if (parts.length === 3) {
+        // Nested style: YYYY/MM/YYYY-MM-DD.md
+        const [year, month, filename] = parts;
+        const m = DATE_FILE_RE.exec(filename);
+        if (m && /^\d{4}$/.test(year) && /^\d{2}$/.test(month)) {
+          const dateStr = m[1];
+          if (dateStr.startsWith(`${year}-${month}-`)) {
+            dates.add(dateStr);
+          }
+        }
+      }
     }
     return dates;
   }

@@ -2,6 +2,7 @@ import { addIcon, Plugin, WorkspaceLeaf } from 'obsidian';
 import { MatrixView, VIEW_TYPE_MATRIX } from './src/view/MatrixView.ts';
 import { DEFAULT_SETTINGS, type PluginSettings } from './src/settings/settings.ts';
 import { MatrixSettingsTab } from './src/settings/SettingsTab.ts';
+import type { Quadrant } from './src/core/types.ts';
 
 // Vlastní ikona pro stav "In progress" [/] — Lucide nemá half-square,
 // tak ji zaregistrujeme: hranatý rámeček + vyplněná levá polovina (Things-style).
@@ -44,14 +45,37 @@ export default class EisenhowerMatrixPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    const loaded = (await this.loadData()) as Partial<PluginSettings> | null;
+    const loaded = (await this.loadData()) as any;
+    
+    // Map old kanbanQuadrant if it exists
+    let kanbanQuadrant = loaded?.kanbanQuadrant;
+    if (kanbanQuadrant === 'DO') kanbanQuadrant = 'DO_IMMEDIATELY';
+    else if (kanbanQuadrant === 'DECIDE') kanbanQuadrant = 'SCHEDULE';
+    else if (kanbanQuadrant === 'DELETE') kanbanQuadrant = 'DEFER';
+
+    // Map old collapsedQuadrants if they exist
+    const collapsedQuadrants = { ...DEFAULT_SETTINGS.collapsedQuadrants };
+    if (loaded?.collapsedQuadrants) {
+      const old = loaded.collapsedQuadrants;
+      if (old.DO !== undefined) collapsedQuadrants.DO_IMMEDIATELY = old.DO;
+      if (old.DECIDE !== undefined) collapsedQuadrants.SCHEDULE = old.DECIDE;
+      if (old.DELEGATE !== undefined) collapsedQuadrants.DELEGATE = old.DELEGATE;
+      if (old.DELETE !== undefined) collapsedQuadrants.DEFER = old.DELETE;
+      if (old.OPEN !== undefined) collapsedQuadrants.OPEN = old.OPEN;
+
+      // Copy new format values too, if present
+      for (const k of Object.keys(DEFAULT_SETTINGS.collapsedQuadrants) as Quadrant[]) {
+        if (old[k] !== undefined) {
+          collapsedQuadrants[k] = old[k];
+        }
+      }
+    }
+
     this.settings = {
       ...DEFAULT_SETTINGS,
       ...(loaded ?? {}),
-      collapsedQuadrants: {
-        ...DEFAULT_SETTINGS.collapsedQuadrants,
-        ...(loaded?.collapsedQuadrants ?? {}),
-      },
+      collapsedQuadrants,
+      kanbanQuadrant: kanbanQuadrant !== undefined ? kanbanQuadrant : DEFAULT_SETTINGS.kanbanQuadrant,
     };
   }
 

@@ -5,7 +5,17 @@
 
 import type { Priority, Quadrant } from './types.ts';
 
-const QUADRANT_TAGS = ['#DO', '#DECIDE', '#DELEGATE', '#DELETE'] as const;
+const QUADRANT_TAGS = [
+  '#DO_IMMEDIATELY',
+  '#DO_REDUCED',
+  '#DELEGATE_PRIORITY',
+  '#DELEGATE',
+  '#SCHEDULE',
+  '#DEFER',
+  '#DO',
+  '#DECIDE',
+  '#DELETE',
+] as const;
 
 // `[^\]]` = jakýkoli stav uvnitř hranatých závorek (kromě samotného `]`).
 // Plugin pak rozliší 6 Basic stavů + ostatní (viz TASK_STATUSES v types.ts).
@@ -177,14 +187,21 @@ function determineQuadrant(body: string): Quadrant {
   if (!firstTokenMatch) return 'OPEN';
   const first = firstTokenMatch[1].toUpperCase();
   switch (first) {
+    case '#DO_IMMEDIATELY':
     case '#DO':
-      return 'DO';
-    case '#DECIDE':
-      return 'DECIDE';
+      return 'DO_IMMEDIATELY';
+    case '#DO_REDUCED':
+      return 'DO_REDUCED';
+    case '#DELEGATE_PRIORITY':
+      return 'DELEGATE_PRIORITY';
     case '#DELEGATE':
       return 'DELEGATE';
+    case '#SCHEDULE':
+    case '#DECIDE':
+      return 'SCHEDULE';
+    case '#DEFER':
     case '#DELETE':
-      return 'DELETE';
+      return 'DEFER';
     default:
       return 'OPEN';
   }

@@ -31,10 +31,54 @@ export function getDailyNotesTemplatePath(app: App): string {
   return '';
 }
 
-/**
- * Pokud má core „Daily notes" nastavený formát, použij ho. Jinak fallback YYYY-MM-DD.
- * (Phase A: hardcoded YYYY-MM-DD; Phase D doplníme moment.js parsing.)
- */
+async function ensureFolderExists(app: App, folderPath: string): Promise<void> {
+  const normalized = normalizePath(folderPath);
+  if (!normalized || normalized === '.' || normalized === '/') return;
+
+  const existing = app.vault.getAbstractFileByPath(normalized);
+  if (existing instanceof TFolder) return;
+
+  // Recursively ensure parent folder exists first
+  const lastSlash = normalized.lastIndexOf('/');
+  if (lastSlash !== -1) {
+    const parent = normalized.substring(0, lastSlash);
+    await ensureFolderExists(app, parent);
+  }
+
+  await app.vault.createFolder(normalized);
+}
+
+function shouldUseNestedFormat(app: App, folder: string): boolean {
+  // Check daily-notes plugin config
+  const internalPlugins = (app as unknown as any).internalPlugins;
+  const dailyNotes = internalPlugins?.plugins?.['daily-notes'];
+  if (dailyNotes?.enabled && dailyNotes.instance?.options?.format) {
+    const format = dailyNotes.instance.options.format;
+    if (format.includes('/')) {
+      return true;
+    }
+  }
+
+  // Check if there are any existing nested daily notes in the vault
+  const files = app.vault.getMarkdownFiles();
+  for (const f of files) {
+    let relPath = f.path;
+    if (folder !== '') {
+      if (!relPath.startsWith(folder + '/')) continue;
+      relPath = relPath.substring(folder.length + 1);
+    }
+    const parts = relPath.split('/');
+    if (parts.length === 3) {
+      const [year, month, filename] = parts;
+      if (/^\d{4}$/.test(year) && /^\d{2}$/.test(month) && /^\d{4}-\d{2}-\d{2}\.md$/.test(filename)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 export function getDailyNoteFilenameFormat(_app: App): string {
   return 'YYYY-MM-DD';
 }
@@ -44,8 +88,31 @@ export function getDailyNoteFilenameFormat(_app: App): string {
  */
 export function buildDailyNotePath(app: App, isoDate: string, override?: string): string {
   const folder = getDailyNotesFolder(app, override);
-  const filename = `${isoDate}.md`;
-  return folder ? normalizePath(`${folder}/${filename}`) : filename;
+  
+  // 1. First, check if the nested file already exists in the vault.
+  const year = isoDate.substring(0, 4);
+  const month = isoDate.substring(5, 7);
+  const nestedSubpath = `${year}/${month}/${isoDate}.md`;
+  const nestedPath = folder ? normalizePath(`${folder}/${nestedSubpath}`) : nestedSubpath;
+  
+  if (app.vault.getFileByPath(nestedPath)) {
+    return nestedPath;
+  }
+  
+  // 2. Second, check if the flat file already exists in the vault.
+  const flatSubpath = `${isoDate}.md`;
+  const flatPath = folder ? normalizePath(`${folder}/${flatSubpath}`) : flatSubpath;
+  
+  if (app.vault.getFileByPath(flatPath)) {
+    return flatPath;
+  }
+
+  // 3. If neither exists, decide how to build it based on detection:
+  if (shouldUseNestedFormat(app, folder)) {
+    return nestedPath;
+  }
+  
+  return flatPath;
 }
 
 /**
@@ -66,12 +133,10 @@ export async function ensureDailyExists(
   if (existing) return existing;
 
   // Ensure parent folder exists
-  const folder = getDailyNotesFolder(app, override);
-  if (folder) {
-    const folderObj = app.vault.getAbstractFileByPath(folder);
-    if (!(folderObj instanceof TFolder)) {
-      await app.vault.createFolder(folder);
-    }
+  const lastSlash = targetPath.lastIndexOf('/');
+  if (lastSlash !== -1) {
+    const parentFolder = targetPath.substring(0, lastSlash);
+    await ensureFolderExists(app, parentFolder);
   }
 
   // Try to use core Daily Notes template

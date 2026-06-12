@@ -475,19 +475,27 @@
  * Subtle barevný tint per kvadrant — mix 7 % accent barvy s primary background.
  * V dark mode automaticky tmavší (background-primary je dark), v light mode světlý.
  */
-.em-quadrant-do {
+.em-quadrant-do_immediately {
   background-color: color-mix(in srgb, var(--color-red) 7%, var(--background-primary));
   border-top-color: var(--color-red);
 }
-.em-quadrant-decide {
-  background-color: color-mix(in srgb, var(--color-blue) 7%, var(--background-primary));
-  border-top-color: var(--color-blue);
+.em-quadrant-do_reduced {
+  background-color: color-mix(in srgb, var(--color-orange) 7%, var(--background-primary));
+  border-top-color: var(--color-orange);
+}
+.em-quadrant-delegate_priority {
+  background-color: color-mix(in srgb, var(--color-purple) 7%, var(--background-primary));
+  border-top-color: var(--color-purple);
 }
 .em-quadrant-delegate {
   background-color: color-mix(in srgb, var(--color-green) 7%, var(--background-primary));
   border-top-color: var(--color-green);
 }
-.em-quadrant-delete {
+.em-quadrant-schedule {
+  background-color: color-mix(in srgb, var(--color-blue) 7%, var(--background-primary));
+  border-top-color: var(--color-blue);
+}
+.em-quadrant-defer {
   background-color: color-mix(in srgb, var(--color-yellow) 7%, var(--background-primary));
   border-top-color: var(--color-yellow);
 }

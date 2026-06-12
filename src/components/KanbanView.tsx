@@ -63,10 +63,12 @@ type Props = {
 export function KanbanView(props: Props) {
   const { kanbanQuadrant } = props;
   const byQuadrant: Record<QuadrantKind, Task[]> = {
-    DO: [],
-    DECIDE: [],
+    DO_IMMEDIATELY: [],
+    DO_REDUCED: [],
+    DELEGATE_PRIORITY: [],
     DELEGATE: [],
-    DELETE: [],
+    SCHEDULE: [],
+    DEFER: [],
     OPEN: [],
   };
   for (const t of props.tasks) byQuadrant[t.quadrant].push(t);

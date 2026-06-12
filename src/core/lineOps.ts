@@ -13,11 +13,21 @@ const DONE_DATE_RE = /\s*✅\s*\d{4}-\d{2}-\d{2}/g;
 const DUE_DATE_STRIP_RE = /\s*📅\s*\d{4}-\d{2}-\d{2}/;
 const LEADING_TAGS_FULL_RE = /^(\s*-\s+\[[^\]]\]\s+(?:#[\p{L}\p{N}_-]+\s+)*)/u;
 const LEADING_QUADRANT_TAG_RE =
-  /^(\s*-\s+\[[^\]]\]\s+)(#(?:DO|DECIDE|DELEGATE|DELETE))(\s+|$)/i;
+  /^(\s*-\s+\[[^\]]\]\s+)(#(?:DO_IMMEDIATELY|DO_REDUCED|DELEGATE_PRIORITY|DELEGATE|SCHEDULE|DEFER|DO|DECIDE|DELETE))(\s+|$)/i;
 const LEADING_NO_TAG_RE = /^(\s*-\s+\[[^\]]\]\s+)(.*)$/;
 const FRONTMATTER_END_RE = /^---\s*$/;
 
-const QUADRANT_TAG_SET = new Set(['#DO', '#DECIDE', '#DELEGATE', '#DELETE']);
+const QUADRANT_TAG_SET = new Set([
+  '#DO_IMMEDIATELY',
+  '#DO_REDUCED',
+  '#DELEGATE_PRIORITY',
+  '#DELEGATE',
+  '#SCHEDULE',
+  '#DEFER',
+  '#DO',
+  '#DECIDE',
+  '#DELETE',
+]);
 
 // ============================================================
 // Toggle checkbox + manage ✅ done date

@@ -3,7 +3,14 @@
  * Drž sync ručně. Při změně v jedné kopii uprav i druhou.
  */
 
-export type Quadrant = 'DO' | 'DECIDE' | 'DELEGATE' | 'DELETE' | 'OPEN';
+export type Quadrant =
+  | 'DO_IMMEDIATELY'
+  | 'DO_REDUCED'
+  | 'DELEGATE_PRIORITY'
+  | 'DELEGATE'
+  | 'SCHEDULE'
+  | 'DEFER'
+  | 'OPEN';
 
 export type Priority = 'highest' | 'high' | 'medium' | 'low' | 'lowest';
 
@@ -54,30 +61,48 @@ export function isClosedStatus(status: string): boolean {
   return status.toLowerCase() === 'x' || status === '-';
 }
 
-export const QUADRANTS: Quadrant[] = ['DO', 'DECIDE', 'DELEGATE', 'DELETE', 'OPEN'];
+export const QUADRANTS: Quadrant[] = [
+  'DO_IMMEDIATELY',
+  'DO_REDUCED',
+  'DELEGATE_PRIORITY',
+  'DELEGATE',
+  'SCHEDULE',
+  'DEFER',
+  'OPEN',
+];
 
 export const QUADRANT_META: Record<
   Quadrant,
   { label: string; subtitle: string; accent: string }
 > = {
-  DO: {
-    label: 'DO',
+  DO_IMMEDIATELY: {
+    label: 'DO IMMEDIATELY',
     subtitle: 'Important + Urgent',
     accent: 'var(--color-red)',
   },
-  DECIDE: {
-    label: 'DECIDE',
-    subtitle: 'Important + Less Urgent',
-    accent: 'var(--color-blue)',
+  DO_REDUCED: {
+    label: 'DO REDUCED QUALITY',
+    subtitle: 'Not Important + Urgent',
+    accent: 'var(--color-orange)',
+  },
+  DELEGATE_PRIORITY: {
+    label: 'DELEGATE WITH PRIORITY',
+    subtitle: 'Important + Urgent + Unable to do',
+    accent: 'var(--color-purple)',
   },
   DELEGATE: {
     label: 'DELEGATE',
-    subtitle: 'Less Important + Urgent',
+    subtitle: 'Not Important + Urgent',
     accent: 'var(--color-green)',
   },
-  DELETE: {
-    label: 'DELETE',
-    subtitle: 'Less Important + Less Urgent',
+  SCHEDULE: {
+    label: 'SCHEDULE',
+    subtitle: 'Not Urgent + Important',
+    accent: 'var(--color-blue)',
+  },
+  DEFER: {
+    label: 'DEFER',
+    subtitle: 'Not Urgent + Not Important',
     accent: 'var(--color-yellow)',
   },
   OPEN: {
