@@ -28,6 +28,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 | **Markdown in task text** | Inline **bold**, *italic*, `code`, ~~strikethrough~~; a leading `#`…`######` renders the task as a heading. |
 | **Tag autocomplete** | Suggests existing vault tags as you type, so you don't create near-duplicates. |
 | **Filter by tag** | Context-tag chips in the filter bar (multi-select, OR logic) + a virtual "Other" chip for untagged tasks. |
+| **Due-date quick filters** | **Today** (overdue + due today) and **This week** (overdue + next 7 days) buttons at the start of the filter bar, set apart in orange. |
 | **Date navigation** | ← / → / calendar / Today, plus a day-cutoff banner offering to jump to today after midnight. |
 | **Undo grace period** | A 3-second window with a green countdown bar after you complete or cancel a task — click again to undo. |
 | **Compact mode** | Header toggle that shrinks every card to two lines (text + priority/due date) for a denser overview. |
@@ -86,6 +87,7 @@ Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+
 | Move between quadrants | **Desktop:** drag the card onto the target quadrant. **Mobile:** long-press / double-tap → menu → "Move to…" |
 | Open the source file | **Desktop:** right-click the card. **Mobile:** long-press / double-tap. → menu (current pane / new tab / split / window) — the cursor lands on the task's line |
 | Filter by tag | Click a chip in the filter bar (multi-select, OR) |
+| Due-date quick filter | The **Today** (overdue + due today) / **This week** (overdue + next 7 days) buttons at the start of the filter bar |
 | Previous / next day | The ← → arrows in the header, the calendar, or "Today" |
 | Collapse a quadrant | Click the ▼/▶ arrow next to the quadrant name |
 | Collapse the whole header | The ▲ button top-right (handy on mobile) |
@@ -143,6 +145,20 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 ## Bugs / contributing
 
 [Issues](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) · Pull requests welcome.
+
+## Changelog
+
+**1.0.18** — Due-date quick filters: **Today** (overdue + due today) and **This week** (overdue + next 7 days) buttons at the start of the filter bar, visually set apart in orange. Desktop + mobile.
+
+<details>
+<summary>Earlier versions</summary>
+
+- **1.0.13–1.0.17** — Kanban view (desktop): per-quadrant toggle into To-do / In progress / Scheduled / Done status columns, drag to change status or move quadrant, add tasks per column, "Back to grid" button.
+- **1.0.7–1.0.12** — Six Things-style task statuses with a custom status box, Markdown headings in task text, half-square "in progress" icon, view controls kept in the collapsed header.
+- **1.0.6** — Inline Markdown in task text + compact 2-line card mode.
+- **1.0.0** — First release: 5-quadrant matrix, cross-vault aggregation, CRUD, priority, tag autocomplete, filters, dates, grace period, daily-note integration.
+
+</details>
 
 ## License
 

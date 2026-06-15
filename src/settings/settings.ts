@@ -1,4 +1,5 @@
 import type { Quadrant } from '../core/types.ts';
+import type { DueFilter } from '../core/taskUtils.ts';
 
 /**
  * Plugin nastavení — persistovaná napříč restarty Obsidianu přes
@@ -9,6 +10,8 @@ import type { Quadrant } from '../core/types.ts';
  */
 export type PluginSettings = {
   selectedTags: string[];
+  /** Rychlý filtr podle due date: none / today (overdue+dnes) / week (overdue+7 dní). */
+  dueFilter: DueFilter;
   collapsedQuadrants: Record<Quadrant, boolean>;
   showCompleted: boolean;
   lastOpenedDate: string | null;
@@ -44,6 +47,7 @@ export type PluginSettings = {
 
 export const DEFAULT_SETTINGS: PluginSettings = {
   selectedTags: [],
+  dueFilter: 'none',
   collapsedQuadrants: {
     DO: false,
     DECIDE: false,

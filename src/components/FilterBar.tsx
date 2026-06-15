@@ -1,9 +1,11 @@
-import { UNTAGGED_FILTER } from '../core/taskUtils.ts';
+import { UNTAGGED_FILTER, type DueFilter } from '../core/taskUtils.ts';
 
 type Props = {
   availableTags: { tag: string; count: number }[];
   selectedTags: string[];
+  dueFilter: DueFilter;
   onToggle: (tag: string) => void;
+  onDueFilter: (f: DueFilter) => void;
   onClear: () => void;
   totalCount: number;
   filteredCount: number;
@@ -16,18 +18,49 @@ function chipLabel(tag: string): string {
 export function FilterBar({
   availableTags,
   selectedTags,
+  dueFilter,
   onToggle,
+  onDueFilter,
   onClear,
   totalCount,
   filteredCount,
 }: Props) {
   if (availableTags.length === 0) return null;
 
-  const active = selectedTags.length > 0;
+  const active = selectedTags.length > 0 || dueFilter !== 'none';
 
   return (
     <div className="em-filterbar">
       <span className="em-filterbar-label">Filter:</span>
+      {/* Due-date rychlé filtry — vždy první, opticky odlišené (oranžové). */}
+      <button
+        type="button"
+        onClick={() => onDueFilter('today')}
+        className={`em-chip em-due-chip ${dueFilter === 'today' ? 'em-due-chip-active' : ''}`}
+        aria-pressed={dueFilter === 'today'}
+        title="Overdue + due today"
+      >
+        {dueFilter === 'today' && (
+          <span className="em-chip-check" aria-hidden="true">
+            ✓
+          </span>
+        )}
+        <span>Today</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => onDueFilter('week')}
+        className={`em-chip em-due-chip ${dueFilter === 'week' ? 'em-due-chip-active' : ''}`}
+        aria-pressed={dueFilter === 'week'}
+        title="Overdue + due within the next 7 days"
+      >
+        {dueFilter === 'week' && (
+          <span className="em-chip-check" aria-hidden="true">
+            ✓
+          </span>
+        )}
+        <span>This week</span>
+      </button>
       {availableTags.map(({ tag, count }) => {
         const isSelected = selectedTags.some(
           (s) => s.toLowerCase() === tag.toLowerCase(),

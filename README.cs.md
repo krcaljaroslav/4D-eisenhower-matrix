@@ -28,6 +28,7 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 | **Markdown v textu tasku** | Inline **tučné**, *kurzíva*, `kód`, ~~přeškrtnuté~~; úvodní `#`…`######` vykreslí task jako nadpis. |
 | **Tag autocomplete** | Při psaní napovídá existující tagy z vault-u, ať netvoříš skoro-duplicity. |
 | **Filtr podle tagu** | Context-tag chipy ve filter baru (multi-select, OR logika) + virtuální „Other" chip pro tasky bez tagu. |
+| **Rychlé filtry podle due date** | Tlačítka **Today** (overdue + due dnes) a **This week** (overdue + 7 dní dopředu) na začátku filter baru, opticky odlišená oranžovou. |
 | **Datum navigace** | ← / → / kalendář / Dnes + den-cutoff banner po půlnoci s nabídkou skoku na dnešek. |
 | **Undo grace period** | 3sekundové okno se zeleným odpočtem po odškrtnutí/zrušení tasku — klik znovu = vrátit. |
 | **Kompaktní režim** | Přepínač v hlavičce zmenší každou kartu na dva řádky (text + priorita/due date) pro hustší přehled. |
@@ -86,6 +87,7 @@ Priorita ([Obsidian Tasks konvence](https://publish.obsidian.md/tasks/Getting+St
 | Přesun mezi kvadranty | **Desktop:** drag karty na cílový kvadrant. **Mobil:** long-press / dvojklep → menu → „Move to…" |
 | Otevřít source soubor | **Desktop:** pravý klik na kartu. **Mobil:** long-press / dvojklep. → menu (current pane / nová záložka / split / okno) — kurzor přistane na řádku tasku |
 | Filtr podle tagu | Klik na chip ve filter baru (multi-select OR) |
+| Rychlý filtr podle due date | Tlačítka **Today** (overdue + due dnes) / **This week** (overdue + 7 dní) na začátku filter baru |
 | Předchozí / další den | Šipky ← → v headeru, kalendář, nebo „Dnes" |
 | Sbalit kvadrant | Klik na šipku ▼/▶ vedle názvu kvadrantu |
 | Sbalit celou hlavičku | ▲ vpravo nahoře (užitečné na mobilu) |
@@ -143,6 +145,20 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 ## Bugs / přispívání
 
 [Issues](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) · Pull requesty vítané.
+
+## Changelog
+
+**1.0.18** — Rychlé filtry podle due date: tlačítka **Today** (overdue + due dnes) a **This week** (overdue + 7 dní) na začátku filter baru, opticky odlišená oranžovou. Desktop i mobil.
+
+<details>
+<summary>Starší verze</summary>
+
+- **1.0.13–1.0.17** — Kanban zobrazení (desktop): přepnutí kvadrantu do sloupců To-do / In progress / Scheduled / Done, drag pro změnu stavu i přesun kvadrantu, přidávání tasků po sloupcích, tlačítko „Back to grid".
+- **1.0.7–1.0.12** — Šest Things-style stavů tasku s vlastním status boxem, Markdown nadpisy v textu, půlený čtverec pro „in progress", ovládání ve sbalené hlavičce.
+- **1.0.6** — Inline Markdown v textu tasku + kompaktní 2řádkový režim.
+- **1.0.0** — První release: 5-polová matice, cross-vault agregace, CRUD, priorita, tag autocomplete, filtry, data, grace period, daily-note integrace.
+
+</details>
 
 ## Licence
 

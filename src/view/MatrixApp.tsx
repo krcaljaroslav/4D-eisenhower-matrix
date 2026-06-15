@@ -23,8 +23,10 @@ import {
   extractAllContextTags,
   formatDateISO,
   makeCompareTask,
+  matchesDueFilter,
   matchesFilter,
   UNTAGGED_FILTER,
+  type DueFilter,
 } from '../core/taskUtils.ts';
 import { Matrix } from '../components/Matrix.tsx';
 import { KanbanView } from '../components/KanbanView.tsx';
@@ -112,6 +114,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
   // Settings (persisted)
   const [selectedTags, setSelectedTags] = useState<string[]>(plugin.settings.selectedTags);
+  const [dueFilter, setDueFilter] = useState<DueFilter>(plugin.settings.dueFilter);
   const [collapsed, setCollapsed] = useState<Record<Quadrant, boolean>>(
     plugin.settings.collapsedQuadrants,
   );
@@ -144,6 +147,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     plugin.settings.selectedTags = selectedTags;
     void plugin.saveSettings();
   }, [selectedTags, plugin]);
+
+  useEffect(() => {
+    plugin.settings.dueFilter = dueFilter;
+    void plugin.saveSettings();
+  }, [dueFilter, plugin]);
 
   useEffect(() => {
     plugin.settings.collapsedQuadrants = collapsed;
@@ -380,13 +388,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     () =>
       tasks.filter((t) => {
         if (!matchesFilter(t, selectedTags)) return false;
+        if (!matchesDueFilter(t, dueFilter, today)) return false;
         if (showCompleted) return true;
         // "Closed" = done ([x]) i canceled ([-]) — oba schované, pokud
         // uživatel nezapne přepínač "Done" v hlavičce.
         if (!isClosedStatus(t.status)) return true;
         return graceMap.has(taskKey(t.sourceFile, t.lineIndex));
       }),
-    [tasks, selectedTags, showCompleted, graceMap],
+    [tasks, selectedTags, dueFilter, today, showCompleted, graceMap],
   );
 
   const sortedVisibleTasks = useMemo(
@@ -430,7 +439,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     );
   }, []);
 
-  const clearTags = useCallback(() => setSelectedTags([]), []);
+  const clearFilters = useCallback(() => {
+    setSelectedTags([]);
+    setDueFilter('none');
+  }, []);
+
+  const toggleDueFilter = useCallback((f: DueFilter) => {
+    setDueFilter((prev) => (prev === f ? 'none' : f));
+  }, []);
 
   const toggleQuadrantCollapsed = useCallback((q: Quadrant) => {
     setCollapsed((prev) => ({ ...prev, [q]: !prev[q] }));
@@ -707,8 +723,10 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         <FilterBar
           availableTags={availableTags}
           selectedTags={selectedTags}
+          dueFilter={dueFilter}
           onToggle={toggleTag}
-          onClear={clearTags}
+          onDueFilter={toggleDueFilter}
+          onClear={clearFilters}
           totalCount={totalUnfiltered}
           filteredCount={sortedVisibleTasks.length}
         />

@@ -80,6 +80,32 @@ export function matchesFilter(task: Task, selectedTags: string[]): boolean {
   });
 }
 
+// ============================================================
+// Rychlý filtr podle due date
+// ============================================================
+
+export type DueFilter = 'none' | 'today' | 'week';
+
+/** Vrátí ISO datum posunuté o `days` (lokální čas, bez UTC off-by-one). */
+export function addDaysISO(isoDate: string, days: number): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return formatDateISO(new Date(y, m - 1, d + days));
+}
+
+/**
+ * Due-date quick filtr:
+ *   'today' = overdue + due dnes
+ *   'week'  = overdue + due v rozmezí dnes .. dnes+7
+ * Tasky bez due date při aktivním filtru nikdy nematchují.
+ */
+export function matchesDueFilter(task: Task, dueFilter: DueFilter, today: string): boolean {
+  if (dueFilter === 'none') return true;
+  if (!task.dueDate) return false;
+  if (task.dueDate < today) return true; // overdue platí pro oba
+  if (dueFilter === 'today') return task.dueDate === today;
+  return task.dueDate <= addDaysISO(today, 7); // 'week': dnes .. dnes+7
+}
+
 export function formatDateISO(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');

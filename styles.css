@@ -344,6 +344,24 @@
   font-style: italic;
 }
 
+/* Due-date rychlé filtry (Today / This week) — oranžový nádech, ať se
+   opticky odliší od běžných tag chipů. --color-orange definují všechny themes. */
+.em-due-chip {
+  font-family: inherit;
+  border-color: var(--color-orange);
+  color: var(--color-orange);
+}
+.em-due-chip:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--color-orange);
+}
+.em-due-chip-active {
+  background-color: var(--color-orange);
+  border-color: var(--color-orange);
+  color: var(--text-on-accent);
+  font-weight: var(--font-bold);
+}
+
 .em-chip-count {
   opacity: 0.6;
   font-weight: var(--font-normal);
