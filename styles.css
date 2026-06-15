@@ -344,11 +344,12 @@
   font-style: italic;
 }
 
-/* Due-date rychlé filtry (Today / This week) — oranžový nádech, ať se
-   opticky odliší od běžných tag chipů. --color-orange definují všechny themes. */
+/* Due-date rychlé filtry (Today / This week).
+   Odlišení od tag chipů = oranžový TEXT (ne ohraničení), ať se nepletou.
+   Vybrané tlačítko = oranžová výplň + oranžové ohraničení → na první pohled
+   jasné, které je aktivní. --color-orange definují všechny themes. */
 .em-due-chip {
   font-family: inherit;
-  border-color: var(--color-orange);
   color: var(--color-orange);
 }
 .em-due-chip:hover {

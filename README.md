@@ -148,11 +148,12 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
-**1.0.18** — Due-date quick filters: **Today** (overdue + due today) and **This week** (overdue + next 7 days) buttons at the start of the filter bar, visually set apart in orange. Desktop + mobile.
+**1.0.19** — Refined the due-filter chips: the selected one now stands out clearly (orange fill + border) while the unselected one is distinguished by orange text only.
 
 <details>
 <summary>Earlier versions</summary>
 
+- **1.0.18** — Due-date quick filters: **Today** (overdue + due today) and **This week** (overdue + next 7 days) buttons at the start of the filter bar, set apart in orange.
 - **1.0.13–1.0.17** — Kanban view (desktop): per-quadrant toggle into To-do / In progress / Scheduled / Done status columns, drag to change status or move quadrant, add tasks per column, "Back to grid" button.
 - **1.0.7–1.0.12** — Six Things-style task statuses with a custom status box, Markdown headings in task text, half-square "in progress" icon, view controls kept in the collapsed header.
 - **1.0.6** — Inline Markdown in task text + compact 2-line card mode.
