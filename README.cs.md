@@ -111,12 +111,12 @@ Manuální páka přeskupování je **priorita** — nastav ji a task se vyhoupn
 `Settings → 4D Eisenhower Matrix`:
 
 - **Daily folder** — kam ukládat nové daily notes. Prázdné = respektuj core plugin „Daily notes" config. Override = vlastní cesta (s folder suggesterem).
-- **Daily section heading** — nadpis v daily note, pod který se čtou a přidávají dnešní tasky. Výchozí: `# Dnes`. Nastav podle toho, co používáš (např. `# Today`, `## Úkoly`).
+- **Daily section heading** — nadpis v daily note, pod který se čtou a přidávají dnešní tasky. Výchozí: `# Today`. Nastav podle toho, co používáš (např. `# Dnes`, `## Úkoly`).
 - **Vyloučené složky** — tasky z těchto složek se ignorují. Výchozí: žádné — vyloučené složky si nastav sám. UI s + / × tlačítky a folder suggesterem.
 
 ## Daily note integrace
 
-Plugin hledá v daily souboru konfigurovatelný nadpis sekce (nastavuje se v **Settings → Daily section heading**, výchozí `# Dnes`). Nové tasky vkládá pod tuto sekci.
+Plugin hledá v daily souboru konfigurovatelný nadpis sekce (nastavuje se v **Settings → Daily section heading**, výchozí `# Today`). Nové tasky vkládá pod tuto sekci.
 
 Pokud daily note pro daný den neexistuje a přidáš první task, plugin ji **vytvoří automaticky**:
 1. Pokud má core plugin „Daily notes" nastavený **template**, použije ho (s expanzí `{{date}}`, `{{title}}`, `{{time}}`)
@@ -148,10 +148,12 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 
 ## Changelog
 
-**1.0.22** — Kanban zobrazení je teď dostupné i na **mobilu a tabletu**, nejen na desktopu. Status sloupce scrollují vodorovně (swipe mezi nimi); protože touch-drag je v Obsidian mobilním webview nespolehlivý, stav karty měníš přes její menu (*Mark as…*) — karta naskočí do odpovídajícího sloupce.
+**1.0.23** — Změněn výchozí **Daily section heading** z `# Dnes` na `# Today`. Dotkne se jen čistých instalací / uživatelů, kteří si nikdy nenastavili vlastní — existující konfigurace si svou hodnotu nechá.
 
 <details>
 <summary>Starší verze</summary>
+
+- **1.0.22** — Kanban zobrazení je teď dostupné i na **mobilu a tabletu**, nejen na desktopu. Status sloupce scrollují vodorovně (swipe mezi nimi); protože touch-drag je v Obsidian mobilním webview nespolehlivý, stav karty měníš přes její menu (*Mark as…*) — karta naskočí do odpovídajícího sloupce.
 
 - **1.0.21** — Úklid lintu pro store review: async handlery obaleny `void`, přepnuto na `activeDocument` / `activeWindow` kvůli popout oknům, odstraněna nadbytečná type assertion, popsán zbývající direktivní komentář. Bez dopadu na uživatele. (Tři deprecation *recommendations* nechány — náhrady nejsou dostupné při `minAppVersion` 1.8.0.)
 

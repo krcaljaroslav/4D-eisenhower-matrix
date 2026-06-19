@@ -51,7 +51,7 @@ export function buildDailyNotePath(app: App, isoDate: string, override?: string)
 /**
  * Pokud daily note pro `isoDate` neexistuje, vytvoří ji:
  *   1. Pokud má uživatel v core „Daily notes" nastavený template → použij ten
- *   2. Jinak → vlož minimální scaffold (frontmatter + `# Dnes` heading)
+ *   2. Jinak → vlož minimální scaffold (frontmatter + `# Today` heading)
  *
  * Vrací `TFile` existujícího nebo nově vytvořeného souboru.
  */

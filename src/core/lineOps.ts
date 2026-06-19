@@ -255,7 +255,7 @@ export type AppendResult = {
 
 /**
  * Příjme celý obsah daily souboru, vrátí nový obsah s vloženým taskem.
- * Pokud sekční heading (`sectionHeading`, např. `# Dnes`) chybí, vloží ho
+ * Pokud sekční heading (`sectionHeading`, např. `# Today`) chybí, vloží ho
  * hned za frontmatter.
  */
 export function appendTaskUnderHeading(

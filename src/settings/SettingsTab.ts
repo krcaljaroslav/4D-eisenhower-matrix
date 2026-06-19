@@ -51,7 +51,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
           .onChange(async (value) => {
             const trimmed = value.trim();
             // Fallback to default if the user clears it.
-            this.plugin.settings.dailySectionHeading = trimmed || '# Dnes';
+            this.plugin.settings.dailySectionHeading = trimmed || '# Today';
             await this.plugin.saveSettings();
             this.plugin.notifyRepoConfigChanged();
           }),

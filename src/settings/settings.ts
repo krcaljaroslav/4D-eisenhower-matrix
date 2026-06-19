@@ -23,7 +23,7 @@ export type PluginSettings = {
   dailyFolderOverride: string;
   /**
    * Heading sekce v daily note, pod kterou se přidávají / ze které se čtou
-   * dnešní tasky. Default `# Dnes`.
+   * dnešní tasky. Default `# Today`.
    */
   dailySectionHeading: string;
   /**
@@ -61,7 +61,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   // Generic plugin nemá hádat vault-specifické složky.
   excludedFolders: [],
   dailyFolderOverride: '',
-  dailySectionHeading: '# Dnes',
+  dailySectionHeading: '# Today',
   headerCollapsed: false,
   compactMode: false,
   kanbanQuadrant: null,

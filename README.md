@@ -111,12 +111,12 @@ The manual lever for reordering is **priority** — set it and the task jumps up
 `Settings → 4D Eisenhower Matrix`:
 
 - **Daily folder** — where new daily notes are created. Empty = respect the core "Daily notes" plugin config. Override = a custom path (with a folder suggester).
-- **Daily section heading** — the heading in the daily note under which today's tasks are read and added. Default: `# Dnes`. Set it to whatever you use (e.g. `# Today`, `## Tasks`).
+- **Daily section heading** — the heading in the daily note under which today's tasks are read and added. Default: `# Today`. Set it to whatever you use (e.g. `# Dnes`, `## Tasks`).
 - **Excluded folders** — tasks from these folders are ignored. Default: none — add the folders you want excluded yourself. UI with + / × buttons and a folder suggester.
 
 ## Daily note integration
 
-The plugin looks for a configurable section heading in the daily note (set via **Settings → Daily section heading**, default `# Dnes`). New tasks are inserted under that heading.
+The plugin looks for a configurable section heading in the daily note (set via **Settings → Daily section heading**, default `# Today`). New tasks are inserted under that heading.
 
 If a daily note for the given day doesn't exist and you add the first task, the plugin **creates it automatically**:
 1. If the core "Daily notes" plugin has a **template** configured, it uses that (expanding `{{date}}`, `{{title}}`, `{{time}}`).
@@ -148,10 +148,12 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
-**1.0.22** — Kanban view is now available on **mobile and tablet**, not just desktop. The status columns scroll horizontally (swipe between them); since touch-drag is unreliable in the Obsidian mobile webview, you change a card's status through its menu (*Mark as…*) — the card jumps to the matching column.
+**1.0.23** — Changed the default **Daily section heading** from `# Dnes` to `# Today`. Only affects fresh installs / users who never set their own — existing configurations keep their value.
 
 <details>
 <summary>Earlier versions</summary>
+
+- **1.0.22** — Kanban view is now available on **mobile and tablet**, not just desktop. The status columns scroll horizontally (swipe between them); since touch-drag is unreliable in the Obsidian mobile webview, you change a card's status through its menu (*Mark as…*) — the card jumps to the matching column.
 
 - **1.0.21** — Lint cleanup for the store review: void-wrapped the async event handlers, switched to `activeDocument` / `activeWindow` for popout-window compatibility, removed a redundant type assertion, and described the remaining directive comment. No user-facing changes. (Three deprecation *recommendations* are left as-is — their replacements aren't available at `minAppVersion` 1.8.0.)
 

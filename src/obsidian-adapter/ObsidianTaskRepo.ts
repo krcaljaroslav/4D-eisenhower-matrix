@@ -32,7 +32,7 @@ export class ObsidianTaskRepo {
     private app: App,
     excludedFolders: string[] = [],
     dailyFolderOverride: string = '',
-    sectionHeading: string = '# Dnes',
+    sectionHeading: string = '# Today',
   ) {
     this.excludedFolders = excludedFolders;
     this.dailyFolderOverride = dailyFolderOverride;
