@@ -84,7 +84,7 @@ export function matchesFilter(task: Task, selectedTags: string[]): boolean {
 // Rychlý filtr podle due date
 // ============================================================
 
-export type DueFilter = 'none' | 'today' | 'week';
+export type DueFilter = 'none' | 'today' | 'week' | 'selected';
 
 /** Vrátí ISO datum posunuté o `days` (lokální čas, bez UTC off-by-one). */
 export function addDaysISO(isoDate: string, days: number): string {
@@ -94,14 +94,22 @@ export function addDaysISO(isoDate: string, days: number): string {
 
 /**
  * Due-date quick filtr:
- *   'today' = overdue + due dnes
- *   'week'  = overdue + due v rozmezí dnes .. dnes+7
+ *   'today'    = overdue + due dnes
+ *   'week'     = overdue + due v rozmezí dnes .. dnes+7
+ *   'selected' = due přesně na datum vybrané v horní liště (`selectedDate`),
+ *                bez overdue — čistě tasky toho jednoho dne
  * Tasky bez due date při aktivním filtru nikdy nematchují.
  */
-export function matchesDueFilter(task: Task, dueFilter: DueFilter, today: string): boolean {
+export function matchesDueFilter(
+  task: Task,
+  dueFilter: DueFilter,
+  today: string,
+  selectedDate: string,
+): boolean {
   if (dueFilter === 'none') return true;
   if (!task.dueDate) return false;
-  if (task.dueDate < today) return true; // overdue platí pro oba
+  if (dueFilter === 'selected') return task.dueDate === selectedDate;
+  if (task.dueDate < today) return true; // overdue platí pro 'today' i 'week'
   if (dueFilter === 'today') return task.dueDate === today;
   return task.dueDate <= addDaysISO(today, 7); // 'week': dnes .. dnes+7
 }

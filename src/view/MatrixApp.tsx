@@ -388,14 +388,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     () =>
       tasks.filter((t) => {
         if (!matchesFilter(t, selectedTags)) return false;
-        if (!matchesDueFilter(t, dueFilter, today)) return false;
+        if (!matchesDueFilter(t, dueFilter, today, date)) return false;
         if (showCompleted) return true;
         // "Closed" = done ([x]) i canceled ([-]) — oba schované, pokud
         // uživatel nezapne přepínač "Done" v hlavičce.
         if (!isClosedStatus(t.status)) return true;
         return graceMap.has(taskKey(t.sourceFile, t.lineIndex));
       }),
-    [tasks, selectedTags, dueFilter, today, showCompleted, graceMap],
+    [tasks, selectedTags, dueFilter, today, date, showCompleted, graceMap],
   );
 
   const sortedVisibleTasks = useMemo(
@@ -727,6 +727,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           availableTags={availableTags}
           selectedTags={selectedTags}
           dueFilter={dueFilter}
+          selectedDate={date}
           onToggle={toggleTag}
           onDueFilter={toggleDueFilter}
           onClear={clearFilters}

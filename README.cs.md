@@ -28,7 +28,7 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 | **Markdown v textu tasku** | Inline **tučné**, *kurzíva*, `kód`, ~~přeškrtnuté~~; úvodní `#`…`######` vykreslí task jako nadpis. |
 | **Tag autocomplete** | Při psaní napovídá existující tagy z vault-u, ať netvoříš skoro-duplicity. |
 | **Filtr podle tagu** | Context-tag chipy ve filter baru (multi-select, OR logika) + virtuální „Other" chip pro tasky bez tagu. |
-| **Rychlé filtry podle due date** | Tlačítka **Today** (overdue + due dnes) a **This week** (overdue + 7 dní dopředu) na začátku filter baru, opticky odlišená oranžovou. |
+| **Rychlé filtry podle due date** | Tlačítka **Today** (overdue + due dnes), **Selected** (due přesně na datum vybrané v hlavičce) a **This week** (overdue + 7 dní dopředu) na začátku filter baru, opticky odlišená oranžovou. |
 | **Datum navigace** | ← / → / kalendář / Dnes + den-cutoff banner po půlnoci s nabídkou skoku na dnešek. |
 | **Undo grace period** | 3sekundové okno se zeleným odpočtem po odškrtnutí/zrušení tasku — klik znovu = vrátit. |
 | **Kompaktní režim** | Přepínač v hlavičce zmenší každou kartu na dva řádky (text + priorita/due date) pro hustší přehled. |
@@ -87,7 +87,7 @@ Priorita ([Obsidian Tasks konvence](https://publish.obsidian.md/tasks/Getting+St
 | Přesun mezi kvadranty | **Desktop:** drag karty na cílový kvadrant. **Mobil:** long-press / dvojklep → menu → „Move to…" |
 | Otevřít source soubor | **Desktop:** pravý klik na kartu. **Mobil:** long-press / dvojklep. → menu (current pane / nová záložka / split / okno) — kurzor přistane na řádku tasku |
 | Filtr podle tagu | Klik na chip ve filter baru (multi-select OR) |
-| Rychlý filtr podle due date | Tlačítka **Today** (overdue + due dnes) / **This week** (overdue + 7 dní) na začátku filter baru |
+| Rychlý filtr podle due date | Tlačítka **Today** (overdue + due dnes) / **Selected** (due na datum vybrané v hlavičce) / **This week** (overdue + 7 dní) na začátku filter baru |
 | Předchozí / další den | Šipky ← → v headeru, kalendář, nebo „Dnes" |
 | Sbalit kvadrant | Klik na šipku ▼/▶ vedle názvu kvadrantu |
 | Sbalit celou hlavičku | ▲ vpravo nahoře (užitečné na mobilu) |
@@ -148,10 +148,12 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 
 ## Changelog
 
-**1.0.23** — Změněn výchozí **Daily section heading** z `# Dnes` na `# Today`. Dotkne se jen čistých instalací / uživatelů, kteří si nikdy nenastavili vlastní — existující konfigurace si svou hodnotu nechá.
+**1.0.24** — Přidán rychlý due-date filtr **Selected** (mezi Today a This week): zobrazí tasky s due-date přesně na datum aktuálně vybrané v horní liště — bez overdue, jen ten jeden den. Sleduje výběr data živě.
 
 <details>
 <summary>Starší verze</summary>
+
+- **1.0.23** — Změněn výchozí **Daily section heading** z `# Dnes` na `# Today`. Dotkne se jen čistých instalací / uživatelů, kteří si nikdy nenastavili vlastní — existující konfigurace si svou hodnotu nechá.
 
 - **1.0.22** — Kanban zobrazení je teď dostupné i na **mobilu a tabletu**, nejen na desktopu. Status sloupce scrollují vodorovně (swipe mezi nimi); protože touch-drag je v Obsidian mobilním webview nespolehlivý, stav karty měníš přes její menu (*Mark as…*) — karta naskočí do odpovídajícího sloupce.
 

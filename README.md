@@ -28,7 +28,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 | **Markdown in task text** | Inline **bold**, *italic*, `code`, ~~strikethrough~~; a leading `#`…`######` renders the task as a heading. |
 | **Tag autocomplete** | Suggests existing vault tags as you type, so you don't create near-duplicates. |
 | **Filter by tag** | Context-tag chips in the filter bar (multi-select, OR logic) + a virtual "Other" chip for untagged tasks. |
-| **Due-date quick filters** | **Today** (overdue + due today) and **This week** (overdue + next 7 days) buttons at the start of the filter bar, set apart in orange. |
+| **Due-date quick filters** | **Today** (overdue + due today), **Selected** (due exactly on the date picked in the header), and **This week** (overdue + next 7 days) buttons at the start of the filter bar, set apart in orange. |
 | **Date navigation** | ← / → / calendar / Today, plus a day-cutoff banner offering to jump to today after midnight. |
 | **Undo grace period** | A 3-second window with a green countdown bar after you complete or cancel a task — click again to undo. |
 | **Compact mode** | Header toggle that shrinks every card to two lines (text + priority/due date) for a denser overview. |
@@ -87,7 +87,7 @@ Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+
 | Move between quadrants | **Desktop:** drag the card onto the target quadrant. **Mobile:** long-press / double-tap → menu → "Move to…" |
 | Open the source file | **Desktop:** right-click the card. **Mobile:** long-press / double-tap. → menu (current pane / new tab / split / window) — the cursor lands on the task's line |
 | Filter by tag | Click a chip in the filter bar (multi-select, OR) |
-| Due-date quick filter | The **Today** (overdue + due today) / **This week** (overdue + next 7 days) buttons at the start of the filter bar |
+| Due-date quick filter | The **Today** (overdue + due today) / **Selected** (due on the date picked in the header) / **This week** (overdue + next 7 days) buttons at the start of the filter bar |
 | Previous / next day | The ← → arrows in the header, the calendar, or "Today" |
 | Collapse a quadrant | Click the ▼/▶ arrow next to the quadrant name |
 | Collapse the whole header | The ▲ button top-right (handy on mobile) |
@@ -148,10 +148,12 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
-**1.0.23** — Changed the default **Daily section heading** from `# Dnes` to `# Today`. Only affects fresh installs / users who never set their own — existing configurations keep their value.
+**1.0.24** — Added a **Selected** due-date quick filter (between Today and This week): shows tasks due exactly on the date currently picked in the header bar — no overdue, just that one day. Follows the date picker live.
 
 <details>
 <summary>Earlier versions</summary>
+
+- **1.0.23** — Changed the default **Daily section heading** from `# Dnes` to `# Today`. Only affects fresh installs / users who never set their own — existing configurations keep their value.
 
 - **1.0.22** — Kanban view is now available on **mobile and tablet**, not just desktop. The status columns scroll horizontally (swipe between them); since touch-drag is unreliable in the Obsidian mobile webview, you change a card's status through its menu (*Mark as…*) — the card jumps to the matching column.
 

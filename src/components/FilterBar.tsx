@@ -4,6 +4,7 @@ type Props = {
   availableTags: { tag: string; count: number }[];
   selectedTags: string[];
   dueFilter: DueFilter;
+  selectedDate: string;
   onToggle: (tag: string) => void;
   onDueFilter: (f: DueFilter) => void;
   onClear: () => void;
@@ -19,6 +20,7 @@ export function FilterBar({
   availableTags,
   selectedTags,
   dueFilter,
+  selectedDate,
   onToggle,
   onDueFilter,
   onClear,
@@ -46,6 +48,20 @@ export function FilterBar({
           </span>
         )}
         <span>Today</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => onDueFilter('selected')}
+        className={`em-chip em-due-chip ${dueFilter === 'selected' ? 'em-due-chip-active' : ''}`}
+        aria-pressed={dueFilter === 'selected'}
+        title={`Due on the selected date (${selectedDate})`}
+      >
+        {dueFilter === 'selected' && (
+          <span className="em-chip-check" aria-hidden="true">
+            ✓
+          </span>
+        )}
+        <span>Selected</span>
       </button>
       <button
         type="button"
