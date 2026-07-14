@@ -390,7 +390,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const handleOpenLink = useCallback(
     (task: Task, link: InlineLinkTarget) => {
       if (link.external) {
-        window.open(link.target, '_blank');
+        // Defense-in-depth: renderer linkuje externě jen https/http/mailto,
+        // ale schéma zkontrolujeme znovu i tady, u samotného otevření.
+        if (/^(https?:\/\/|mailto:)/i.test(link.target)) {
+          window.open(link.target, '_blank');
+        }
         return;
       }
       void app.workspace.openLinkText(link.target, task.sourceFile, link.newLeaf);

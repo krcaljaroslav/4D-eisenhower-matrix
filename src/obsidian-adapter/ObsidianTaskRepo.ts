@@ -67,6 +67,9 @@ export class ObsidianTaskRepo {
       const raw = await this.app.vault.cachedRead(dailyFile);
       const { tasks } = parseDaily(raw, this.sectionHeading);
       for (const t of tasks) {
+        // Prázdné tasky (jen checkbox/tag bez textu) nezobrazujeme —
+        // stejný filtr jako u ostatních souborů níž.
+        if (!t.text) continue;
         dnesTasks.push({ ...t, sourceFile: dailyFile.path, isFromDnes: true });
       }
     }

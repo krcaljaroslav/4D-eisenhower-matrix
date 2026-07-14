@@ -26,7 +26,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 | **Priority** | Obsidian Tasks convention: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest. It's also the manual lever for ordering — raise a priority and the task jumps up. |
 | **Due / start / done dates** | Reads and writes `📅 due`, `🛫 start`, `✅ done`. Overdue tasks are highlighted and float to the top of their quadrant. |
 | **Markdown in task text** | Inline **bold**, *italic*, `code`, ~~strikethrough~~; a leading `#`…`######` renders the task as a heading. |
-| **Clickable links** | `[[wikilinks]]` (with `#heading` / `\|alias`) and `[text](url)` in the task title are live — click to open the note (resolved relative to the task's file) or the URL; Ctrl/Cmd-click opens in a new pane. Clicks don't trigger drag or edit. |
+| **Clickable links** | `[[wikilinks]]` (with `#heading` / `\|alias`) and `[text](url)` in the task title are live — click to open the note (resolved relative to the task's file) or the URL; Ctrl/Cmd-click opens in a new pane. Clicks don't trigger drag or edit. Only `https:`/`http:`/`mailto:` URLs open externally — other schemes stay plain text. |
 | **Tag autocomplete** | Suggests existing vault tags as you type, so you don't create near-duplicates. |
 | **Filter by tag** | Context-tag chips in the filter bar (multi-select, OR logic) + a virtual "Other" chip for untagged tasks. |
 | **Due-date quick filters** | **Today** (overdue + due today), **Selected** (due exactly on the date picked in the header), and **This week** (overdue + next 7 days) buttons at the start of the filter bar, set apart in orange. |
@@ -149,10 +149,12 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
-**1.0.26** — Task titles now render **clickable links**: `[[wikilinks]]` (including `#heading` and `|alias` forms) and `[text](url)`. Internal links open the note resolved relative to the task's own file; external URLs open in the browser; Ctrl/Cmd-click opens in a new pane. Clicking a link doesn't start a drag or open the editor, so drag-to-move still works. (Requested by Ampa — thanks!)
+**1.0.27** — Security hardening + cleanup after a code audit: external links in task titles are now restricted to `https:` / `http:` / `mailto:` — anything else (`file:`, `javascript:`, `data:`, …) renders as plain text and never opens (checked both at render time and again at open time). Also, tasks with empty text (e.g. a lone `- [ ] #DO` line) are now hidden from the matrix consistently — previously they showed as "(empty text)" cards when they came from the daily note.
 
 <details>
 <summary>Earlier versions</summary>
+
+- **1.0.26** — Task titles now render **clickable links**: `[[wikilinks]]` (including `#heading` and `|alias` forms) and `[text](url)`. Internal links open the note resolved relative to the task's own file; external URLs open in the browser; Ctrl/Cmd-click opens in a new pane. Clicking a link doesn't start a drag or open the editor, so drag-to-move still works. (Requested by Ampa — thanks!)
 
 - **1.0.25** — Fixed the date picker jumping by a whole month: navigating months in the calendar (the ↑/↓ arrows) no longer commits the date prematurely — it just shows the next/previous month so you can click the exact day. The native picker's month-navigation `input` events were being treated as a final selection; the picker now commits only on the real `change` (day click). Applies to the header date navigation and every due-date badge.
 

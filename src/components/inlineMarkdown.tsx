@@ -31,6 +31,13 @@ const HEADING_RE = /^(#{1,6})\s+(.*)$/;
 const WIKILINK_RE = /\[\[([^[\]]+?)\]\]/;
 const MDLINK_RE = /\[([^\]]*?)\]\(([^()\s]+?)\)/;
 
+// Bezpečnostní allowlist: externě se smí otevřít jen http(s) a mailto.
+// Cokoli jiného se schématem (javascript:, file:, data:, protocol-relative
+// `//`…) se NElinkuje vůbec — zůstane plain text. Bez schématu = interní
+// cesta ve vaultu (řeší openLinkText, neškodné).
+const HAS_SCHEME_RE = /^([a-z][a-z0-9+.-]*:|\/\/)/i;
+const SAFE_EXTERNAL_RE = /^(https?:\/\/|mailto:)/i;
+
 // Pořadí: `**` před `*`, aby se na shodném indexu vyhodnotil bold dřív.
 const FORMAT_PATTERNS: { re: RegExp; tag: InlineTag }[] = [
   { re: /\*\*(.+?)\*\*/, tag: 'strong' },
@@ -38,10 +45,6 @@ const FORMAT_PATTERNS: { re: RegExp; tag: InlineTag }[] = [
   { re: /`([^`]+?)`/, tag: 'code' },
   { re: /\*(.+?)\*/, tag: 'em' },
 ];
-
-function isExternalUrl(url: string): boolean {
-  return /^[a-z][a-z0-9+.-]*:/i.test(url) || url.startsWith('//');
-}
 
 export function renderInlineMarkdown(text: string, onLink?: InlineLinkHandler): ReactNode {
   let keyCounter = 0;
@@ -87,14 +90,24 @@ export function renderInlineMarkdown(text: string, onLink?: InlineLinkHandler): 
       cands.push({ index: wiki.index, len: wiki[0].length, node: makeAnchor(display, target, false) });
     }
 
-    // [text](url | cesta)
-    const md = MDLINK_RE.exec(input);
-    if (md) {
-      const label = md[1];
+    // [text](url | cesta) — první výskyt s POVOLENÝM cílem. Odkaz s jiným
+    // schématem se přeskočí (zůstane plain text) a hledá se další za ním,
+    // aby zakázaný odkaz nezastínil povolený dál na řádku.
+    let mdFrom = 0;
+    while (mdFrom < input.length) {
+      const md = MDLINK_RE.exec(input.slice(mdFrom));
+      if (!md) break;
+      const index = mdFrom + md.index;
       const url = md[2];
-      const external = isExternalUrl(url);
+      const external = SAFE_EXTERNAL_RE.test(url);
+      if (HAS_SCHEME_RE.test(url) && !external) {
+        mdFrom = index + md[0].length;
+        continue;
+      }
+      const label = md[1];
       const display: ReactNode = label.length > 0 ? parse(label) : url;
-      cands.push({ index: md.index, len: md[0].length, node: makeAnchor(display, url, external) });
+      cands.push({ index, len: md[0].length, node: makeAnchor(display, url, external) });
+      break;
     }
 
     // Inline formátování
