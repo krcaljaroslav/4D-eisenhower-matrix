@@ -1,54 +1,121 @@
-import { createElement, type ReactNode } from 'react';
+import { createElement, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 
 /**
- * Lehký inline-markdown renderer pro text tasku. Záměrně řeší jen
- * ZÁKLADNÍ formátování:
+ * Lehký inline-markdown renderer pro text tasku. Řeší:
  *   **tučné**  ·  *kurzíva*  ·  ~~přeškrtnuté~~  ·  `kód`
+ *   [[wikilink]] / [[wikilink#heading|alias]]  ·  [text](url | cesta)
  *
  * Plus: pokud text začíná `# ` až `###### `, vykreslí se jako nadpis
  * (větší + tučné, vnitřek se dál parsuje inline).
  *
- * NErenderuje #tagy ani [[odkazy]] — ty zůstávají jako plain text
- * (tagy má karta jako vlastní badge, odkazy nechceme klikatelné).
+ * Odkazy jsou klikatelné — po kliknutí se zavolá `onLink`. Klik má
+ * stopPropagation na pointer/mouse/dblclick, aby nespustil drag karty
+ * ani edit. Bez `onLink` se vykreslí jako neaktivní (transientní overlay).
+ * #tagy nerenderujeme (karta je má jako vlastní badge).
  */
+
+export type InlineLinkTarget = {
+  /** Cíl: u `[[wiki]]` link-text (bez závorek), u `[t](url)` URL/cesta. */
+  target: string;
+  /** true = externí URL (schéma nebo `//`) → otevřít v prohlížeči. */
+  external: boolean;
+  /** Ctrl/Cmd/prostřední tlačítko → otevřít v novém panelu. */
+  newLeaf: boolean;
+};
+
+export type InlineLinkHandler = (t: InlineLinkTarget) => void;
 
 type InlineTag = 'strong' | 'em' | 'del' | 'code';
 
 const HEADING_RE = /^(#{1,6})\s+(.*)$/;
+const WIKILINK_RE = /\[\[([^[\]]+?)\]\]/;
+const MDLINK_RE = /\[([^\]]*?)\]\(([^()\s]+?)\)/;
 
-// Pořadí je důležité: `**` musí být před `*`, aby se na shodném indexu
-// vyhodnotil bold dřív než kurzíva.
-const PATTERNS: { re: RegExp; tag: InlineTag }[] = [
+// Pořadí: `**` před `*`, aby se na shodném indexu vyhodnotil bold dřív.
+const FORMAT_PATTERNS: { re: RegExp; tag: InlineTag }[] = [
   { re: /\*\*(.+?)\*\*/, tag: 'strong' },
   { re: /~~(.+?)~~/, tag: 'del' },
   { re: /`([^`]+?)`/, tag: 'code' },
   { re: /\*(.+?)\*/, tag: 'em' },
 ];
 
-export function renderInlineMarkdown(text: string): ReactNode {
+function isExternalUrl(url: string): boolean {
+  return /^[a-z][a-z0-9+.-]*:/i.test(url) || url.startsWith('//');
+}
+
+export function renderInlineMarkdown(text: string, onLink?: InlineLinkHandler): ReactNode {
   let keyCounter = 0;
 
-  const parse = (input: string): ReactNode[] => {
-    let best:
-      | { index: number; matchLen: number; inner: string; tag: InlineTag }
-      | null = null;
+  const makeAnchor = (display: ReactNode, target: string, external: boolean): ReactNode =>
+    createElement(
+      'a',
+      {
+        key: `md${keyCounter++}`,
+        className: `em-task-link${external ? ' em-task-link-external' : ''}`,
+        href: '#',
+        title: external ? target : `↳ ${target}`,
+        onPointerDown: (e: PointerEvent) => e.stopPropagation(),
+        onMouseDown: (e: MouseEvent) => e.stopPropagation(),
+        onDoubleClick: (e: MouseEvent) => e.stopPropagation(),
+        onClick: (e: MouseEvent) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onLink?.({
+            target,
+            external,
+            newLeaf: e.ctrlKey || e.metaKey || e.button === 1,
+          });
+        },
+      },
+      display,
+    );
 
-    for (const { re, tag } of PATTERNS) {
+  const parse = (input: string): ReactNode[] => {
+    type Cand = { index: number; len: number; node: ReactNode };
+    // Posbíráme všechny kandidáty a vybereme ten s nejmenším indexem;
+    // při shodě vyhrává dřív přidaný (pořadí = priorita: wiki, md, formát).
+    const cands: Cand[] = [];
+
+    // [[wikilink]] / [[wikilink#heading|alias]]
+    const wiki = WIKILINK_RE.exec(input);
+    if (wiki) {
+      const raw = wiki[1];
+      const pipe = raw.indexOf('|');
+      const target = (pipe === -1 ? raw : raw.slice(0, pipe)).trim();
+      const alias = (pipe === -1 ? raw : raw.slice(pipe + 1)).trim();
+      const display = alias.length > 0 ? alias : target;
+      cands.push({ index: wiki.index, len: wiki[0].length, node: makeAnchor(display, target, false) });
+    }
+
+    // [text](url | cesta)
+    const md = MDLINK_RE.exec(input);
+    if (md) {
+      const label = md[1];
+      const url = md[2];
+      const external = isExternalUrl(url);
+      const display: ReactNode = label.length > 0 ? parse(label) : url;
+      cands.push({ index: md.index, len: md[0].length, node: makeAnchor(display, url, external) });
+    }
+
+    // Inline formátování
+    for (const { re, tag } of FORMAT_PATTERNS) {
       const m = re.exec(input);
-      if (m && (best === null || m.index < best.index)) {
-        best = { index: m.index, matchLen: m[0].length, inner: m[1], tag };
+      if (m) {
+        // `kód` se renderuje doslova — uvnitř se další markdown neparsuje.
+        const inner = tag === 'code' ? m[1] : parse(m[1]);
+        const node = createElement(tag, { key: `md${keyCounter++}` }, inner);
+        cands.push({ index: m.index, len: m[0].length, node });
       }
     }
 
-    if (best === null) return input.length > 0 ? [input] : [];
+    if (cands.length === 0) return input.length > 0 ? [input] : [];
+
+    let best = cands[0];
+    for (const c of cands) if (c.index < best.index) best = c;
 
     const before = input.slice(0, best.index);
-    const after = input.slice(best.index + best.matchLen);
-    // `kód` se renderuje doslova — uvnitř se další markdown neparsuje.
-    const children = best.tag === 'code' ? best.inner : parse(best.inner);
-    const el = createElement(best.tag, { key: `md${keyCounter++}` }, children);
-
-    return [...(before.length > 0 ? [before] : []), el, ...parse(after)];
+    const after = input.slice(best.index + best.len);
+    return [...(before.length > 0 ? [before] : []), best.node, ...parse(after)];
   };
 
   // Nadpis na začátku → obal vnitřek do <span> s heading třídou.

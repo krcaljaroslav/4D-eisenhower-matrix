@@ -7,6 +7,7 @@ import { TaskCard } from './TaskCard.tsx';
 import { Quadrant } from './Quadrant.tsx';
 import { AddTaskInput } from './AddTaskInput.tsx';
 import { Icon } from './Icon.tsx';
+import type { InlineLinkTarget } from './inlineMarkdown.tsx';
 
 // 4 status-sloupce. Forwarded [>] se zobrazí ve Scheduled, canceled [-] v Done
 // (drop ale vždy nastaví primární char sloupce — vzácné stavy jen přes menu).
@@ -56,6 +57,7 @@ type Props = {
     status?: string;
   }) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
+  onOpenLink: (task: Task, link: InlineLinkTarget) => void;
   onMoveQuadrant: (task: Task, target: QuadrantKind) => void;
   createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
@@ -90,6 +92,7 @@ export function KanbanView(props: Props) {
         onSetDueDate={(d) => props.onSetDueDate(t, d)}
         onUpdateTask={(text, tags, opts) => props.onUpdateTask(t, text, tags, opts)}
         onOpenSource={(mode) => props.onOpenSource(t, mode)}
+        onOpenLink={(link) => props.onOpenLink(t, link)}
         onMoveQuadrant={(target) => props.onMoveQuadrant(t, target)}
         createTagSuggest={props.createTagSuggest}
       />
@@ -156,6 +159,7 @@ export function KanbanView(props: Props) {
             onUpdateTask={props.onUpdateTask}
             onAddTask={props.onAddTask}
             onOpenSource={props.onOpenSource}
+            onOpenLink={props.onOpenLink}
             onMoveQuadrant={props.onMoveQuadrant}
             createTagSuggest={props.createTagSuggest}
           />

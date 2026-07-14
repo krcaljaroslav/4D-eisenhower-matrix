@@ -3,6 +3,7 @@ import type { PaneType } from 'obsidian';
 import type { Priority, Task, Quadrant as QuadrantKind } from '../core/types.ts';
 import { QUADRANTS } from '../core/types.ts';
 import { Quadrant } from './Quadrant.tsx';
+import type { InlineLinkTarget } from './inlineMarkdown.tsx';
 
 type Props = {
   tasks: Task[];
@@ -30,6 +31,7 @@ type Props = {
     priority: Priority | null;
   }) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
+  onOpenLink: (task: Task, link: InlineLinkTarget) => void;
   onMoveQuadrant: (task: Task, target: QuadrantKind) => void;
   createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
@@ -68,6 +70,7 @@ export function Matrix(props: Props) {
       onUpdateTask={props.onUpdateTask}
       onAddTask={props.onAddTask}
       onOpenSource={props.onOpenSource}
+      onOpenLink={props.onOpenLink}
       onMoveQuadrant={props.onMoveQuadrant}
       createTagSuggest={props.createTagSuggest}
     />

@@ -6,6 +6,7 @@ import { QUADRANT_META } from '../core/types.ts';
 import { TaskCard } from './TaskCard.tsx';
 import { AddTaskInput } from './AddTaskInput.tsx';
 import { Icon } from './Icon.tsx';
+import type { InlineLinkTarget } from './inlineMarkdown.tsx';
 
 type Props = {
   kind: QuadrantKind;
@@ -34,6 +35,7 @@ type Props = {
     priority: Priority | null;
   }) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
+  onOpenLink: (task: Task, link: InlineLinkTarget) => void;
   onMoveQuadrant: (task: Task, target: QuadrantKind) => void;
   createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
@@ -55,6 +57,7 @@ export function Quadrant({
   onUpdateTask,
   onAddTask,
   onOpenSource,
+  onOpenLink,
   onMoveQuadrant,
   createTagSuggest,
 }: Props) {
@@ -147,6 +150,7 @@ export function Quadrant({
                     onSetDueDate={(d) => onSetDueDate(t, d)}
                     onUpdateTask={(text, tags, opts) => onUpdateTask(t, text, tags, opts)}
                     onOpenSource={(mode) => onOpenSource(t, mode)}
+                    onOpenLink={(link) => onOpenLink(t, link)}
                     onMoveQuadrant={(target) => onMoveQuadrant(t, target)}
                     createTagSuggest={createTagSuggest}
                   />

@@ -26,6 +26,7 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 | **Priorita** | Obsidian Tasks konvence: 🔺 highest · ⏫ high · 🔼 medium · 🔽 low · ⏬ lowest. Zároveň páka na řazení — zvýším prioritu a task vyskočí nahoru. |
 | **Due / start / done data** | Čte a zapisuje `📅 due`, `🛫 start`, `✅ done`. Overdue tasky jsou zvýrazněné a plavou nahoru ve svém kvadrantu. |
 | **Markdown v textu tasku** | Inline **tučné**, *kurzíva*, `kód`, ~~přeškrtnuté~~; úvodní `#`…`######` vykreslí task jako nadpis. |
+| **Klikatelné odkazy** | `[[wikilinky]]` (i s `#nadpisem` / `\|aliasem`) a `[text](url)` v názvu tasku jsou aktivní — klikem otevřeš poznámku (rozlišeno vůči souboru tasku) nebo URL; Ctrl/Cmd-klik otevře v novém panelu. Klik nespustí drag ani editaci. |
 | **Tag autocomplete** | Při psaní napovídá existující tagy z vault-u, ať netvoříš skoro-duplicity. |
 | **Filtr podle tagu** | Context-tag chipy ve filter baru (multi-select, OR logika) + virtuální „Other" chip pro tasky bez tagu. |
 | **Rychlé filtry podle due date** | Tlačítka **Today** (overdue + due dnes), **Selected** (due přesně na datum vybrané v hlavičce) a **This week** (overdue + 7 dní dopředu) na začátku filter baru, opticky odlišená oranžovou. |
@@ -148,10 +149,12 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 
 ## Changelog
 
-**1.0.25** — Oprava date-pickeru „skákajícího o měsíc": navigace mezi měsíci v kalendáři (šipky ↑/↓) už datum nepotvrdí předčasně — jen zobrazí další/předchozí měsíc, ať si klikneš přesný den. Nativní picker posílal při přepnutí měsíce `input` událost, která se brala jako finální výběr; nově se potvrdí až reálný `change` (kliknutí na den). Platí pro navigaci data v liště i pro všechny due-date badge.
+**1.0.26** — Názvy tasků nově renderují **klikatelné odkazy**: `[[wikilinky]]` (i s `#nadpisem` a `|aliasem`) a `[text](url)`. Interní odkazy otevřou poznámku rozlišenou vůči souboru daného tasku, externí URL v prohlížeči, Ctrl/Cmd-klik v novém panelu. Klik na odkaz nespustí drag ani editaci, takže přetahování karet dál funguje. (Na žádost uživatele Ampa — díky!)
 
 <details>
 <summary>Starší verze</summary>
+
+- **1.0.25** — Oprava date-pickeru „skákajícího o měsíc": navigace mezi měsíci v kalendáři (šipky ↑/↓) už datum nepotvrdí předčasně — jen zobrazí další/předchozí měsíc, ať si klikneš přesný den. Nativní picker posílal při přepnutí měsíce `input` událost, která se brala jako finální výběr; nově se potvrdí až reálný `change` (kliknutí na den). Platí pro navigaci data v liště i pro všechny due-date badge.
 
 - **1.0.24** — Přidán rychlý due-date filtr **Selected** (mezi Today a This week): zobrazí tasky s due-date přesně na datum aktuálně vybrané v horní liště — bez overdue, jen ten jeden den. Sleduje výběr data živě.
 

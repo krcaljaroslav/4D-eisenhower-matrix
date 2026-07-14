@@ -12,7 +12,7 @@ import { isOverdue } from '../core/taskUtils.ts';
 import { DueDatePicker } from './DueDatePicker.tsx';
 import { HiddenDateInput, type HiddenDateInputHandle } from './HiddenDateInput.tsx';
 import { PriorityPicker } from './PriorityPicker.tsx';
-import { renderInlineMarkdown } from './inlineMarkdown.tsx';
+import { renderInlineMarkdown, type InlineLinkHandler } from './inlineMarkdown.tsx';
 
 export const GRACE_MS = 3000;
 
@@ -44,6 +44,7 @@ type Props = {
     options: { dueDate: string | null; priority: Priority | null },
   ) => Promise<void>;
   onOpenSource: (mode?: PaneType | boolean) => void;
+  onOpenLink: InlineLinkHandler;
   onMoveQuadrant: (target: Quadrant) => void;
   createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
@@ -59,6 +60,7 @@ export function TaskCard({
   onSetDueDate,
   onUpdateTask,
   onOpenSource,
+  onOpenLink,
   onMoveQuadrant,
   createTagSuggest,
 }: Props) {
@@ -176,7 +178,7 @@ export function TaskCard({
   };
 
   const taskText = task.text ? (
-    renderInlineMarkdown(task.text)
+    renderInlineMarkdown(task.text, onOpenLink)
   ) : (
     <em className="em-empty-text">(empty text)</em>
   );

@@ -33,6 +33,7 @@ import { KanbanView } from '../components/KanbanView.tsx';
 import { FilterBar } from '../components/FilterBar.tsx';
 import { DateNav } from '../components/DateNav.tsx';
 import { TaskCardOverlay, GRACE_MS } from '../components/TaskCard.tsx';
+import type { InlineLinkTarget } from '../components/inlineMarkdown.tsx';
 import { TagSuggest } from '../components/TagSuggest.ts';
 import type EisenhowerMatrixPlugin from '../../main.ts';
 
@@ -379,6 +380,20 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         active: true,
         eState: { line: task.lineIndex },
       });
+    },
+    [app],
+  );
+
+  // Klik na [[wikilink]] / [text](url) v textu tasku. Interní odkazy řeší
+  // Obsidian přes openLinkText (rozlišuje relativně vůči zdrojovému souboru
+  // tasku, včetně #headingů a aliasů); externí URL otevřeme v prohlížeči.
+  const handleOpenLink = useCallback(
+    (task: Task, link: InlineLinkTarget) => {
+      if (link.external) {
+        window.open(link.target, '_blank');
+        return;
+      }
+      void app.workspace.openLinkText(link.target, task.sourceFile, link.newLeaf);
     },
     [app],
   );
@@ -757,6 +772,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             onUpdateTask={handleUpdate}
             onAddTask={handleAdd}
             onOpenSource={handleOpenSource}
+            onOpenLink={handleOpenLink}
             onMoveQuadrant={(t, q) => void handleMove(t, q)}
             createTagSuggest={createTagSuggest}
           />
@@ -779,6 +795,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             onUpdateTask={handleUpdate}
             onAddTask={handleAdd}
             onOpenSource={handleOpenSource}
+            onOpenLink={handleOpenLink}
             onMoveQuadrant={(t, q) => void handleMove(t, q)}
             createTagSuggest={createTagSuggest}
           />

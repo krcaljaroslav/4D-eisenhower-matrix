@@ -1181,6 +1181,23 @@ button.em-priority {
   background-color: var(--background-modifier-border);
 }
 
+/* Klikatelné odkazy v textu tasku — [[wikilink]] i [text](url). Barvou
+   sledují Obsidian link styl; externí URL dostane jemnou ↗ značku. */
+.em-task-link {
+  color: var(--link-color);
+  text-decoration: var(--link-decoration, none);
+  cursor: pointer;
+}
+.em-task-link:hover {
+  color: var(--link-color-hover);
+  text-decoration: var(--link-decoration-hover, underline);
+}
+.em-task-link-external::after {
+  content: ' ↗';
+  font-size: 0.8em;
+  opacity: 0.6;
+}
+
 /* === Kompaktní režim — 2řádkové karty ===
    Řádek 1 = text ořezaný „…" na šířku karty, řádek 2 = priorita +
    due date. Tagy / cesta / start-done badge jsou v compact skryté. */
