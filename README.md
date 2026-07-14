@@ -148,10 +148,12 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
-**1.0.24** — Added a **Selected** due-date quick filter (between Today and This week): shows tasks due exactly on the date currently picked in the header bar — no overdue, just that one day. Follows the date picker live.
+**1.0.25** — Fixed the date picker jumping by a whole month: navigating months in the calendar (the ↑/↓ arrows) no longer commits the date prematurely — it just shows the next/previous month so you can click the exact day. The native picker's month-navigation `input` events were being treated as a final selection; the picker now commits only on the real `change` (day click). Applies to the header date navigation and every due-date badge.
 
 <details>
 <summary>Earlier versions</summary>
+
+- **1.0.24** — Added a **Selected** due-date quick filter (between Today and This week): shows tasks due exactly on the date currently picked in the header bar — no overdue, just that one day. Follows the date picker live.
 
 - **1.0.23** — Changed the default **Daily section heading** from `# Dnes` to `# Today`. Only affects fresh installs / users who never set their own — existing configurations keep their value.
 

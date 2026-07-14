@@ -10,6 +10,7 @@ import {
 } from '../core/types.ts';
 import { isOverdue } from '../core/taskUtils.ts';
 import { DueDatePicker } from './DueDatePicker.tsx';
+import { HiddenDateInput, type HiddenDateInputHandle } from './HiddenDateInput.tsx';
 import { PriorityPicker } from './PriorityPicker.tsx';
 import { renderInlineMarkdown } from './inlineMarkdown.tsx';
 
@@ -329,7 +330,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
   const [error, setError] = useState<string | null>(null);
   const textRef = useRef<HTMLInputElement>(null);
   const tagsRef = useRef<HTMLInputElement>(null);
-  const dateRef = useRef<HTMLInputElement>(null);
+  const dateRef = useRef<HiddenDateInputHandle>(null);
 
   useEffect(() => {
     const el = textRef.current;
@@ -384,12 +385,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
     }
   };
 
-  const openDatePicker = () => {
-    const el = dateRef.current;
-    if (!el) return;
-    if (typeof el.showPicker === 'function') el.showPicker();
-    else el.focus();
-  };
+  const openDatePicker = () => dateRef.current?.open();
 
   return (
     <div
@@ -439,15 +435,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
             ×
           </button>
         )}
-        <input
-          ref={dateRef}
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          className="em-sr-only"
-          aria-hidden
-          tabIndex={-1}
-        />
+        <HiddenDateInput ref={dateRef} value={dueDate} onCommit={setDueDate} />
 
         <PriorityPicker value={priority} onChange={setPriority} disabled={pending} />
       </div>

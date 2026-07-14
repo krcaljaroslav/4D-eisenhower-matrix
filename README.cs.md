@@ -148,10 +148,12 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 
 ## Changelog
 
-**1.0.24** — Přidán rychlý due-date filtr **Selected** (mezi Today a This week): zobrazí tasky s due-date přesně na datum aktuálně vybrané v horní liště — bez overdue, jen ten jeden den. Sleduje výběr data živě.
+**1.0.25** — Oprava date-pickeru „skákajícího o měsíc": navigace mezi měsíci v kalendáři (šipky ↑/↓) už datum nepotvrdí předčasně — jen zobrazí další/předchozí měsíc, ať si klikneš přesný den. Nativní picker posílal při přepnutí měsíce `input` událost, která se brala jako finální výběr; nově se potvrdí až reálný `change` (kliknutí na den). Platí pro navigaci data v liště i pro všechny due-date badge.
 
 <details>
 <summary>Starší verze</summary>
+
+- **1.0.24** — Přidán rychlý due-date filtr **Selected** (mezi Today a This week): zobrazí tasky s due-date přesně na datum aktuálně vybrané v horní liště — bez overdue, jen ten jeden den. Sleduje výběr data živě.
 
 - **1.0.23** — Změněn výchozí **Daily section heading** z `# Dnes` na `# Today`. Dotkne se jen čistých instalací / uživatelů, kteří si nikdy nenastavili vlastní — existující konfigurace si svou hodnotu nechá.
 

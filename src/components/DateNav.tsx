@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { HiddenDateInput, type HiddenDateInputHandle } from './HiddenDateInput.tsx';
 
 type Props = {
   date: string;
@@ -20,18 +21,13 @@ function shiftDate(iso: string, delta: number): string {
 }
 
 export function DateNav({ date, today, existingDates, onChange }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HiddenDateInputHandle>(null);
 
   const prev = shiftDate(date, -1);
   const next = shiftDate(date, 1);
   const isToday = date === today;
 
-  const openPicker = () => {
-    const el = inputRef.current;
-    if (!el) return;
-    if (typeof el.showPicker === 'function') el.showPicker();
-    else el.focus();
-  };
+  const openPicker = () => dateInputRef.current?.open();
 
   const dotIf = (d: string) => existingDates.has(d) ? <span className="em-dn-dot" aria-hidden /> : null;
 
@@ -55,14 +51,10 @@ export function DateNav({ date, today, existingDates, onChange }: Props) {
       >
         {date}
       </button>
-      <input
-        ref={inputRef}
-        type="date"
+      <HiddenDateInput
+        ref={dateInputRef}
         value={date}
-        onChange={(e) => e.target.value && onChange(e.target.value)}
-        className="em-sr-only"
-        aria-hidden
-        tabIndex={-1}
+        onCommit={(v) => v && onChange(v)}
       />
 
       <button

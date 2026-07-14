@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { HiddenDateInput, type HiddenDateInputHandle } from './HiddenDateInput.tsx';
 
 type Props = {
   currentDueDate?: string;
@@ -15,26 +16,14 @@ type Props = {
  * jak se due date nastavuje při vytváření tasku.
  */
 export function DueDatePicker({ currentDueDate, onChange, variant, overdue }: Props) {
-  const dateInputRef = useRef<HTMLInputElement>(null);
+  const dateInputRef = useRef<HiddenDateInputHandle>(null);
 
-  const openPicker = () => {
-    const el = dateInputRef.current;
-    if (!el) return;
-    if (typeof el.showPicker === 'function') {
-      try {
-        el.showPicker();
-        return;
-      } catch {
-        // showPicker může selhat (např. element ne-visible v některých prohlížečích) — fallback
-      }
-    }
-    el.focus();
-  };
+  const openPicker = () => dateInputRef.current?.open();
 
-  const handleDateChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value || null;
+  const handleCommit = (raw: string) => {
+    const newValue = raw || null;
     if (newValue !== (currentDueDate ?? null)) {
-      await onChange(newValue);
+      void onChange(newValue);
     }
   };
 
@@ -70,14 +59,10 @@ export function DueDatePicker({ currentDueDate, onChange, variant, overdue }: Pr
           ×
         </button>
       )}
-      <input
+      <HiddenDateInput
         ref={dateInputRef}
-        type="date"
         value={currentDueDate ?? ''}
-        onChange={(e) => void handleDateChange(e)}
-        className="em-sr-only"
-        aria-hidden
-        tabIndex={-1}
+        onCommit={handleCommit}
       />
     </span>
   );
