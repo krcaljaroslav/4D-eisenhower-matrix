@@ -151,10 +151,12 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
-**1.0.28** — Settings moved to Obsidian's declarative settings API (`getSettingDefinitions`). On Obsidian 1.13+ this means the plugin's settings are indexed by the **search box at the top of Settings** — typing "Excluded folders" or "Daily section heading" now finds them; before, the settings tab was only reachable by scrolling to the plugin. Excluded folders use the native list UI (a `+` button and a delete button per row), and adding one opens a folder picker. Saving is also serialized and rolled back if the write fails, so a failed save no longer leaves the UI showing a value that disappears after a restart. Obsidian below 1.13 keeps the previous settings tab unchanged — `minAppVersion` stays 1.8.0.
+**1.0.29** — Internal fix, no visible change: the two Obsidian 1.13 APIs used by the new settings tab (`SettingTab.update()`, `ButtonComponent.setDestructive()`) are now behind `requireApiVersion('1.13.0')` guards. They were only ever reached on 1.13+, but a static check can't see that and flagged them against the declared `minAppVersion` of 1.8.0. Support for older Obsidian versions is unchanged — `minAppVersion` stays 1.8.0.
 
 <details>
 <summary>Earlier versions</summary>
+
+- **1.0.28** — Settings moved to Obsidian's declarative settings API (`getSettingDefinitions`). On Obsidian 1.13+ this means the plugin's settings are indexed by the **search box at the top of Settings** — typing "Excluded folders" or "Daily section heading" now finds them; before, the settings tab was only reachable by scrolling to the plugin. Excluded folders use the native list UI (a `+` button and a delete button per row), and adding one opens a folder picker. Saving is also serialized and rolled back if the write fails, so a failed save no longer leaves the UI showing a value that disappears after a restart. Obsidian below 1.13 keeps the previous settings tab unchanged — `minAppVersion` stays 1.8.0.
 
 - **1.0.27** — Security hardening + cleanup after a code audit: external links in task titles are now restricted to `https:` / `http:` / `mailto:` — anything else (`file:`, `javascript:`, `data:`, …) renders as plain text and never opens (checked both at render time and again at open time). Also, tasks with empty text (e.g. a lone `- [ ] #DO` line) are now hidden from the matrix consistently — previously they showed as "(empty text)" cards when they came from the daily note.
 

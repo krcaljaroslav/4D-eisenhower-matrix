@@ -151,10 +151,12 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 
 ## Changelog
 
-**1.0.28** — Nastavení přešlo na deklarativní settings API Obsidianu (`getSettingDefinitions`). Na Obsidianu 1.13+ to znamená, že se nastavení pluginu nově najde **vyhledávacím polem nahoře v Settings** — napiš „Excluded folders" nebo „Daily section heading" a vyskočí; dřív se ke kartě dalo dostat jen odscrollováním k pluginu. Vyloučené složky mají nativní vzhled seznamu (tlačítko `+` a mazání u každého řádku), přidání jde přes výběr složky. Ukládání je navíc serializované a při chybě zápisu se vrátí zpět, takže po neúspěšném uložení už v UI nezůstane hodnota, která po restartu zmizí. Na Obsidianu starším než 1.13 zůstává původní karta nastavení beze změny — `minAppVersion` je pořád 1.8.0.
+**1.0.29** — Interní oprava bez viditelné změny: dvě API Obsidianu 1.13, která používá nová karta nastavení (`SettingTab.update()`, `ButtonComponent.setDestructive()`), jsou nově za guardem `requireApiVersion('1.13.0')`. Volala se odjakživa jen na 1.13+, ale statická kontrola to nepozná a hlásila je proti deklarovanému `minAppVersion` 1.8.0. Podpora starších verzí Obsidianu se nemění — `minAppVersion` zůstává 1.8.0.
 
 <details>
 <summary>Starší verze</summary>
+
+- **1.0.28** — Nastavení přešlo na deklarativní settings API Obsidianu (`getSettingDefinitions`). Na Obsidianu 1.13+ to znamená, že se nastavení pluginu nově najde **vyhledávacím polem nahoře v Settings** — napiš „Excluded folders" nebo „Daily section heading" a vyskočí; dřív se ke kartě dalo dostat jen odscrollováním k pluginu. Vyloučené složky mají nativní vzhled seznamu (tlačítko `+` a mazání u každého řádku), přidání jde přes výběr složky. Ukládání je navíc serializované a při chybě zápisu se vrátí zpět, takže po neúspěšném uložení už v UI nezůstane hodnota, která po restartu zmizí. Na Obsidianu starším než 1.13 zůstává původní karta nastavení beze změny — `minAppVersion` je pořád 1.8.0.
 
 - **1.0.27** — Bezpečnostní zpevnění + úklid po code auditu: externí odkazy v názvech tasků jsou nově omezené na `https:` / `http:` / `mailto:` — cokoli jiného (`file:`, `javascript:`, `data:`, …) se vykreslí jako plain text a nikdy se neotevře (kontrola při renderu i znovu při otevření). Zároveň se tasky s prázdným textem (např. samotné `- [ ] #DO`) už nezobrazují nikde — dřív se z daily note ukazovaly jako karty „(empty text)".
 

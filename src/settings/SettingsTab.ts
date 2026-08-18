@@ -1,4 +1,10 @@
-import { type App, PluginSettingTab, Setting, type SettingDefinitionItem } from 'obsidian';
+import {
+  type App,
+  PluginSettingTab,
+  requireApiVersion,
+  Setting,
+  type SettingDefinitionItem,
+} from 'obsidian';
 import type EisenhowerMatrixPlugin from '../../main.ts';
 import { getDailyNotesFolder } from '../obsidian-adapter/dailyNotes.ts';
 import { showError } from '../obsidian-adapter/toast.ts';
@@ -70,13 +76,13 @@ export class MatrixSettingsTab extends PluginSettingTab {
         onDelete: (index) => {
           const folder = excluded[index];
           if (folder === undefined) return;
-          void this.removeExcludedFolder(folder, index).then(() => this.update());
+          void this.removeExcludedFolder(folder, index).then(() => this.refreshDefinitions());
         },
         addItem: {
           name: 'Exclude a folder',
           action: () => {
             new ExcludeFolderModal(this.app, this.plugin.settings.excludedFolders, (path) => {
-              void this.addExcludedFolder(path).then(() => this.update());
+              void this.addExcludedFolder(path).then(() => this.refreshDefinitions());
             }).open();
           },
         },
@@ -85,17 +91,27 @@ export class MatrixSettingsTab extends PluginSettingTab {
         name: RESET_NAME,
         desc: RESET_DESC,
         render: (setting: Setting) => {
-          setting.addButton((btn) =>
-            btn
-              .setButtonText('Reset')
-              .setDestructive()
-              .onClick(() => {
-                void this.resetOverrides().then(() => this.update());
-              }),
-          );
+          setting.addButton((btn) => {
+            btn.setButtonText('Reset').onClick(() => {
+              void this.resetOverrides().then(() => this.refreshDefinitions());
+            });
+            // `setDestructive()` je 1.13+; sem se dostaneme jen na 1.13+, ale statická
+            // kontrola to neví — guard drží `minAppVersion` na 1.8.0 bez nálezu.
+            // Bez `else`: nedosažitelná větev by přidala deprecated `setWarning()` navíc.
+            if (requireApiVersion('1.13.0')) btn.setDestructive();
+          });
         },
       },
     ];
+  }
+
+  /**
+   * Překreslení deklarativní karty. Volá se jen z definic, které konzumuje
+   * Obsidian 1.13+, takže guard je pojistka — a hlavně to jediné, čím se dá
+   * statické kontrole doložit, že se `update()` (1.13+) nezavolá na 1.8.0.
+   */
+  private refreshDefinitions(): void {
+    if (requireApiVersion('1.13.0')) this.update();
   }
 
   /** Čtení hodnoty pro deklarativní `control` — protějšek `setControlValue`. */
