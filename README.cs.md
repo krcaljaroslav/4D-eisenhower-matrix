@@ -113,7 +113,9 @@ Manuální páka přeskupování je **priorita** — nastav ji a task se vyhoupn
 
 - **Daily folder** — kam ukládat nové daily notes. Prázdné = respektuj core plugin „Daily notes" config. Override = vlastní cesta (s folder suggesterem).
 - **Daily section heading** — nadpis v daily note, pod který se čtou a přidávají dnešní tasky. Výchozí: `# Today`. Nastav podle toho, co používáš (např. `# Dnes`, `## Úkoly`).
-- **Vyloučené složky** — tasky z těchto složek se ignorují. Výchozí: žádné — vyloučené složky si nastav sám. UI s + / × tlačítky a folder suggesterem.
+- **Vyloučené složky** — tasky z těchto složek se ignorují. Výchozí: žádné — vyloučené složky si nastav sám. Na Obsidianu 1.13+ je to nativní seznam (`+` otevře výběr složky, každý řádek má mazací tlačítko), na starších verzích UI s + / × a folder suggesterem.
+
+Na Obsidianu 1.13 a novějším se nastavení navíc najde přes vyhledávací pole nahoře v okně Settings.
 
 ## Daily note integrace
 
@@ -149,10 +151,12 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 
 ## Changelog
 
-**1.0.27** — Bezpečnostní zpevnění + úklid po code auditu: externí odkazy v názvech tasků jsou nově omezené na `https:` / `http:` / `mailto:` — cokoli jiného (`file:`, `javascript:`, `data:`, …) se vykreslí jako plain text a nikdy se neotevře (kontrola při renderu i znovu při otevření). Zároveň se tasky s prázdným textem (např. samotné `- [ ] #DO`) už nezobrazují nikde — dřív se z daily note ukazovaly jako karty „(empty text)".
+**1.0.28** — Nastavení přešlo na deklarativní settings API Obsidianu (`getSettingDefinitions`). Na Obsidianu 1.13+ to znamená, že se nastavení pluginu nově najde **vyhledávacím polem nahoře v Settings** — napiš „Excluded folders" nebo „Daily section heading" a vyskočí; dřív se ke kartě dalo dostat jen odscrollováním k pluginu. Vyloučené složky mají nativní vzhled seznamu (tlačítko `+` a mazání u každého řádku), přidání jde přes výběr složky. Ukládání je navíc serializované a při chybě zápisu se vrátí zpět, takže po neúspěšném uložení už v UI nezůstane hodnota, která po restartu zmizí. Na Obsidianu starším než 1.13 zůstává původní karta nastavení beze změny — `minAppVersion` je pořád 1.8.0.
 
 <details>
 <summary>Starší verze</summary>
+
+- **1.0.27** — Bezpečnostní zpevnění + úklid po code auditu: externí odkazy v názvech tasků jsou nově omezené na `https:` / `http:` / `mailto:` — cokoli jiného (`file:`, `javascript:`, `data:`, …) se vykreslí jako plain text a nikdy se neotevře (kontrola při renderu i znovu při otevření). Zároveň se tasky s prázdným textem (např. samotné `- [ ] #DO`) už nezobrazují nikde — dřív se z daily note ukazovaly jako karty „(empty text)".
 
 - **1.0.26** — Názvy tasků nově renderují **klikatelné odkazy**: `[[wikilinky]]` (i s `#nadpisem` a `|aliasem`) a `[text](url)`. Interní odkazy otevřou poznámku rozlišenou vůči souboru daného tasku, externí URL v prohlížeči, Ctrl/Cmd-klik v novém panelu. Klik na odkaz nespustí drag ani editaci, takže přetahování karet dál funguje. (Na žádost uživatele Ampa — díky!)
 

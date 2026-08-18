@@ -113,7 +113,9 @@ The manual lever for reordering is **priority** — set it and the task jumps up
 
 - **Daily folder** — where new daily notes are created. Empty = respect the core "Daily notes" plugin config. Override = a custom path (with a folder suggester).
 - **Daily section heading** — the heading in the daily note under which today's tasks are read and added. Default: `# Today`. Set it to whatever you use (e.g. `# Dnes`, `## Tasks`).
-- **Excluded folders** — tasks from these folders are ignored. Default: none — add the folders you want excluded yourself. UI with + / × buttons and a folder suggester.
+- **Excluded folders** — tasks from these folders are ignored. Default: none — add the folders you want excluded yourself. On Obsidian 1.13+ this is the native list UI (`+` opens a folder picker, each row has a delete button); on older versions it's the + / × UI with a folder suggester.
+
+On Obsidian 1.13 and later the settings also show up in the search box at the top of the Settings window.
 
 ## Daily note integration
 
@@ -149,10 +151,12 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
-**1.0.27** — Security hardening + cleanup after a code audit: external links in task titles are now restricted to `https:` / `http:` / `mailto:` — anything else (`file:`, `javascript:`, `data:`, …) renders as plain text and never opens (checked both at render time and again at open time). Also, tasks with empty text (e.g. a lone `- [ ] #DO` line) are now hidden from the matrix consistently — previously they showed as "(empty text)" cards when they came from the daily note.
+**1.0.28** — Settings moved to Obsidian's declarative settings API (`getSettingDefinitions`). On Obsidian 1.13+ this means the plugin's settings are indexed by the **search box at the top of Settings** — typing "Excluded folders" or "Daily section heading" now finds them; before, the settings tab was only reachable by scrolling to the plugin. Excluded folders use the native list UI (a `+` button and a delete button per row), and adding one opens a folder picker. Saving is also serialized and rolled back if the write fails, so a failed save no longer leaves the UI showing a value that disappears after a restart. Obsidian below 1.13 keeps the previous settings tab unchanged — `minAppVersion` stays 1.8.0.
 
 <details>
 <summary>Earlier versions</summary>
+
+- **1.0.27** — Security hardening + cleanup after a code audit: external links in task titles are now restricted to `https:` / `http:` / `mailto:` — anything else (`file:`, `javascript:`, `data:`, …) renders as plain text and never opens (checked both at render time and again at open time). Also, tasks with empty text (e.g. a lone `- [ ] #DO` line) are now hidden from the matrix consistently — previously they showed as "(empty text)" cards when they came from the daily note.
 
 - **1.0.26** — Task titles now render **clickable links**: `[[wikilinks]]` (including `#heading` and `|alias` forms) and `[text](url)`. Internal links open the note resolved relative to the task's own file; external URLs open in the browser; Ctrl/Cmd-click opens in a new pane. Clicking a link doesn't start a drag or open the editor, so drag-to-move still works. (Requested by Ampa — thanks!)
 
