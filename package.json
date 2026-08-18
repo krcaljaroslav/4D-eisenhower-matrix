@@ -18,12 +18,12 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@dnd-kit/core": "^6.3.1",
     "@types/node": "^20.14.12",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@dnd-kit/core": "^6.3.1",
     "esbuild": "^0.21.5",
-    "obsidian": "latest",
+    "obsidian": "^1.13.1",
     "tslib": "^2.6.3",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
