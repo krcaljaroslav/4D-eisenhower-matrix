@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/core';
 import type { ObsidianTaskRepo } from '../obsidian-adapter/ObsidianTaskRepo.ts';
 import { showError, showInfo } from '../obsidian-adapter/toast.ts';
+import { confirmDialog } from '../obsidian-adapter/ConfirmModal.ts';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
 import { QUADRANTS, isClosedStatus } from '../core/types.ts';
 import {
@@ -72,9 +73,24 @@ function showUnblockedTasks(task: Task): void {
   }
 }
 
-function confirmBlockedCompletion(app: App, task: Task): boolean {
-  const message = `"${task.text}" is not finished yet. Complete this task anyway?`;
-  return app.workspace.containerEl.ownerDocument.defaultView?.confirm(message) ?? false;
+/**
+ * Klíče tasků, pro které je právě otevřený potvrzovací dialog.
+ *
+ * Na rozdíl od `confirm()` modal neblokuje, takže druhý klik na tutéž kartu by
+ * jinak otevřel druhý dialog a po dvojím potvrzení by se zápis provedl dvakrát.
+ */
+const pendingConfirmations = new Set<string>();
+
+async function confirmBlockedCompletion(app: App, task: Task): Promise<boolean> {
+  const key = taskKey(task.sourceFile, task.lineIndex);
+  if (pendingConfirmations.has(key)) return false;
+  pendingConfirmations.add(key);
+  try {
+    const message = `"${task.text}" is not finished yet. Complete this task anyway?`;
+    return await confirmDialog(app, message, 'Complete anyway');
+  } finally {
+    pendingConfirmations.delete(key);
+  }
 }
 
 /**
@@ -354,7 +370,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         !isClosedStatus(task.status) &&
         task.isBlocked &&
         plugin.settings.warnWhenCompletingBlockedTask &&
-        !confirmBlockedCompletion(app, task)
+        !(await confirmBlockedCompletion(app, task))
       ) return;
       applyLocalStatus(task.sourceFile, task.lineIndex, newStatus);
       try {
@@ -387,7 +403,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         isClosedStatus(newStatus) &&
         task.isBlocked &&
         plugin.settings.warnWhenCompletingBlockedTask &&
-        !confirmBlockedCompletion(app, task)
+        !(await confirmBlockedCompletion(app, task))
       ) return;
       // Stejný optimistic flow jako u toggle — pro [x]/[-] nastartuje
       // 3s grace s undo, ostatní stavy se promítnou rovnou.

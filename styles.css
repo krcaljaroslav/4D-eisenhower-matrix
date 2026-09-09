@@ -41,7 +41,7 @@
 .em-task:hover > .em-graph-port { display: block; }
 .em-graph-port-top { top: -5px; left: calc(50% - 5px); }
 .em-graph-port-bottom { bottom: -5px; left: calc(50% - 5px); }
-.em-graph .em-task-editing { height: auto !important; overflow: visible; z-index: 20; }
+.em-graph .em-task-editing { height: auto; overflow: visible; z-index: 20; }
 .em-graph .em-task-blocked { opacity: 1; }
 .em-graph .em-task-dimmed { opacity: .45; }
 .em-graph .em-task-q-do { background: color-mix(in srgb, var(--color-red) 12%, var(--background-primary)); }
@@ -59,7 +59,9 @@
 .em-graph .em-task-body-compact .em-dependency-badge { display: none; }
 .em-graph .em-task-body-compact .em-task-badges { flex-wrap: nowrap; }
 .em-mobile .em-graph-viewport { overflow-x: auto; overflow-y: visible; }
-.em-mobile .em-graph-port { display: none !important; }
+/* Vyšší specificita než `.em-task:hover > .em-graph-port`, aby stačilo bez !important. */
+.em-mobile .em-graph-port,
+.em-mobile .em-task:hover > .em-graph-port { display: none; }
 
 .em-app {
   display: flex;

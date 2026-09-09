@@ -172,6 +172,8 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 
 ## Changelog
 
+**1.0.37** — Úklid nálezů z kontroly pluginu od Obsidianu, ovládání se nemění. Obě potvrzovací hlášky (reset pozic v grafu, dokončení blokovaného tasku) používají místo prohlížečového `confirm()` Obsidian modal - ten se v popout okně otvíral nad špatným oknem a na mobilu mohl být potlačený úplně; ze stejného důvodu plánuje graf animační snímky přes `window`. Zmizela obě pravidla s `!important`: editovaná karta v grafu si pevnou výšku zahazuje už u zdroje a mobilní pravidlo skrývající porty vyhrálo specificitou. `minAppVersion` se posouvá na **1.8.7**, což je verze, ve které vzniklo použité `Notice` API.
+
 **1.0.36** — Přidán graf závislostí vzniklý ve vývojovém cyklu 1.0.33, nyní s funkčním zakládáním tasků a našeptáváním tagů, ovládáním jednotlivých větví, sdíleným odpočtem dokončení, centrovaným resetem a zoomem, posuvníky a tažením plátna, konzistentním tlačítkem Back a širšími compact kartami bez nadbytečných textových popisků vazeb.
 
 **1.0.32** — Oprava neviditelného výběru hledání na prošlých taskech: aktuální shodu nově značí accentový outline kreslený vně karty, takže je vidět i přes červený rámeček overdue (a přes ztlumené blokované karty), místo aby mu podlehl. Červený rámeček zůstává, takže prošlá shoda dál vypadá jako prošlá.

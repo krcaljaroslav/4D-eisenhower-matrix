@@ -172,6 +172,8 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
+**1.0.37** — Cleanup pass over the findings from Obsidian's plugin review, with no change to how the plugin is used. Both confirmation prompts (resetting graph positions, completing a blocked task) now use an Obsidian modal instead of the browser `confirm()`, which was showing up in the wrong window in popouts and could be suppressed entirely on mobile; the graph schedules its animation frames on `window` for the same popout reason. The two `!important` rules are gone — a card being edited in the graph drops its fixed height at the source, and the mobile rule hiding link ports won on specificity instead. `minAppVersion` moves to **1.8.7**, the release that introduced the `Notice` API this version uses.
+
 **1.0.36** — Added the dependency graph introduced during the 1.0.33 development cycle, now with working task creation and tag suggestions, per-branch expand/collapse controls, the shared completion countdown, centered reset and zoom, scrollbars and canvas panning, a consistent Back control, and roomier compact cards with redundant dependency labels hidden.
 
 **1.0.32** — Fixed the search selection being invisible on overdue tasks: the current hit is now marked by an accent outline drawn outside the card, so it shows through the red overdue border (and the dimmed blocked style) instead of losing to it. The red border stays visible, so an overdue hit still reads as overdue.

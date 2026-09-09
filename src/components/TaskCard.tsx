@@ -340,6 +340,10 @@ export function TaskCard({
     </>
   );
 
+  // Při editaci roste karta podle obsahu, takže pevná výška z grafu se vypouští už tady.
+  // Kdyby zůstala v inline stylu, přebila by ji jedině `height: auto !important` v CSS.
+  const cardStyle = editing && style?.height !== undefined ? { ...style, height: undefined } : style;
+
   return (
     <li
       ref={setNodeRef}
@@ -351,7 +355,7 @@ export function TaskCard({
       onMouseLeave={onMouseLeave}
       data-task-key={draggableId}
       aria-current={isCurrentSearchMatch ? 'true' : undefined}
-      style={style}
+      style={cardStyle}
       className={`em-task ${overdue ? 'em-task-overdue' : ''} ${
         inGrace ? 'em-task-grace' : ''
       } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${

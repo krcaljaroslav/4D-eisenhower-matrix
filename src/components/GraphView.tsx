@@ -57,7 +57,7 @@ export function GraphView(props: Props) {
     const viewport = viewportRef.current;
     if (!viewport) return;
     initiallyCenteredRef.current = true;
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       viewport.scrollLeft = centeredScrollOffset(viewport.scrollWidth, viewport.clientWidth);
       viewport.scrollTop = centeredScrollOffset(viewport.scrollHeight, viewport.clientHeight);
     });
@@ -133,9 +133,11 @@ export function GraphView(props: Props) {
       try { await props.onLinkTasks(roles.blocker, roles.blocked); }
       catch (error) { showInfo(`Could not save the dependency: ${String((error as Error).message ?? error)}`); }
     };
+    // Listener musí být synchronní - a odhlašuje se stejná reference, kterou jsme přihlásili.
+    const pointerUpListener = () => { void pointerUp(); };
     window.addEventListener('pointermove', pointerMove);
-    window.addEventListener('pointerup', pointerUp, { once: true });
-    return () => { window.removeEventListener('pointermove', pointerMove); window.removeEventListener('pointerup', pointerUp); };
+    window.addEventListener('pointerup', pointerUpListener, { once: true });
+    return () => { window.removeEventListener('pointermove', pointerMove); window.removeEventListener('pointerup', pointerUpListener); };
   }, [linkDrag, props, dependencyIndex]);
 
   useEffect(() => {
@@ -157,7 +159,7 @@ export function GraphView(props: Props) {
     const pointX = (viewport.scrollLeft + viewport.clientWidth / 2) / props.zoom;
     const pointY = (viewport.scrollTop + viewport.clientHeight / 2) / props.zoom;
     props.onZoom(next);
-    requestAnimationFrame(() => { viewport.scrollLeft = pointX * next - viewport.clientWidth / 2; viewport.scrollTop = pointY * next - viewport.clientHeight / 2; });
+    window.requestAnimationFrame(() => { viewport.scrollLeft = pointX * next - viewport.clientWidth / 2; viewport.scrollTop = pointY * next - viewport.clientHeight / 2; });
   };
   const fit = () => setCenteredZoom(Math.max(.25, Math.min(1, viewportWidth / layout.size.width)));
   const zoomAtPointer = useCallback((event: WheelEvent) => {
@@ -168,7 +170,7 @@ export function GraphView(props: Props) {
     const pointY = (viewport.scrollTop + viewport.clientHeight / 2) / props.zoom;
     const next = Math.max(.25, Math.min(2, props.zoom * (event.deltaY < 0 ? 1.25 : .8)));
     props.onZoom(next);
-    requestAnimationFrame(() => { viewport.scrollLeft = pointX * next - viewport.clientWidth / 2; viewport.scrollTop = pointY * next - viewport.clientHeight / 2; });
+    window.requestAnimationFrame(() => { viewport.scrollLeft = pointX * next - viewport.clientWidth / 2; viewport.scrollTop = pointY * next - viewport.clientHeight / 2; });
   }, [props]);
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -195,7 +197,7 @@ export function GraphView(props: Props) {
   return <div className="em-graph">
     <div className="em-graph-toolbar">
       <button onClick={props.onBack}><Icon name="layout-grid" className="em-kanban-icon" /> Back to grid</button><button onClick={() => setCenteredZoom(Math.max(.25, props.zoom / 1.25))}>−</button><button onClick={() => setCenteredZoom(1)}>{Math.round(props.zoom * 100)} %</button><button onClick={() => setCenteredZoom(Math.min(2, props.zoom * 1.25))}>+</button><button onClick={fit}>Fit</button>
-      <button onClick={() => setAddPanel({ cell: { col: 0, row: -1 } })}>+ Task</button><button onClick={() => setCollapsedKeys(new Set())}>Expand all</button><button onClick={() => { props.onResetAll(); requestAnimationFrame(() => requestAnimationFrame(() => { const viewport = viewportRef.current; if (viewport) { viewport.scrollLeft = centeredScrollOffset(viewport.scrollWidth, viewport.clientWidth); viewport.scrollTop = centeredScrollOffset(viewport.scrollHeight, viewport.clientHeight); } })); }}>Reset all positions</button>
+      <button onClick={() => setAddPanel({ cell: { col: 0, row: -1 } })}>+ Task</button><button onClick={() => setCollapsedKeys(new Set())}>Expand all</button><button onClick={() => { props.onResetAll(); window.requestAnimationFrame(() => window.requestAnimationFrame(() => { const viewport = viewportRef.current; if (viewport) { viewport.scrollLeft = centeredScrollOffset(viewport.scrollWidth, viewport.clientWidth); viewport.scrollTop = centeredScrollOffset(viewport.scrollHeight, viewport.clientHeight); } })); }}>Reset all positions</button>
     </div>
     <div ref={viewportRef} className={`em-graph-viewport ${panning ? 'em-graph-panning' : ''}`} onPointerDown={startPan} onPointerMove={movePan} onPointerUp={stopPan} onPointerCancel={stopPan}>
       <div className="em-graph-scaler" style={{ width: layout.size.width * props.zoom, height: layout.size.height * props.zoom }}>

@@ -9,6 +9,7 @@ import type EisenhowerMatrixPlugin from '../../main.ts';
 import { getDailyNotesFolder } from '../obsidian-adapter/dailyNotes.ts';
 import { showError } from '../obsidian-adapter/toast.ts';
 import { DEFAULT_SETTINGS } from './settings.ts';
+import { ConfirmModal } from '../obsidian-adapter/ConfirmModal.ts';
 import { ExcludeFolderModal } from './ExcludeFolderModal.ts';
 import { FolderSuggest } from './FolderSuggest.ts';
 
@@ -38,6 +39,7 @@ const RESET_DESC =
   'Clears overrides — daily folder falls back to the core config, excluded folders are emptied.';
 const RESET_GRAPH_NAME = 'Reset graph positions';
 const RESET_GRAPH_DESC = 'Forget every manually placed card in the dependency graph.';
+const RESET_GRAPH_QUESTION = 'Reset every manually placed graph card?';
 
 export class MatrixSettingsTab extends PluginSettingTab {
   constructor(
@@ -116,7 +118,9 @@ export class MatrixSettingsTab extends PluginSettingTab {
         desc: RESET_GRAPH_DESC,
         render: (setting: Setting) => setting.addButton((btn) => {
           btn.setButtonText('Reset').onClick(() => {
-            if (confirm('Reset every manually placed graph card?')) void this.resetGraphPositions().then(() => this.refreshDefinitions());
+            new ConfirmModal(this.app, RESET_GRAPH_QUESTION, 'Reset', (confirmed) => {
+              if (confirmed) void this.resetGraphPositions().then(() => this.refreshDefinitions());
+            }).open();
           });
           if (requireApiVersion('1.13.0')) btn.setDestructive();
         }),
@@ -130,7 +134,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
               void this.resetOverrides().then(() => this.refreshDefinitions());
             });
             // `setDestructive()` je 1.13+; sem se dostaneme jen na 1.13+, ale statická
-            // kontrola to neví — guard drží `minAppVersion` na 1.8.0 bez nálezu.
+            // kontrola to neví — guard drží nižší `minAppVersion` bez nálezu.
             // Bez `else`: nedosažitelná větev by přidala deprecated `setWarning()` navíc.
             if (requireApiVersion('1.13.0')) btn.setDestructive();
           });
@@ -368,8 +372,10 @@ export class MatrixSettingsTab extends PluginSettingTab {
     // === Excluded folders ===
     this.renderExcludedFoldersSection(containerEl);
 
-    new Setting(containerEl).setName(RESET_GRAPH_NAME).setDesc(RESET_GRAPH_DESC).addButton((btn) => btn.setButtonText('Reset').setWarning().onClick(async () => {
-      if (confirm('Reset every manually placed graph card?')) { await this.resetGraphPositions(); this.display(); }
+    new Setting(containerEl).setName(RESET_GRAPH_NAME).setDesc(RESET_GRAPH_DESC).addButton((btn) => btn.setButtonText('Reset').setWarning().onClick(() => {
+      new ConfirmModal(this.app, RESET_GRAPH_QUESTION, 'Reset', (confirmed) => {
+        if (confirmed) void this.resetGraphPositions().then(() => this.display());
+      }).open();
     }));
 
     // === Reset ===
