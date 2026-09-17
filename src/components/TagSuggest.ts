@@ -62,10 +62,8 @@ export class TagSuggest extends AbstractInputSuggest<string> {
     // by zůstal s tím, co uživatel naťukal před výběrem (tj. selection by
     // se po Save „ztratila"). Použijeme nativní setter z prototype, aby
     // React změnu zaregistroval jako legitimní user input.
-    const nativeSetter = Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      'value',
-    )?.set;
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- native value setter, invoked via .call with explicit receiver below
+    const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
     if (nativeSetter) {
       nativeSetter.call(this.inputEl, newValue);
     } else {

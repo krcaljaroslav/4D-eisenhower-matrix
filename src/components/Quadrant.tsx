@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { Platform, type PaneType } from 'obsidian';
+import { type PaneType } from 'obsidian';
 import type { Priority, Quadrant as QuadrantKind, Task } from '../core/types.ts';
 import { QUADRANT_META } from '../core/types.ts';
-import { TaskCard } from './TaskCard.tsx';
+import { TaskCard, type DependencySelection } from './TaskCard.tsx';
 import { AddTaskInput } from './AddTaskInput.tsx';
 import { Icon } from './Icon.tsx';
+import type { InlineLinkTarget } from './inlineMarkdown.tsx';
 
 type Props = {
   kind: QuadrantKind;
@@ -26,6 +27,7 @@ type Props = {
     text: string,
     contextTags: string[],
     options: { dueDate: string | null; priority: Priority | null },
+    dependencies: DependencySelection,
   ) => Promise<void>;
   onAddTask: (input: {
     text: string;
@@ -34,6 +36,7 @@ type Props = {
     priority: Priority | null;
   }) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
+  onOpenLink: (task: Task, link: InlineLinkTarget) => void;
   onMoveQuadrant: (task: Task, target: QuadrantKind) => void;
   createTagSuggest: (inputEl: HTMLInputElement) => void;
 };
@@ -55,6 +58,7 @@ export function Quadrant({
   onUpdateTask,
   onAddTask,
   onOpenSource,
+  onOpenLink,
   onMoveQuadrant,
   createTagSuggest,
 }: Props) {
@@ -101,18 +105,16 @@ export function Quadrant({
           >
             +
           </button>
-          {!Platform.isMobile && (
-            <button
-              type="button"
-              onClick={onToggleKanban}
-              className={`em-kanban-btn em-kanban-btn-labeled ${kanbanActive ? 'em-kanban-btn-active' : ''}`}
-              title={kanbanActive ? 'Back to grid' : 'Kanban view (status columns)'}
-              aria-label={kanbanActive ? 'Back to grid' : 'Kanban view'}
-            >
-              <Icon name="square-kanban" className="em-kanban-icon" />
-              <span>Kanban</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onToggleKanban}
+            className={`em-kanban-btn em-kanban-btn-labeled ${kanbanActive ? 'em-kanban-btn-active' : ''}`}
+            title={kanbanActive ? 'Back to grid' : 'Kanban view (status columns)'}
+            aria-label={kanbanActive ? 'Back to grid' : 'Kanban view'}
+          >
+            <Icon name="square-kanban" className="em-kanban-icon" />
+            <span>Kanban</span>
+          </button>
           <span className="em-quadrant-count">{tasks.length}</span>
         </div>
       </header>
@@ -147,8 +149,11 @@ export function Quadrant({
                     onToggle={() => onToggleTask(t)}
                     onSetStatus={(s) => onSetStatus(t, s)}
                     onSetDueDate={(d) => onSetDueDate(t, d)}
-                    onUpdateTask={(text, tags, opts) => onUpdateTask(t, text, tags, opts)}
+                    onUpdateTask={(text, tags, opts, dependencies) =>
+                      onUpdateTask(t, text, tags, opts, dependencies)
+                    }
                     onOpenSource={(mode) => onOpenSource(t, mode)}
+                    onOpenLink={(link) => onOpenLink(t, link)}
                     onMoveQuadrant={(target) => onMoveQuadrant(t, target)}
                     createTagSuggest={createTagSuggest}
                   />

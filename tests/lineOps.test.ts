@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addBlockerIdToLine,
+  addIdToLine,
+  removeBlockerIdFromLine,
   appendTaskUnderHeading,
   buildTaskLine,
   moveLineQuadrant,
@@ -137,6 +140,26 @@ describe('parseTaskLine — non-standard statuses', () => {
   });
 });
 
+describe('parseTaskLine — task metadata', () => {
+  it('extracts id and a deduplicated blocked-by list from text', () => {
+    const parsed = parseTaskLine('- [ ] #DO Draft proposal 🆔 draft-1 ⛔ brief, review_2,brief', 4);
+
+    expect(parsed).toMatchObject({
+      text: 'Draft proposal',
+      id: 'draft-1',
+      blockedBy: ['brief', 'review_2'],
+      trailingTokens: [],
+    });
+  });
+
+  it('defaults blockedBy and trailingTokens to empty arrays', () => {
+    const parsed = parseTaskLine('- [ ] plain task', 0);
+
+    expect(parsed?.blockedBy).toEqual([]);
+    expect(parsed?.trailingTokens).toEqual([]);
+  });
+});
+
 describe('setDueDateOnLine', () => {
   it('adds 📅 when none', () => {
     const r = setDueDateOnLine('- [ ] #DO_IMMEDIATELY hello', '2026-05-20');
@@ -153,6 +176,19 @@ describe('setDueDateOnLine', () => {
 });
 
 describe('updateLineTextAndTags', () => {
+  it.each([
+    '- [ ] #DO_IMMEDIATELY #Petr Call about X',
+    '- [ ] #DO_IMMEDIATELY Call #Petr about X',
+    '- [ ] #DO_IMMEDIATELY Call about X #Petr',
+    '- [ ] #DO_IMMEDIATELY Call #pEtR about #Petr',
+  ])('round-trips context tags without duplicating them: %s', (line) => {
+    const parsed = parseTaskLine(line, 0)!;
+
+    expect(
+      updateLineTextAndTags(line, parsed.text, parsed.contextTags).newLine,
+    ).toBe(line);
+  });
+
   it('updates text + tags, preserves other parts', () => {
     const r = updateLineTextAndTags(
       '- [x] #DO_IMMEDIATELY #Work 📅 2026-05-20 🛫 2026-05-10 Send report ✅ 2026-05-15',
@@ -219,9 +255,73 @@ describe('updateLineTextAndTags', () => {
     );
     expect(r.newLine).toBe('- [ ] #DO_IMMEDIATELY #Osobní #Work hello');
   });
+
+  it('round-trips dependency metadata and named Tasks tokens', () => {
+    const original =
+      '- [ ] #DO 📅 2026-06-01 🛫 2026-05-10 Send draft ⏳ 2026-05-20 ➕ 2026-05-01 🔁 every week 🏁 keep ❌ 2026-05-30 🧩 future value 🆔 draft1 ⛔ brief,review,brief';
+    const parsedBefore = parseTaskLine(original, 0)!;
+    const updated = updateLineTextAndTags(
+      original,
+      parsedBefore.text,
+      parsedBefore.contextTags,
+    ).newLine;
+    const parsedAfter = parseTaskLine(updated, 0)!;
+
+    expect(parsedAfter.id).toBe(parsedBefore.id);
+    expect(parsedAfter.blockedBy).toEqual(parsedBefore.blockedBy);
+    expect(parsedAfter.trailingTokens).toEqual(parsedBefore.trailingTokens);
+    expect(parsedAfter.trailingTokens).toEqual([
+      '⏳ 2026-05-20',
+      '➕ 2026-05-01',
+      '🔁 every week',
+      '🏁 keep',
+      '❌ 2026-05-30 🧩 future value',
+    ]);
+  });
+
+  it('can replace dependency metadata while preserving the rest of the task', () => {
+    const updated = updateLineTextAndTags(
+      '- [ ] #DO_IMMEDIATELY Draft 🆔 old-id ⛔ first,second',
+      'Draft',
+      [],
+      { id: 'new-id', blockedBy: ['third'] },
+    ).newLine;
+
+    expect(updated).toBe('- [ ] #DO_IMMEDIATELY Draft 🆔 new-id ⛔ third');
+  });
+
+  it('builds a task line with preserved metadata before the done date', () => {
+    expect(
+      buildTaskLine(
+        'DO_IMMEDIATELY',
+        'finished',
+        '2026-05-14',
+        null,
+        null,
+        'x',
+        'task-1',
+        ['blocker_a', 'blocker-b'],
+        ['⏳ 2026-05-15'],
+      ),
+    ).toBe(
+      '- [x] #DO_IMMEDIATELY 🛫 2026-05-14 finished ⏳ 2026-05-15 🆔 task-1 ⛔ blocker_a,blocker-b ✅ 2026-05-14',
+    );
+  });
 });
 
 describe('appendTaskUnderHeading', () => {
+  it('round-trips id and blockers in a newly appended task', () => {
+    const result = appendTaskUnderHeading(
+      '# Today\n', '# Today', 'linked', 'OPEN', '2026-09-08', null, null, ' ',
+      'task-1', ['blocker-a', 'blocker_b'],
+    );
+
+    expect(parseTaskLine(result.newLine, result.lineIndex)).toMatchObject({
+      id: 'task-1',
+      blockedBy: ['blocker-a', 'blocker_b'],
+    });
+  });
+
   it('inserts after existing tasks under # Dnes', () => {
     const content = [
       '---',
@@ -255,6 +355,54 @@ describe('appendTaskUnderHeading', () => {
   });
 });
 
+describe('surgical dependency metadata', () => {
+  it('adds an id at the end without changing any preceding byte', () => {
+    const line = '- [ ] #DO 📅 2026-09-10 ⏫ 🛫 2026-09-08 ⏳ later 🔁 weekly Task  ';
+    const result = addIdToLine(line, 'x');
+    expect(result.newLine.replace(' 🆔 x', '')).toBe(line.trimEnd());
+    expect(parseTaskLine(result.newLine, 0)?.id).toBe('x');
+  });
+
+  it('adds an id before a done date', () => {
+    expect(addIdToLine('- [x] done ✅ 2026-09-08', 'x').newLine)
+      .toBe('- [x] done 🆔 x ✅ 2026-09-08');
+  });
+
+  it('rejects invalid targets, duplicate ids, and invalid ids', () => {
+    expect(() => addIdToLine('heading', 'x')).toThrow(/Not a task/);
+    expect(() => addIdToLine('- [ ] task 🆔 old', 'x')).toThrow(/already/);
+    expect(() => addIdToLine('- [ ] task', 'bad id')).toThrow(/Invalid/);
+  });
+
+  it('replaces a bare id marker in place', () => {
+    const line = '- [ ] task 🆔';
+    const result = addIdToLine(line, 'x').newLine;
+    expect(result).toBe('- [ ] task 🆔 x');
+    expect(parseTaskLine(result, 0)?.id).toBe('x');
+  });
+
+  it('extends blockers, inserts blockers, and is idempotent', () => {
+    expect(addBlockerIdToLine('- [ ] task ⛔ a', 'x').newLine).toBe('- [ ] task ⛔ a,x');
+    const inserted = addBlockerIdToLine('- [x] task ✅ 2026-09-08', 'x').newLine;
+    expect(inserted).toBe('- [x] task ⛔ x ✅ 2026-09-08');
+    expect(addBlockerIdToLine(inserted, 'x').newLine).toBe(inserted);
+    expect(parseTaskLine(addBlockerIdToLine('- [ ] task ⛔ a', 'x').newLine, 0)?.blockedBy)
+      .toEqual(['a', 'x']);
+  });
+
+  it('replaces a bare blocker marker in place', () => {
+    const result = addBlockerIdToLine('- [ ] task ⛔', 'x').newLine;
+    expect(result).toBe('- [ ] task ⛔ x');
+    expect(parseTaskLine(result, 0)?.blockedBy).toEqual(['x']);
+  });
+
+  it('removes one blocker without removing an orphaned task id', () => {
+    expect(removeBlockerIdFromLine('- [ ] task 🆔 own ⛔ a,b ✅ 2026-09-08', 'a').newLine).toBe('- [ ] task 🆔 own ⛔ b ✅ 2026-09-08');
+    expect(removeBlockerIdFromLine('- [ ] task 🆔 own ⛔ a ✅ 2026-09-08', 'a').newLine).toBe('- [ ] task 🆔 own ✅ 2026-09-08');
+    expect(removeBlockerIdFromLine('- [ ] task  ⛔ a,  b , c  tail', 'b').newLine).toBe('- [ ] task  ⛔ a,  c  tail');
+  });
+});
+
 describe('transformLineInContent', () => {
   it('replaces target line, preserves rest', () => {
     const content = ['# Dnes', '- [ ] #DO_IMMEDIATELY a', '- [ ] #DO_IMMEDIATELY b'].join('\n');
@@ -272,5 +420,10 @@ describe('transformLineInContent', () => {
       toggleLine(l, '2026-05-14').newLine,
     );
     expect(out.includes('\r\n')).toBe(true);
+  });
+  it('preserves every original line ending in a mixed-EOL file', () => {
+    const content = 'a\nb\r\nc\n- [ ] task\r\n';
+    expect(transformLineInContent(content, 3, (line) => `${line} 🆔 x`))
+      .toBe('a\nb\r\nc\n- [ ] task 🆔 x\r\n');
   });
 });

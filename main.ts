@@ -3,6 +3,7 @@ import { MatrixView, VIEW_TYPE_MATRIX } from './src/view/MatrixView.ts';
 import { DEFAULT_SETTINGS, type PluginSettings } from './src/settings/settings.ts';
 import { MatrixSettingsTab } from './src/settings/SettingsTab.ts';
 import type { Quadrant } from './src/core/types.ts';
+import { validateGraphPositions } from './src/core/graphLayout.ts';
 
 // Vlastní ikona pro stav "In progress" [/] — Lucide nemá half-square,
 // tak ji zaregistrujeme: hranatý rámeček + vyplněná levá polovina (Things-style).
@@ -40,7 +41,7 @@ export default class EisenhowerMatrixPlugin extends Plugin {
     this.addSettingTab(new MatrixSettingsTab(this.app, this));
   }
 
-  async onunload(): Promise<void> {
+  onunload(): void {
     // Obsidian uvolní view / ribbon / command / settings tab automaticky.
   }
 
@@ -77,6 +78,10 @@ export default class EisenhowerMatrixPlugin extends Plugin {
       collapsedQuadrants,
       kanbanQuadrant: kanbanQuadrant !== undefined ? kanbanQuadrant : DEFAULT_SETTINGS.kanbanQuadrant,
     };
+    this.settings.graphPositions = validateGraphPositions(this.settings.graphPositions, (key) => console.warn(`[4D Matrix] Ignoring invalid graph position: ${key}`));
+    const zoom = Number(this.settings.graphZoom);
+    if (!Number.isFinite(zoom) || zoom < .25 || zoom > 2) console.warn('[4D Matrix] Clamping invalid graph zoom');
+    this.settings.graphZoom = Math.min(2, Math.max(.25, Number.isFinite(zoom) ? zoom : 1));
   }
 
   async saveSettings(): Promise<void> {
@@ -98,13 +103,13 @@ export default class EisenhowerMatrixPlugin extends Plugin {
 
     const existing = workspace.getLeavesOfType(VIEW_TYPE_MATRIX);
     if (existing.length > 0) {
-      workspace.revealLeaf(existing[0]);
+      void workspace.revealLeaf(existing[0]);
       return;
     }
 
     const leaf: WorkspaceLeaf | null = workspace.getLeaf('tab');
     if (!leaf) return;
     await leaf.setViewState({ type: VIEW_TYPE_MATRIX, active: true });
-    workspace.revealLeaf(leaf);
+    void workspace.revealLeaf(leaf);
   }
 }

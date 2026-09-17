@@ -1,4 +1,5 @@
 import type { Quadrant } from '../core/types.ts';
+import type { DueFilter } from '../core/taskUtils.ts';
 
 /**
  * Plugin nastavení — persistovaná napříč restarty Obsidianu přes
@@ -9,6 +10,8 @@ import type { Quadrant } from '../core/types.ts';
  */
 export type PluginSettings = {
   selectedTags: string[];
+  /** Rychlý filtr podle due date: none / today (overdue+dnes) / week (overdue+7 dní). */
+  dueFilter: DueFilter;
   collapsedQuadrants: Record<Quadrant, boolean>;
   showCompleted: boolean;
   lastOpenedDate: string | null;
@@ -20,7 +23,7 @@ export type PluginSettings = {
   dailyFolderOverride: string;
   /**
    * Heading sekce v daily note, pod kterou se přidávají / ze které se čtou
-   * dnešní tasky. Default `# Dnes`.
+   * dnešní tasky. Default `# Today`.
    */
   dailySectionHeading: string;
   /**
@@ -34,16 +37,26 @@ export type PluginSettings = {
    * skryjí, editace zůstává plná. Přepíná se v hlavičce. Persistované.
    */
   compactMode: boolean;
+  /** Zobrazí potvrzení před uzavřením blokovaného úkolu. */
+  warnWhenCompletingBlockedTask: boolean;
+  /** Řadí blokátory před úkoly, které na ně čekají. */
+  respectTaskDependenciesWhenSorting: boolean;
+  /** Skryje úkoly, které čekají na alespoň jeden otevřený blokátor. */
+  hideBlockedTasks: boolean;
   /**
-   * Kanban režim (jen desktop): pokud je nastaven kvadrant, ten se rozbalí
+   * Kanban režim (desktop i mobil/tablet): pokud je nastaven kvadrant, ten se rozbalí
    * na celou šířku se 4 status-sloupci (To-do / In progress / Scheduled /
    * Done) a zbylé kvadranty jsou pod ním. `null` = normální 5-mřížka.
    */
   kanbanQuadrant: Quadrant | null;
+  graphView: boolean;
+  graphPositions: Record<string, { col: number; row: number }>;
+  graphZoom: number;
 };
 
 export const DEFAULT_SETTINGS: PluginSettings = {
   selectedTags: [],
+  dueFilter: 'none',
   collapsedQuadrants: {
     DO_IMMEDIATELY: false,
     DO_REDUCED: false,
@@ -59,8 +72,14 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   // Generic plugin nemá hádat vault-specifické složky.
   excludedFolders: [],
   dailyFolderOverride: '',
-  dailySectionHeading: '# Dnes',
+  dailySectionHeading: '# Today',
   headerCollapsed: false,
   compactMode: false,
+  warnWhenCompletingBlockedTask: true,
+  respectTaskDependenciesWhenSorting: true,
+  hideBlockedTasks: false,
   kanbanQuadrant: null,
+  graphView: false,
+  graphPositions: {},
+  graphZoom: 1,
 };

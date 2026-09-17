@@ -33,8 +33,8 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    const doc = triggerRef.current?.ownerDocument ?? document;
-    const win = doc.defaultView ?? window;
+    const doc = triggerRef.current?.ownerDocument ?? activeDocument;
+    const win = doc.defaultView ?? activeWindow;
     const onDocClick = (e: MouseEvent) => {
       const target = e.target as Node;
       if (popoverRef.current?.contains(target)) return;
@@ -45,14 +45,14 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
-    const t = setTimeout(() => {
+    const t = win.setTimeout(() => {
       doc.addEventListener('click', onDocClick);
       doc.addEventListener('keydown', onKey);
       win.addEventListener('scroll', onScroll, true);
       win.addEventListener('resize', recomputePosition);
     }, 0);
     return () => {
-      clearTimeout(t);
+      win.clearTimeout(t);
       doc.removeEventListener('click', onDocClick);
       doc.removeEventListener('keydown', onKey);
       win.removeEventListener('scroll', onScroll, true);
@@ -80,7 +80,7 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
     </button>
   );
 
-  const doc = triggerRef.current?.ownerDocument ?? document;
+  const doc = triggerRef.current?.ownerDocument ?? activeDocument;
   const popover =
     open && pos
       ? createPortal(

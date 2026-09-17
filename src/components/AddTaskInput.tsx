@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'obsidian';
 import type { Priority, Quadrant } from '../core/types.ts';
 import { PriorityPicker } from './PriorityPicker.tsx';
+import { HiddenDateInput, type HiddenDateInputHandle } from './HiddenDateInput.tsx';
 
 type Props = {
   quadrant: Quadrant;
@@ -16,6 +17,7 @@ type Props = {
   }) => Promise<void>;
   onCancel: () => void;
   createTagSuggest: (inputEl: HTMLInputElement) => void;
+  initialTags?: string[];
 };
 
 function normalizeTagsInput(raw: string): string[] {
@@ -26,20 +28,20 @@ function normalizeTagsInput(raw: string): string[] {
     .map((t) => (t.startsWith('#') ? t : `#${t}`));
 }
 
-export function AddTaskInput({ quadrant, status, onSubmit, onCancel, createTagSuggest }: Props) {
+export function AddTaskInput({ quadrant, status, onSubmit, onCancel, createTagSuggest, initialTags = [] }: Props) {
   const [text, setText] = useState('');
-  const [tagsRaw, setTagsRaw] = useState('');
+  const [tagsRaw, setTagsRaw] = useState(initialTags.join(' '));
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<Priority | null>(null);
   const [pending, setPending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const tagsRef = useRef<HTMLInputElement>(null);
-  const dateRef = useRef<HTMLInputElement>(null);
+  const dateRef = useRef<HiddenDateInputHandle>(null);
 
   // Attach tag autocomplete na tags input — jen na mount.
   useEffect(() => {
     if (tagsRef.current) createTagSuggest(tagsRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: attach tag autocomplete once
   }, []);
 
   useEffect(() => {
@@ -94,12 +96,7 @@ export function AddTaskInput({ quadrant, status, onSubmit, onCancel, createTagSu
     }
   };
 
-  const openDatePicker = () => {
-    const el = dateRef.current;
-    if (!el) return;
-    if (typeof el.showPicker === 'function') el.showPicker();
-    else el.focus();
-  };
+  const openDatePicker = () => dateRef.current?.open();
 
   return (
     <div className="em-add-form">
@@ -144,18 +141,14 @@ export function AddTaskInput({ quadrant, status, onSubmit, onCancel, createTagSu
             ×
           </button>
         )}
-        <input
+        <HiddenDateInput
           ref={dateRef}
-          type="date"
           value={dueDate}
-          onChange={(e) => {
-            setDueDate(e.target.value);
+          onCommit={(v) => {
+            setDueDate(v);
             // Po zvolení data vrať focus do textu — Enter pak uloží task.
             inputRef.current?.focus();
           }}
-          className="em-sr-only"
-          aria-hidden
-          tabIndex={-1}
         />
 
         <PriorityPicker value={priority} onChange={setPriority} disabled={pending} />

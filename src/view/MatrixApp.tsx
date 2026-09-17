@@ -16,21 +16,39 @@ import {
   type Modifier,
 } from '@dnd-kit/core';
 import type { ObsidianTaskRepo } from '../obsidian-adapter/ObsidianTaskRepo.ts';
-import { showError } from '../obsidian-adapter/toast.ts';
+import { showError, showInfo } from '../obsidian-adapter/toast.ts';
+import { confirmDialog } from '../obsidian-adapter/ConfirmModal.ts';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
 import { QUADRANTS, isClosedStatus } from '../core/types.ts';
 import {
   extractAllContextTags,
   formatDateISO,
   makeCompareTask,
+  sortTasksByDependencies,
+  matchesDueFilter,
   matchesFilter,
+  matchesSearch,
+  normalizeForSearch,
   UNTAGGED_FILTER,
+  type DueFilter,
 } from '../core/taskUtils.ts';
 import { Matrix } from '../components/Matrix.tsx';
 import { KanbanView } from '../components/KanbanView.tsx';
+import { GraphView } from '../components/GraphView.tsx';
+import { parseTaskLine } from '../core/parser.ts';
 import { FilterBar } from '../components/FilterBar.tsx';
 import { DateNav } from '../components/DateNav.tsx';
-import { TaskCardOverlay, GRACE_MS } from '../components/TaskCard.tsx';
+import { SearchBox } from '../components/SearchBox.tsx';
+import { Icon } from '../components/Icon.tsx';
+import {
+  DependencyNavigationContext,
+  SearchHighlightContext,
+  TaskEditingContext,
+  TaskCardOverlay,
+  GRACE_MS,
+  type DependencySelection,
+} from '../components/TaskCard.tsx';
+import type { InlineLinkTarget } from '../components/inlineMarkdown.tsx';
 import { TagSuggest } from '../components/TagSuggest.ts';
 import type EisenhowerMatrixPlugin from '../../main.ts';
 
@@ -42,6 +60,37 @@ type Props = {
 
 function taskKey(sourceFile: string, lineIndex: number): string {
   return `${sourceFile}:${lineIndex}`;
+}
+
+function showUnblockedTasks(task: Task): void {
+  const unblockedCount = task.blocksTasks.filter((dependent) =>
+    dependent.blockedByTasks.every(
+      (blocker) => blocker === task || isClosedStatus(blocker.status),
+    ),
+  ).length;
+  if (unblockedCount > 0) {
+    showInfo(`Unblocked ${unblockedCount} ${unblockedCount === 1 ? 'task' : 'tasks'}`);
+  }
+}
+
+/**
+ * Klíče tasků, pro které je právě otevřený potvrzovací dialog.
+ *
+ * Na rozdíl od `confirm()` modal neblokuje, takže druhý klik na tutéž kartu by
+ * jinak otevřel druhý dialog a po dvojím potvrzení by se zápis provedl dvakrát.
+ */
+const pendingConfirmations = new Set<string>();
+
+async function confirmBlockedCompletion(app: App, task: Task): Promise<boolean> {
+  const key = taskKey(task.sourceFile, task.lineIndex);
+  if (pendingConfirmations.has(key)) return false;
+  pendingConfirmations.add(key);
+  try {
+    const message = `"${task.text}" is not finished yet. Complete this task anyway?`;
+    return await confirmDialog(app, message, 'Complete anyway');
+  } finally {
+    pendingConfirmations.delete(key);
+  }
 }
 
 /**
@@ -101,6 +150,7 @@ const cursorFirstCollisionDetection: CollisionDetection = (args) => {
 };
 
 export function MatrixApp({ app, repo, plugin }: Props) {
+  const appRootRef = useRef<HTMLDivElement>(null);
   const today = useMemo(() => formatDateISO(new Date()), []);
   const [date, setDate] = useState<string>(today);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -108,10 +158,12 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const [scannedFiles, setScannedFiles] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const dependencyHighlightTimerRef = useRef<number | null>(null);
   const [existingDates, setExistingDates] = useState<Set<string>>(() => new Set());
 
   // Settings (persisted)
   const [selectedTags, setSelectedTags] = useState<string[]>(plugin.settings.selectedTags);
+  const [dueFilter, setDueFilter] = useState<DueFilter>(plugin.settings.dueFilter);
   const [collapsed, setCollapsed] = useState<Record<Quadrant, boolean>>(
     plugin.settings.collapsedQuadrants,
   );
@@ -123,6 +175,32 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const [kanbanQuadrant, setKanbanQuadrant] = useState<Quadrant | null>(
     plugin.settings.kanbanQuadrant,
   );
+  const [graphView, setGraphView] = useState(plugin.settings.graphView);
+  const [graphPositions, setGraphPositions] = useState(plugin.settings.graphPositions);
+  const [graphZoom, setGraphZoom] = useState(plugin.settings.graphZoom);
+  const [graphRevealKey, setGraphRevealKey] = useState<string | null>(null);
+  const [graphHighlightKey, setGraphHighlightKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (!graphHighlightKey) return;
+    const timer = window.setTimeout(() => setGraphHighlightKey(null), 1500);
+    return () => window.clearTimeout(timer);
+  }, [graphHighlightKey]);
+  // Hledání (nepersistuje se — po otevření view je vždy zavřené a prázdné)
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchIndex, setSearchIndex] = useState(0);
+  /** Roste s každým skokem — ať „další" na jediné shodě zase odscrolluje. */
+  const [searchJump, setSearchJump] = useState(0);
+  /**
+   * Poslední nalezený task; po zavření hledání zůstává vidět (a přes filtr).
+   * Text si držíme spolu s klíčem: `sourceFile:lineIndex` se po editaci
+   * souboru může posunout na jiný task a pin by pak ukazoval na cizí kartu.
+   */
+  const [pinnedTask, setPinnedTask] = useState<{ key: string; text: string } | null>(
+    null,
+  );
+  const lastScrolledRef = useRef<string | null>(null);
+
   const [dayChangedBanner, setDayChangedBanner] = useState<string | null>(() => {
     const last = plugin.settings.lastOpenedDate;
     return last && last !== today ? last : null;
@@ -144,6 +222,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     plugin.settings.selectedTags = selectedTags;
     void plugin.saveSettings();
   }, [selectedTags, plugin]);
+
+  useEffect(() => {
+    plugin.settings.dueFilter = dueFilter;
+    void plugin.saveSettings();
+  }, [dueFilter, plugin]);
 
   useEffect(() => {
     plugin.settings.collapsedQuadrants = collapsed;
@@ -169,6 +252,10 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     plugin.settings.kanbanQuadrant = kanbanQuadrant;
     void plugin.saveSettings();
   }, [kanbanQuadrant, plugin]);
+
+  useEffect(() => { plugin.settings.graphView = graphView; void plugin.saveSettings(); }, [graphView, plugin]);
+  useEffect(() => { plugin.settings.graphPositions = graphPositions; void plugin.saveSettings(); }, [graphPositions, plugin]);
+  useEffect(() => { plugin.settings.graphZoom = graphZoom; void plugin.saveSettings(); }, [graphZoom, plugin]);
 
   // === Data fetching ===
   const refetchTimerRef = useRef<number | null>(null);
@@ -279,15 +366,22 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     async (task: Task) => {
       // Z [x]/[-] zpátky na [ ], jinak na [x] — zrcadlí toggleLine v core.
       const newStatus = isClosedStatus(task.status) ? ' ' : 'x';
+      if (
+        !isClosedStatus(task.status) &&
+        task.isBlocked &&
+        plugin.settings.warnWhenCompletingBlockedTask &&
+        !(await confirmBlockedCompletion(app, task))
+      ) return;
       applyLocalStatus(task.sourceFile, task.lineIndex, newStatus);
       try {
         await repo.toggleTask(task.sourceFile, task.lineIndex, today);
+        if (isClosedStatus(newStatus)) showUnblockedTasks(task);
       } catch (e) {
         applyLocalStatus(task.sourceFile, task.lineIndex, task.status);
         showError(`Toggle failed: ${String((e as Error).message ?? e)}`);
       }
     },
-    [repo, today, applyLocalStatus],
+    [repo, today, applyLocalStatus, plugin, app],
   );
 
   const handleSetDueDate = useCallback(
@@ -304,17 +398,25 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const handleSetStatus = useCallback(
     async (task: Task, newStatus: string) => {
       const previousStatus = task.status;
+      if (
+        !isClosedStatus(previousStatus) &&
+        isClosedStatus(newStatus) &&
+        task.isBlocked &&
+        plugin.settings.warnWhenCompletingBlockedTask &&
+        !(await confirmBlockedCompletion(app, task))
+      ) return;
       // Stejný optimistic flow jako u toggle — pro [x]/[-] nastartuje
       // 3s grace s undo, ostatní stavy se promítnou rovnou.
       applyLocalStatus(task.sourceFile, task.lineIndex, newStatus);
       try {
         await repo.setStatus(task.sourceFile, task.lineIndex, newStatus, today);
+        if (isClosedStatus(newStatus)) showUnblockedTasks(task);
       } catch (e) {
         applyLocalStatus(task.sourceFile, task.lineIndex, previousStatus);
         showError(`Changing status failed: ${String((e as Error).message ?? e)}`);
       }
     },
-    [repo, today, applyLocalStatus],
+    [repo, today, applyLocalStatus, plugin, app],
   );
 
   const handleUpdate = useCallback(
@@ -323,9 +425,10 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       text: string,
       contextTags: string[],
       options: { dueDate: string | null; priority: Priority | null },
+      dependencies: DependencySelection,
     ) => {
       try {
-        await repo.updateTask(task.sourceFile, task.lineIndex, text, contextTags, options);
+        await repo.updateTask(task, text, contextTags, options, dependencies);
       } catch (e) {
         showError(`Save failed: ${String((e as Error).message ?? e)}`);
         throw e;
@@ -343,7 +446,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       status?: string;
     }) => {
       try {
-        await repo.addTask(
+        const result = await repo.addTask(
           date,
           input.text,
           input.quadrant,
@@ -351,6 +454,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           input.priority,
           input.status ?? ' ',
         );
+        setGraphHighlightKey(taskKey(result.sourceFile, result.lineIndex));
       } catch (e) {
         showError(`Adding task failed: ${String((e as Error).message ?? e)}`);
         throw e;
@@ -375,24 +479,232 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [app],
   );
 
+  const handleNavigateToDependency = useCallback(
+    (target: Task) => {
+      const targetKey = taskKey(target.sourceFile, target.lineIndex);
+      const targetCard = Array.from(
+        appRootRef.current?.querySelectorAll<HTMLElement>('[data-task-key]') ?? [],
+      ).find((card) => card.dataset.taskKey === targetKey);
+      if (!targetCard) {
+        if (graphView) { setGraphRevealKey(targetKey); return; }
+        handleOpenSource(target);
+        return;
+      }
+
+      targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetCard.classList.remove('em-task-highlight');
+      void targetCard.offsetWidth;
+      targetCard.classList.add('em-task-highlight');
+      if (dependencyHighlightTimerRef.current !== null) {
+        window.clearTimeout(dependencyHighlightTimerRef.current);
+      }
+      dependencyHighlightTimerRef.current = window.setTimeout(() => {
+        targetCard.classList.remove('em-task-highlight');
+        dependencyHighlightTimerRef.current = null;
+      }, 1500);
+    },
+    [handleOpenSource, graphView],
+  );
+
+  const handleGraphRevealed = useCallback((key: string, present: boolean) => {
+    if (!present) {
+      const target = tasks.find((candidate) => taskKey(candidate.sourceFile, candidate.lineIndex) === key);
+      if (target) handleOpenSource(target);
+      setGraphRevealKey(null);
+      return;
+    }
+    setSearchJump((value) => value + 1);
+  }, [tasks, handleOpenSource]);
+
+  useEffect(
+    () => () => {
+      if (dependencyHighlightTimerRef.current !== null) {
+        window.clearTimeout(dependencyHighlightTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  // Klik na [[wikilink]] / [text](url) v textu tasku. Interní odkazy řeší
+  // Obsidian přes openLinkText (rozlišuje relativně vůči zdrojovému souboru
+  // tasku, včetně #headingů a aliasů); externí URL otevřeme v prohlížeči.
+  const handleOpenLink = useCallback(
+    (task: Task, link: InlineLinkTarget) => {
+      if (link.external) {
+        // Defense-in-depth: renderer linkuje externě jen https/http/mailto,
+        // ale schéma zkontrolujeme znovu i tady, u samotného otevření.
+        if (/^(https?:\/\/|mailto:)/i.test(link.target)) {
+          window.open(link.target, '_blank');
+        }
+        return;
+      }
+      void app.workspace.openLinkText(link.target, task.sourceFile, link.newLeaf);
+    },
+    [app],
+  );
+
   // === Derived state ===
+  const normalizedQuery = useMemo(
+    () => normalizeForSearch(searchQuery.trim()),
+    [searchQuery],
+  );
+
+  /**
+   * Pin platí, jen dokud na jeho řádku sedí i text — po refetchi (vložený
+   * nebo smazaný řádek) se jinak drží cizí task. Když sedět přestane, pin
+   * tiše zaniká.
+   */
+  const pinnedTaskKey = useMemo(() => {
+    if (!pinnedTask) return null;
+    const still = tasks.find(
+      (t) => taskKey(t.sourceFile, t.lineIndex) === pinnedTask.key,
+    );
+    return still && still.text === pinnedTask.text ? pinnedTask.key : null;
+  }, [pinnedTask, tasks]);
+
+  const passesFilters = useCallback(
+    (t: Task): boolean => {
+      if (!graphView && plugin.settings.hideBlockedTasks && t.isBlocked) return false;
+      if (!matchesFilter(t, selectedTags)) return false;
+      if (!matchesDueFilter(t, dueFilter, today, date)) return false;
+      if (showCompleted) return true;
+      // "Closed" = done ([x]) i canceled ([-]) — oba schované, pokud
+      // uživatel nezapne přepínač "Done" v hlavičce.
+      if (!isClosedStatus(t.status)) return true;
+      return graceMap.has(taskKey(t.sourceFile, t.lineIndex));
+    },
+    [plugin, selectedTags, dueFilter, today, date, showCompleted, graceMap, graphView],
+  );
+
+  /** Co projde filtry — bez ohledu na hledání. Tohle je číslo ve filter baru. */
+  const filteredTasks = useMemo(
+    () => tasks.filter(passesFilters),
+    [tasks, passesFilters],
+  );
+
   const visibleTasks = useMemo(
     () =>
       tasks.filter((t) => {
-        if (!matchesFilter(t, selectedTags)) return false;
-        if (showCompleted) return true;
-        // "Closed" = done ([x]) i canceled ([-]) — oba schované, pokud
-        // uživatel nezapne přepínač "Done" v hlavičce.
-        if (!isClosedStatus(t.status)) return true;
-        return graceMap.has(taskKey(t.sourceFile, t.lineIndex));
+        // Shoda z hledání (a poslední nalezený task) projde i přes filtry,
+        // „Done" a hideBlocked — jinak by hledání mlčky nic nenašlo
+        // a vypadalo by to jako rozbité. Do počtu ve filter baru se ale
+        // taková karta nezapočítá, ať číslo dál popisuje filtr.
+        if (normalizedQuery !== '' && matchesSearch(t, normalizedQuery)) return true;
+        if (taskKey(t.sourceFile, t.lineIndex) === pinnedTaskKey) return true;
+        return passesFilters(t);
       }),
-    [tasks, selectedTags, showCompleted, graceMap],
+    [tasks, passesFilters, normalizedQuery, pinnedTaskKey],
   );
 
   const sortedVisibleTasks = useMemo(
-    () => [...visibleTasks].sort(makeCompareTask(today)),
-    [visibleTasks, today],
+    () => plugin.settings.respectTaskDependenciesWhenSorting
+      ? sortTasksByDependencies(visibleTasks, today)
+      : [...visibleTasks].sort(makeCompareTask(today)),
+    [visibleTasks, today, plugin],
   );
+
+  // === Hledání ===
+  // Shody v pořadí, v jakém jsou vykreslené — „další" tak jde odshora dolů.
+  const searchMatches = useMemo(() => {
+    if (normalizedQuery === '') return [];
+    return sortedVisibleTasks
+      .filter((t) => matchesSearch(t, normalizedQuery))
+      .map((t) => taskKey(t.sourceFile, t.lineIndex));
+  }, [sortedVisibleTasks, normalizedQuery]);
+
+  const searchMatchKeys = useMemo(() => new Set(searchMatches), [searchMatches]);
+
+  const clampedIndex =
+    searchMatches.length === 0 ? 0 : Math.min(searchIndex, searchMatches.length - 1);
+  const currentMatchKey = searchMatches[clampedIndex] ?? null;
+
+  // Memoizované, ať se identita contextu mění jen se shodami — jinak by
+  // každý stisk klávesy překreslil všechny karty i beze změny výsledků.
+  const searchHighlight = useMemo(
+    () => ({
+      matchKeys: searchMatchKeys,
+      currentKey: searchOpen ? currentMatchKey : pinnedTaskKey,
+    }),
+    [searchMatchKeys, searchOpen, currentMatchKey, pinnedTaskKey],
+  );
+
+  // Nový dotaz → zpátky na první shodu.
+  useEffect(() => {
+    setSearchIndex(0);
+    setSearchJump((n) => n + 1);
+  }, [normalizedQuery]);
+
+  const goToMatch = useCallback(
+    (delta: number) => {
+      setSearchIndex((prev) => {
+        if (searchMatches.length === 0) return 0;
+        const from = Math.min(prev, searchMatches.length - 1);
+        return (from + delta + searchMatches.length) % searchMatches.length;
+      });
+      setSearchJump((n) => n + 1);
+    },
+    [searchMatches.length],
+  );
+
+  const closeSearch = useCallback(() => {
+    // Aktuální shoda zůstane vidět i po zavření (i kdyby ji schovával filtr).
+    const match = currentMatchKey
+      ? tasks.find((t) => taskKey(t.sourceFile, t.lineIndex) === currentMatchKey)
+      : undefined;
+    setPinnedTask(
+      match ? { key: taskKey(match.sourceFile, match.lineIndex), text: match.text } : null,
+    );
+    setSearchOpen(false);
+    setSearchQuery('');
+  }, [currentMatchKey, tasks]);
+
+  const openSearch = useCallback(() => {
+    setPinnedTask(null);
+    setSearchOpen(true);
+  }, []);
+
+  // Skok na aktuální shodu: rozbalit kvadrant / přepnout Kanban a odscrollovat.
+  // Efekt běží znovu po každém renderu, který kartu může zpřístupnit — dokud
+  // karta v DOM není, scroll se odloží (`lastScrolledRef` hlídá duplicity).
+  useEffect(() => {
+    const revealTargetKey = graphRevealKey ?? currentMatchKey;
+    if (!revealTargetKey) {
+      lastScrolledRef.current = null;
+      return;
+    }
+    const target = tasks.find(
+      (t) => taskKey(t.sourceFile, t.lineIndex) === revealTargetKey,
+    );
+    if (!target) return;
+
+    if (!graphView && collapsed[target.quadrant]) {
+      setCollapsed((prev) => ({ ...prev, [target.quadrant]: false }));
+      return;
+    }
+    if (!graphView && kanbanQuadrant !== null && kanbanQuadrant !== target.quadrant) {
+      setKanbanQuadrant(target.quadrant);
+      return;
+    }
+
+    const jumpId = `${revealTargetKey}#${searchJump}`;
+    if (lastScrolledRef.current === jumpId) return;
+
+    const card = Array.from(
+      appRootRef.current?.querySelectorAll<HTMLElement>('[data-task-key]') ?? [],
+    ).find((el) => el.dataset.taskKey === revealTargetKey);
+    if (!card) return;
+
+    lastScrolledRef.current = jumpId;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (graphRevealKey) setGraphRevealKey(null);
+  }, [currentMatchKey, graphRevealKey, searchJump, tasks, collapsed, kanbanQuadrant, sortedVisibleTasks, graphView]);
+
+  // Jiný den = jiný pohled; držet v něm starý nález nedává smysl. Změna
+  // filtrů pin ruší schválně: uživatel po zavření hledání sáhl na filtr,
+  // takže od té chvíle má rozhodovat filtr, ne starý nález.
+  useEffect(() => {
+    setPinnedTask(null);
+  }, [date, selectedTags, dueFilter, showCompleted]);
 
   const availableTags = useMemo(
     () =>
@@ -430,7 +742,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     );
   }, []);
 
-  const clearTags = useCallback(() => setSelectedTags([]), []);
+  const clearFilters = useCallback(() => {
+    setSelectedTags([]);
+    setDueFilter('none');
+  }, []);
+
+  const toggleDueFilter = useCallback((f: DueFilter) => {
+    setDueFilter((prev) => (prev === f ? 'none' : f));
+  }, []);
 
   const toggleQuadrantCollapsed = useCallback((q: Quadrant) => {
     setCollapsed((prev) => ({ ...prev, [q]: !prev[q] }));
@@ -546,6 +865,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
       const draggedId = String(e.active.id);
       const overId = String(e.over.id);
+      if (overId === 'graph-canvas') return;
       if (draggedId === overId) return;
 
       const dragged = tasks.find((t) => taskKey(t.sourceFile, t.lineIndex) === draggedId);
@@ -571,20 +891,35 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   );
 
   const isPastOrFuture = date !== today;
-  const effectiveKanban = Platform.isMobile ? null : kanbanQuadrant;
+  // Kanban je dostupný i na mobilu/tabletu. Přesun mezi status-sloupci tam
+  // nejde dragem (touch-drag je v Obsidian webview nespolehlivý) — řeší se přes
+  // kontextové menu karty „Mark as…", stejně jako přesun mezi kvadranty.
+  const effectiveKanban = kanbanQuadrant;
 
   // Ovládání zobrazení (Collapse all / Done / Compact) — sdílené mezi
   // rozbalenou i sbalenou hlavičkou, ať jsou ty přepínače dostupné i
   // když je hlavička sbalená (uživatel je chce mít po ruce vždy).
   const viewControls = (
     <>
-      <button
+      <SearchBox
+        open={searchOpen}
+        query={searchQuery}
+        matchCount={searchMatches.length}
+        currentIndex={searchMatches.length === 0 ? 0 : clampedIndex + 1}
+        onOpen={openSearch}
+        onClose={closeSearch}
+        onQueryChange={setSearchQuery}
+        onNext={() => goToMatch(1)}
+        onPrev={() => goToMatch(-1)}
+      />
+      {!graphView && <button
         type="button"
         onClick={anyCollapsed ? expandAll : collapseAll}
         className="em-btn-link"
       >
         {anyCollapsed ? 'Expand all' : 'Collapse all'}
-      </button>
+      </button>}
+      <button type="button" onClick={() => setGraphView((current) => !current)} className={graphView ? 'em-kanban-btn-active' : ''} title={graphView ? 'Back to grid' : 'Dependency graph'}><Icon name={graphView ? 'layout-grid' : 'workflow'} className="em-kanban-icon" /> {graphView ? 'Back' : 'Graph'}</button>
       <label className="em-toggle">
         <input
           type="checkbox"
@@ -609,9 +944,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       sensors={sensors}
       collisionDetection={cursorFirstCollisionDetection}
       onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
+      onDragEnd={(e) => void onDragEnd(e)}
     >
-      <div className="em-app">
+      <div ref={appRootRef} className="em-app">
         {headerCollapsed ? (
           <div className="em-app-header em-app-header-compact">
             <span className="em-compact-info">⚡ {totalUnfiltered} tasks</span>
@@ -707,16 +1042,57 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         <FilterBar
           availableTags={availableTags}
           selectedTags={selectedTags}
+          dueFilter={dueFilter}
+          selectedDate={date}
           onToggle={toggleTag}
-          onClear={clearTags}
+          onDueFilter={toggleDueFilter}
+          onClear={clearFilters}
           totalCount={totalUnfiltered}
-          filteredCount={sortedVisibleTasks.length}
+          filteredCount={filteredTasks.length}
         />
         </div>
         )}
 
+        <TaskEditingContext.Provider value={{ app, tasks }}>
+        <DependencyNavigationContext.Provider value={handleNavigateToDependency}>
+        <SearchHighlightContext.Provider value={searchHighlight}>
         <div className="em-app-body">
-        {effectiveKanban ? (
+        {graphView ? (
+          <GraphView
+            tasks={tasks}
+            seedKeys={new Set(visibleTasks.map((task) => taskKey(task.sourceFile, task.lineIndex)))}
+            selectedTags={selectedTags}
+            showCompleted={showCompleted}
+            graceMap={graceMap}
+            positions={graphPositions}
+            zoom={graphZoom}
+            compact={compactMode}
+            today={today}
+            activeTaskId={activeTask ? taskKey(activeTask.sourceFile, activeTask.lineIndex) : null}
+            revealKey={graphRevealKey ?? currentMatchKey}
+            highlightKey={graphHighlightKey}
+            onRevealed={handleGraphRevealed}
+            onZoom={setGraphZoom}
+            onBack={() => setGraphView(false)}
+            onResetAll={() => setGraphPositions({})}
+            onSetPosition={async (task, cell) => {
+              if (!cell) { if (task.id) setGraphPositions((current) => { const next = { ...current }; delete next[task.id!]; return next; }); return; }
+              try {
+                const ensured = await repo.ensureTaskId(task);
+                setGraphPositions((current) => ({ ...current, [ensured.id]: cell }));
+                if (!task.id) setTasks((current) => current.map((candidate) => taskKey(candidate.sourceFile, candidate.lineIndex) === taskKey(task.sourceFile, task.lineIndex) ? { ...candidate, id: ensured.id, raw: ensured.newLine } : candidate));
+              } catch (error) { showError(`Could not save position: ${String((error as Error).message ?? error)}`); }
+            }}
+            onToggleTask={(task) => void handleToggle(task)} onSetStatus={handleSetStatus} onSetDueDate={handleSetDueDate} onUpdateTask={handleUpdate}
+            onOpenSource={handleOpenSource} onOpenLink={handleOpenLink} onMoveQuadrant={(task, quadrant) => void handleMove(task, quadrant)}
+            onAddTask={handleAdd}
+            onAddAtCell={async (cell, input) => { const result = await repo.addTaskAtCell(date, input); setGraphPositions((current) => ({ ...current, [result.newId]: cell })); setGraphHighlightKey(taskKey(result.sourceFile, result.lineIndex)); const parsed = parseTaskLine(result.newLine, result.lineIndex); if (parsed) setTasks((current) => [...current, { ...parsed, sourceFile: result.sourceFile, isFromDnes: true, isBlocked: false, blockedByTasks: [], blocksTasks: [], missingBlockers: [], hasCircularDependency: false }]); }}
+            onAddLinked={async (target, kind, input) => { const result = await repo.addLinkedTask(date, input, { target, kind }); setGraphHighlightKey(taskKey(result.sourceFile, result.lineIndex)); }}
+            onLinkTasks={async (source, target) => { await repo.linkTasks(source, target); setTasks((await repo.getMatrixTasks(date)).tasks); }}
+            onRemoveDependency={async (source, target) => { await repo.unlinkTasks(source, target); setTasks((await repo.getMatrixTasks(date)).tasks); }}
+            createTagSuggest={createTagSuggest}
+          />
+        ) : effectiveKanban ? (
           <KanbanView
             kanbanQuadrant={effectiveKanban}
             tasks={sortedVisibleTasks}
@@ -729,13 +1105,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             }
             onToggleKanban={toggleKanban}
             onToggleCollapsed={toggleQuadrantCollapsed}
-            onToggleTask={handleToggle}
+            onToggleTask={(t) => void handleToggle(t)}
             onSetStatus={handleSetStatus}
             onSetDueDate={handleSetDueDate}
             onUpdateTask={handleUpdate}
             onAddTask={handleAdd}
             onOpenSource={handleOpenSource}
-            onMoveQuadrant={handleMove}
+            onOpenLink={handleOpenLink}
+            onMoveQuadrant={(t, q) => void handleMove(t, q)}
             createTagSuggest={createTagSuggest}
           />
         ) : (
@@ -751,17 +1128,21 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             kanbanQuadrant={effectiveKanban}
             onToggleKanban={toggleKanban}
             onToggleCollapsed={toggleQuadrantCollapsed}
-            onToggleTask={handleToggle}
+            onToggleTask={(t) => void handleToggle(t)}
             onSetStatus={handleSetStatus}
             onSetDueDate={handleSetDueDate}
             onUpdateTask={handleUpdate}
             onAddTask={handleAdd}
             onOpenSource={handleOpenSource}
-            onMoveQuadrant={handleMove}
+            onOpenLink={handleOpenLink}
+            onMoveQuadrant={(t, q) => void handleMove(t, q)}
             createTagSuggest={createTagSuggest}
           />
         )}
         </div>
+        </SearchHighlightContext.Provider>
+        </DependencyNavigationContext.Provider>
+        </TaskEditingContext.Provider>
       </div>
       {/* DragOverlay jen na desktopu — na mobilu se posouvá originální karta
           (position:fixed overlay je na Obsidian mobile nespolehlivý). */}

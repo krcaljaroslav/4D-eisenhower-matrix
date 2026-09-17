@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { Menu, Platform, setIcon, type PaneType } from 'obsidian';
+import { Menu, Platform, setIcon, type App, type PaneType } from 'obsidian';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
 import {
   PRIORITY_META,
@@ -10,10 +10,34 @@ import {
 } from '../core/types.ts';
 import { isOverdue } from '../core/taskUtils.ts';
 import { DueDatePicker } from './DueDatePicker.tsx';
+import { HiddenDateInput, type HiddenDateInputHandle } from './HiddenDateInput.tsx';
 import { PriorityPicker } from './PriorityPicker.tsx';
-import { renderInlineMarkdown } from './inlineMarkdown.tsx';
+import { TaskSuggest } from './TaskSuggest.ts';
+import { renderInlineMarkdown, type InlineLinkHandler } from './inlineMarkdown.tsx';
 
 export const GRACE_MS = 3000;
+
+export const DependencyNavigationContext = createContext<
+  ((task: Task, event?: React.MouseEvent) => void) | null
+>(null);
+
+export const TaskEditingContext = createContext<{ app: App; tasks: Task[] } | null>(null);
+
+/**
+ * Zvýraznění shod z hledání. `matchKeys` = všechny shody (jemně),
+ * `currentKey` = ta, na kterou se právě skočilo (výrazně). `currentKey`
+ * přežívá i zavření hledání — po Esc má zůstat vidět, co jsem našla.
+ */
+export const SearchHighlightContext = createContext<{
+  matchKeys: Set<string>;
+  currentKey: string | null;
+}>({ matchKeys: new Set(), currentKey: null });
+
+export type DependencySelection = {
+  beforeTasks: Task[];
+  afterTasks: Task[];
+  missingBlockerIds: string[];
+};
 
 /**
  * Tenký wrapper kolem Obsidian `setIcon` — renderuje Lucide ikonu do
@@ -41,10 +65,18 @@ type Props = {
     text: string,
     contextTags: string[],
     options: { dueDate: string | null; priority: Priority | null },
+    dependencies: DependencySelection,
   ) => Promise<void>;
   onOpenSource: (mode?: PaneType | boolean) => void;
+  onOpenLink: InlineLinkHandler;
   onMoveQuadrant: (target: Quadrant) => void;
   createTagSuggest: (inputEl: HTMLInputElement) => void;
+  style?: CSSProperties;
+  className?: string;
+  children?: ReactNode;
+  extendMenu?: (menu: Menu) => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 };
 
 export function TaskCard({
@@ -58,13 +90,24 @@ export function TaskCard({
   onSetDueDate,
   onUpdateTask,
   onOpenSource,
+  onOpenLink,
   onMoveQuadrant,
   createTagSuggest,
+  style,
+  className = '',
+  children,
+  extendMenu,
+  onMouseEnter,
+  onMouseLeave,
 }: Props) {
+  const navigateToDependency = useContext(DependencyNavigationContext);
   const overdue = isOverdue(task, today);
   const [editing, setEditing] = useState(false);
 
   const draggableId = `${task.sourceFile}:${task.lineIndex}`;
+  const search = useContext(SearchHighlightContext);
+  const isSearchMatch = search.matchKeys.has(draggableId);
+  const isCurrentSearchMatch = search.currentKey === draggableId;
   // Drag jen na desktopu. Na mobilu je touch-drag v Obsidian webview
   // nespolehlivý (long-press hijackne OS) — místo toho přesun přes
   // context menu „Přesunout do…".
@@ -77,9 +120,11 @@ export function TaskCard({
   // Grace platí pro libovolný „closed" stav ([x] i [-]) — applyLocalStatus
   // přidává klíč do graceMap jen pro tyhle stavy, takže existence
   // graceExpiresAt > now implikuje, že má smysl ukázat zelený pruh + undo.
-  const inGrace = graceExpiresAt !== undefined && graceExpiresAt > now;
-  const graceRemaining = inGrace ? Math.max(0, graceExpiresAt! - now) : 0;
-  const gracePct = inGrace ? (graceRemaining / GRACE_MS) * 100 : 0;
+  // (Podmínka narovno testuje graceExpiresAt → TS ho zúží, není třeba `!`.)
+  const graceRemaining =
+    graceExpiresAt !== undefined && graceExpiresAt > now ? graceExpiresAt - now : 0;
+  const inGrace = graceRemaining > 0;
+  const gracePct = (graceRemaining / GRACE_MS) * 100;
 
   const enterEdit = () => {
     if (editing) return;
@@ -91,6 +136,7 @@ export function TaskCard({
     menu.addItem((item) =>
       item.setTitle('Edit').setIcon('pencil').onClick(enterEdit),
     );
+    extendMenu?.(menu);
     menu.addSeparator();
     menu.addItem((item) =>
       item
@@ -173,7 +219,7 @@ export function TaskCard({
   };
 
   const taskText = task.text ? (
-    renderInlineMarkdown(task.text)
+    renderInlineMarkdown(task.text, onOpenLink)
   ) : (
     <em className="em-empty-text">(empty text)</em>
   );
@@ -231,6 +277,73 @@ export function TaskCard({
     />
   );
 
+  const dependencyBadges = (
+    <>
+      {task.blockedByTasks.length > 0 && (() => {
+        const [firstBlocker, ...otherBlockers] = task.blockedByTasks;
+        const blockerNames = task.blockedByTasks.map((blocker) => blocker.text || '(empty text)');
+        return (
+          <button
+            type="button"
+            className="em-badge em-badge-clickable em-dependency-badge"
+            title={blockerNames.join('\n')}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              navigateToDependency?.(firstBlocker, event);
+            }}
+          >
+            ⛔ {firstBlocker.text || '(empty text)'}
+            {otherBlockers.length > 0 ? ` +${otherBlockers.length}` : ''}
+          </button>
+        );
+      })()}
+      {task.missingBlockers.length > 0 && (
+        <span
+          className="em-badge em-dependency-badge"
+          title={`Depends on a task that no longer exists: ${task.missingBlockers.join(', ')}`}
+        >
+          ⛔ Unknown task
+        </span>
+      )}
+      {task.blocksTasks.length > 0 && (
+        <button
+          type="button"
+          className="em-badge em-badge-clickable em-dependency-badge"
+          title={task.blocksTasks.map((blockedTask) => blockedTask.text || '(empty text)').join('\n')}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (task.blocksTasks.length === 1) {
+              navigateToDependency?.(task.blocksTasks[0], event);
+              return;
+            }
+            const menu = new Menu();
+            for (const blockedTask of task.blocksTasks) {
+              menu.addItem((item) =>
+                item
+                  .setTitle(blockedTask.text || '(empty text)')
+                  .onClick(() => navigateToDependency?.(blockedTask)),
+              );
+            }
+            menu.showAtMouseEvent(event.nativeEvent);
+          }}
+        >
+          🆔 blocks {task.blocksTasks.length}
+        </button>
+      )}
+      {task.hasCircularDependency && (
+        <span className="em-badge em-dependency-badge" title="Circular dependency">
+          ⚠ Circular dependency
+        </span>
+      )}
+    </>
+  );
+
+  // Při editaci roste karta podle obsahu, takže pevná výška z grafu se vypouští už tady.
+  // Kdyby zůstala v inline stylu, přebila by ji jedině `height: auto !important` v CSS.
+  const cardStyle = editing && style?.height !== undefined ? { ...style, height: undefined } : style;
+
   return (
     <li
       ref={setNodeRef}
@@ -238,11 +351,20 @@ export function TaskCard({
       {...(editing ? {} : listeners)}
       onDoubleClick={handleDoubleClick}
       onContextMenu={showContextMenu}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      data-task-key={draggableId}
+      aria-current={isCurrentSearchMatch ? 'true' : undefined}
+      style={cardStyle}
       className={`em-task ${overdue ? 'em-task-overdue' : ''} ${
         inGrace ? 'em-task-grace' : ''
       } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${
         task.status === '-' && !editing ? 'em-task-canceled' : ''
-      } ${isActiveDrag && !Platform.isMobile ? 'em-task-active-drag' : ''}`}
+      } ${task.isBlocked && !editing ? 'em-task-blocked' : ''} ${
+        isActiveDrag && !Platform.isMobile ? 'em-task-active-drag' : ''
+      } ${isSearchMatch ? 'em-task-match' : ''} ${
+        isCurrentSearchMatch ? 'em-task-match-current' : ''
+      } em-task-q-${task.quadrant.toLowerCase()} ${className}`}
       title={
         editing
           ? undefined
@@ -265,6 +387,7 @@ export function TaskCard({
           <div className="em-task-body em-task-body-compact">
             <p className="em-task-text em-task-text-compact">{taskText}</p>
             <div className="em-task-badges">
+              {dependencyBadges}
               {priorityBadge}
               {dueDatePicker}
             </div>
@@ -281,6 +404,7 @@ export function TaskCard({
               </p>
             )}
             <div className="em-task-badges">
+              {dependencyBadges}
               {task.contextTags.map((tag) => (
                 <span key={tag} className="em-tag">
                   {tag}
@@ -302,6 +426,7 @@ export function TaskCard({
       {inGrace && !editing && (
         <div className="em-grace-bar" style={{ width: `${gracePct}%` }} aria-hidden />
       )}
+      {children}
     </li>
   );
 }
@@ -319,15 +444,25 @@ type EditFormProps = {
 };
 
 function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditFormProps) {
+  const editingContext = useContext(TaskEditingContext);
   const [text, setText] = useState(task.text);
   const [tagsRaw, setTagsRaw] = useState(task.contextTags.join(' '));
   const [dueDate, setDueDate] = useState(task.dueDate ?? '');
   const [priority, setPriority] = useState<Priority | null>(task.priority ?? null);
+  const [beforeTasks, setBeforeTasks] = useState(task.blockedByTasks);
+  const [afterTasks, setAfterTasks] = useState(task.blocksTasks);
+  const [missingBlockerIds, setMissingBlockerIds] = useState(task.missingBlockers);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textRef = useRef<HTMLInputElement>(null);
   const tagsRef = useRef<HTMLInputElement>(null);
-  const dateRef = useRef<HTMLInputElement>(null);
+  const beforeRef = useRef<HTMLInputElement>(null);
+  const afterRef = useRef<HTMLInputElement>(null);
+  const dateRef = useRef<HiddenDateInputHandle>(null);
+  const beforeTasksRef = useRef(beforeTasks);
+  const afterTasksRef = useRef(afterTasks);
+  beforeTasksRef.current = beforeTasks;
+  afterTasksRef.current = afterTasks;
 
   useEffect(() => {
     const el = textRef.current;
@@ -336,7 +471,32 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
       el.select();
     }
     if (tagsRef.current) createTagSuggest(tagsRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (editingContext && beforeRef.current && afterRef.current) {
+      const ownKey = dependencyTaskKey(task);
+      new TaskSuggest(
+        editingContext.app,
+        beforeRef.current,
+        () => editingContext.tasks,
+        () => new Set([
+          ownKey,
+          ...beforeTasksRef.current.map(dependencyTaskKey),
+          ...afterTasksRef.current.map(dependencyTaskKey),
+        ]),
+        (selected) => setBeforeTasks((current) => [...current, selected]),
+      );
+      new TaskSuggest(
+        editingContext.app,
+        afterRef.current,
+        () => editingContext.tasks,
+        () => new Set([
+          ownKey,
+          ...afterTasksRef.current.map(dependencyTaskKey),
+          ...beforeTasksRef.current.map(dependencyTaskKey),
+        ]),
+        (selected) => setAfterTasks((current) => [...current, selected]),
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: focus + attach autocomplete once
   }, []);
 
   const save = async () => {
@@ -357,6 +517,10 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
       await onUpdate(trimmed, tagsArray, {
         dueDate: dueDate || null,
         priority,
+      }, {
+        beforeTasks,
+        afterTasks,
+        missingBlockerIds,
       });
       onSaved();
     } catch (e) {
@@ -382,12 +546,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
     }
   };
 
-  const openDatePicker = () => {
-    const el = dateRef.current;
-    if (!el) return;
-    if (typeof el.showPicker === 'function') el.showPicker();
-    else el.focus();
-  };
+  const openDatePicker = () => dateRef.current?.open();
 
   return (
     <div
@@ -416,6 +575,36 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
         placeholder="#tag1 #tag2 (autocomplete · space-separated · # added automatically)"
         className="em-edit-tags"
       />
+      <div className="em-edit-dependencies">
+        <DependencyField
+          icon="⛔"
+          placeholder="Before this"
+          title="Type to search tasks that must be completed before this task"
+          inputRef={beforeRef}
+          tasks={beforeTasks}
+          missingIds={missingBlockerIds}
+          disabled={pending || !editingContext}
+          onRemoveTask={(removed) =>
+            setBeforeTasks((current) => current.filter((candidate) => dependencyTaskKey(candidate) !== dependencyTaskKey(removed)))
+          }
+          onRemoveMissing={(removedId) =>
+            setMissingBlockerIds((current) => current.filter((id) => id !== removedId))
+          }
+        />
+        <DependencyField
+          icon="🆔"
+          placeholder="After this"
+          title="Type to search tasks that must be completed after this task"
+          inputRef={afterRef}
+          tasks={afterTasks}
+          missingIds={[]}
+          disabled={pending || !editingContext}
+          onRemoveTask={(removed) =>
+            setAfterTasks((current) => current.filter((candidate) => dependencyTaskKey(candidate) !== dependencyTaskKey(removed)))
+          }
+          onRemoveMissing={() => undefined}
+        />
+      </div>
       <div className="em-edit-controls">
         <button
           type="button"
@@ -437,15 +626,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
             ×
           </button>
         )}
-        <input
-          ref={dateRef}
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          className="em-sr-only"
-          aria-hidden
-          tabIndex={-1}
-        />
+        <HiddenDateInput ref={dateRef} value={dueDate} onCommit={setDueDate} />
 
         <PriorityPicker value={priority} onChange={setPriority} disabled={pending} />
       </div>
@@ -462,7 +643,7 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
           </button>
           <button
             type="button"
-            onClick={save}
+            onClick={() => void save()}
             disabled={pending || !text.trim()}
             className="em-btn-primary-accent"
           >
@@ -475,6 +656,89 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
           {error}
         </p>
       )}
+    </div>
+  );
+}
+
+function dependencyTaskKey(task: Task): string {
+  return `${task.sourceFile}:${task.lineIndex}`;
+}
+
+type DependencyFieldProps = {
+  icon: string;
+  placeholder: string;
+  title: string;
+  inputRef: React.RefObject<HTMLInputElement>;
+  tasks: Task[];
+  missingIds: string[];
+  disabled: boolean;
+  onRemoveTask: (task: Task) => void;
+  onRemoveMissing: (id: string) => void;
+};
+
+function DependencyField({
+  icon,
+  placeholder,
+  title,
+  inputRef,
+  tasks,
+  missingIds,
+  disabled,
+  onRemoveTask,
+  onRemoveMissing,
+}: DependencyFieldProps) {
+  const dependencies = [
+    ...tasks.map((task) => ({ label: task.text || '(empty text)', remove: () => onRemoveTask(task) })),
+    ...missingIds.map((id) => ({ label: `Unknown task (${id})`, remove: () => onRemoveMissing(id) })),
+  ];
+  const [first, ...additional] = dependencies;
+  const showAdditional = (event: React.MouseEvent) => {
+    const menu = new Menu();
+    for (const dependency of additional) {
+      menu.addItem((item) => item
+        .setTitle(`Remove ${dependency.label}`)
+        .setIcon('x')
+        .onClick(dependency.remove));
+    }
+    menu.showAtMouseEvent(event.nativeEvent);
+  };
+
+  return (
+    <div className="em-dependency-field" title={title}>
+      {first && (
+        <button
+          type="button"
+          className="em-dependency-chip"
+          disabled={disabled}
+          onClick={first.remove}
+          title={`Remove ${first.label}`}
+        >
+          <span className="em-dependency-chip-label">{first.label}</span>
+          <span aria-hidden>×</span>
+        </button>
+      )}
+      {additional.length > 0 && (
+        <button
+          type="button"
+          className="em-dependency-more"
+          disabled={disabled}
+          onClick={showAdditional}
+          title={additional.map((dependency) => dependency.label).join('\n')}
+        >
+          +{additional.length}
+        </button>
+      )}
+      <span className="em-dependency-input-icon" aria-hidden>{icon}</span>
+      <input
+        ref={inputRef}
+        type="text"
+        disabled={disabled}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') event.currentTarget.blur();
+        }}
+      />
     </div>
   );
 }

@@ -10,6 +10,59 @@
   overflow: hidden;
 }
 
+/* === Dependency graph === */
+.em-graph { display: flex; flex-direction: column; height: 100%; min-width: 0; min-height: 0; }
+.em-graph-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-2-1); padding: var(--size-2-2); }
+.em-graph-viewport { flex: 1 1 auto; min-width: 0; min-height: 0; overflow: scroll; cursor: grab; }
+.em-graph-viewport.em-graph-panning { cursor: grabbing; user-select: none; }
+.em-graph-scaler { position: relative; }
+.em-graph-canvas { position: relative; transform-origin: 0 0; }
+.em-graph-edges, .em-graph-nodes { position: absolute; inset: 0; margin: 0; padding: 0; }
+.em-graph-edges { pointer-events: none; overflow: visible; }
+.em-graph-edge { fill: none; stroke: var(--text-muted); stroke-width: 1.5; }
+.em-graph-edge { pointer-events: stroke; cursor: pointer; }
+.em-graph-edge-selected { stroke: var(--interactive-accent); stroke-width: 4; }
+.em-graph-link-preview { stroke: var(--interactive-accent); stroke-width: 2; stroke-dasharray: 5 4; }
+.em-graph-link-preview-invalid { stroke: var(--color-red); }
+.em-graph-edge-resolved { stroke-dasharray: 6 5; }
+.em-graph-edge-cycle { stroke: var(--color-red); }
+.em-graph-edge-active { stroke: var(--interactive-accent); stroke-width: 2.5; }
+.em-graph .em-task { position: absolute; overflow: visible; cursor: grab; box-sizing: border-box; }
+.em-graph .em-task-row { overflow: hidden; height: 100%; }
+.em-graph .em-task-text:not(.em-task-text-compact) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.em-graph .em-task:hover { overflow: visible; }
+.em-graph-drop-target { outline: 3px solid var(--interactive-accent); }
+.em-graph-port { display: none; position: absolute; width: 10px; height: 10px; min-width: 10px; min-height: 10px; padding: 0; border: 1px solid var(--background-primary); border-radius: 50%; background: var(--interactive-accent); cursor: crosshair; z-index: 25; }
+.em-task:hover > .em-graph-port { display: block; }
+.em-graph-port-top { top: -5px; left: calc(50% - 5px); }
+.em-graph-port-bottom { bottom: -5px; left: calc(50% - 5px); }
+.em-graph .em-task-editing { height: auto; overflow: visible; z-index: 20; }
+.em-graph .em-task-blocked { opacity: 1; }
+.em-graph .em-task-dimmed { opacity: .45; }
+.em-graph .em-task-q-do { background: color-mix(in srgb, var(--color-red) 12%, var(--background-primary)); }
+.em-graph .em-task-q-decide { background: color-mix(in srgb, var(--color-blue) 12%, var(--background-primary)); }
+.em-graph .em-task-q-delegate { background: color-mix(in srgb, var(--color-green) 12%, var(--background-primary)); }
+.em-graph .em-task-q-delete { background: color-mix(in srgb, var(--color-yellow) 12%, var(--background-primary)); }
+.em-graph .em-task-q-open { background: var(--background-secondary); }
+.em-graph .em-task-overdue { border-color: var(--color-red); }
+.em-graph-manual-pin { position: absolute; top: 4px; right: 4px; color: var(--text-muted); }
+.em-graph-manual-pin svg { width: 14px; height: 14px; }
+.em-graph-collapse { position: absolute; left: 50%; bottom: -34px; transform: translateX(-50%); width: 34px; height: 30px; min-width: 34px; padding: 0; border: 0; background: transparent; color: var(--text-muted); font-size: 20px; line-height: 30px; z-index: 24; }
+.em-graph-task-collapsed { outline: 2px dashed var(--interactive-accent); outline-offset: 2px; }
+.em-graph-band-separator { position: absolute; left: 0; right: 0; border-top: 1px solid var(--background-modifier-border); padding-top: 5px; color: var(--text-muted); background: var(--background-secondary); }
+.em-graph-add-panel { position: absolute; z-index: 30; background: var(--background-primary); border: 1px solid var(--interactive-accent); border-radius: var(--radius-m); padding: var(--size-4-2); }
+.em-graph .em-task-body-compact .em-dependency-badge { display: none; }
+.em-graph .em-task-body-compact .em-task-badges { flex-wrap: nowrap; }
+.em-mobile .em-graph-viewport { overflow-x: auto; overflow-y: visible; }
+/* Vyšší specificita než `.em-task:hover > .em-graph-port`, aby stačilo bez !important. */
+.em-mobile .em-graph-port,
+.em-mobile .em-task:hover > .em-graph-port { display: none; }
+
 .em-app {
   display: flex;
   flex-direction: column;
@@ -189,6 +242,92 @@
   color: var(--text-normal);
 }
 
+/* === Hledání v hlavičce === */
+.em-search-toggle,
+.em-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--size-2-1);
+  border-radius: var(--radius-s);
+  box-shadow: none;
+}
+
+/* Dotyková plocha 44 px (WCAG 2.5.5) — hlavička se ovládá i na mobilu.
+   Na desktopu by tlačítka takhle velká rozhodila řádek, proto jen coarse. */
+@media (pointer: coarse) {
+  .em-search-toggle,
+  .em-search-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+.em-search-toggle:hover,
+.em-search-btn:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.em-search-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  background: none;
+}
+
+.em-search-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.em-search-icon .svg-icon {
+  width: var(--icon-s);
+  height: var(--icon-s);
+}
+
+.em-search {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-1);
+  padding: 0 var(--size-2-2);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background-color: var(--background-primary);
+  max-width: 100%;
+}
+
+.em-search-input {
+  border: none;
+  background: none;
+  box-shadow: none;
+  outline: none;
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+  padding: var(--size-2-1) 0;
+  width: 12ch;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.em-search-input:focus {
+  box-shadow: none;
+}
+
+.em-search-input-empty {
+  color: var(--text-error);
+}
+
+.em-search-count {
+  font-size: var(--font-ui-smaller);
+  font-family: var(--font-monospace);
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
 .em-toggle {
   display: inline-flex;
   align-items: center;
@@ -342,6 +481,25 @@
 .em-chip-untagged {
   font-family: inherit;
   font-style: italic;
+}
+
+/* Due-date rychlé filtry (Today / This week).
+   Odlišení od tag chipů = oranžový TEXT (ne ohraničení), ať se nepletou.
+   Vybrané tlačítko = oranžová výplň + oranžové ohraničení → na první pohled
+   jasné, které je aktivní. --color-orange definují všechny themes. */
+.em-due-chip {
+  font-family: inherit;
+  color: var(--color-orange);
+}
+.em-due-chip:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--color-orange);
+}
+.em-due-chip-active {
+  background-color: var(--color-orange);
+  border-color: var(--color-orange);
+  color: var(--text-on-accent);
+  font-weight: var(--font-bold);
 }
 
 .em-chip-count {
@@ -655,6 +813,44 @@
   color: var(--text-muted);
 }
 
+/* Otevřený task čekající na jiný task zůstává čitelný, ale ustoupí aktivním kartám. */
+.em-task-blocked {
+  opacity: 0.58;
+}
+
+.em-task-highlight {
+  animation: em-task-highlight-pulse 1.5s ease-out;
+}
+
+@keyframes em-task-highlight-pulse {
+  0%, 35% {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-accent) 55%, transparent);
+  }
+  100% {
+    border-color: var(--background-modifier-border);
+    box-shadow: none;
+  }
+}
+
+/* Nalezené tasky: všechny shody jemně, ta aktuální výrazně. Zvýraznění
+   drží, dokud hledání běží — na rozdíl od pulzu u dependency navigace. */
+.em-task-match {
+  background-color: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+}
+
+/* Dvě třídy schválně: `.em-task-overdue` (a `.em-task-blocked`) stojí v tomhle
+   souboru níž, takže by při stejné specificitě přebily rámeček výběru a na
+   prošlém tasku by nebylo poznat, kde hledání právě stojí. Outline se navíc
+   kreslí NAD borderem, takže je vidět i přes červený rámeček overdue. */
+.em-task.em-task-match-current {
+  /* Border se schválně nepřebarvuje — na prošlém tasku má zůstat vidět, že je
+     prošlý, a výběr nese outline kolem něj. */
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--interactive-accent) 35%, transparent);
+}
+
 /*
  * Originál tasku během aktivního drágu — zešedne, aby uživatel viděl,
  * který task se přesouvá. Řízeno přes activeTaskId z parentu (deterministické,
@@ -762,6 +958,13 @@
   border-radius: var(--radius-s);
   font-family: var(--font-monospace);
   box-sizing: border-box;
+}
+
+.em-dependency-badge {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .em-tag {
@@ -1015,6 +1218,66 @@ button.em-priority {
   font-family: var(--font-monospace);
 }
 
+.em-edit-dependencies {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--size-2-1);
+}
+
+.em-dependency-field {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 5px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background-color: var(--background-primary);
+  overflow: hidden;
+}
+
+.em-dependency-field input {
+  min-width: 0;
+  flex: 1 1 45px;
+  border: 0;
+  padding: 1px;
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--font-ui-smaller);
+}
+
+.em-dependency-input-icon {
+  flex: 0 0 auto;
+  font-size: var(--font-ui-smaller);
+}
+
+.em-dependency-chip,
+.em-dependency-more {
+  min-width: 0;
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 4px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background-color: var(--background-modifier-hover);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.em-dependency-chip-label {
+  min-width: 0;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.em-dependency-more {
+  flex: 0 0 auto;
+}
+
 .em-edit-controls {
   display: flex;
   flex-wrap: wrap;
@@ -1156,9 +1419,25 @@ button.em-priority {
    nečitelné. Vlastní třída + accent barva to vyřeší napříč všemi
    themes (accent je uživatelská barva, themes ji nesahají). */
 .em-tag-suggestion.is-selected,
-.suggestion-item.em-tag-suggestion.is-selected {
+.suggestion-item.em-tag-suggestion.is-selected,
+.em-task-suggestion.is-selected,
+.suggestion-item.em-task-suggestion.is-selected {
   background-color: var(--interactive-accent);
   color: var(--text-on-accent);
+}
+
+.em-task-suggestion-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.em-task-suggestion-source {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* === Inline markdown v textu tasku === */
@@ -1170,6 +1449,23 @@ button.em-priority {
   background-color: var(--background-modifier-border);
 }
 
+/* Klikatelné odkazy v textu tasku — [[wikilink]] i [text](url). Barvou
+   sledují Obsidian link styl; externí URL dostane jemnou ↗ značku. */
+.em-task-link {
+  color: var(--link-color);
+  text-decoration: var(--link-decoration, none);
+  cursor: pointer;
+}
+.em-task-link:hover {
+  color: var(--link-color-hover);
+  text-decoration: var(--link-decoration-hover, underline);
+}
+.em-task-link-external::after {
+  content: ' ↗';
+  font-size: 0.8em;
+  opacity: 0.6;
+}
+
 /* === Kompaktní režim — 2řádkové karty ===
    Řádek 1 = text ořezaný „…" na šířku karty, řádek 2 = priorita +
    due date. Tagy / cesta / start-done badge jsou v compact skryté. */
@@ -1178,6 +1474,7 @@ button.em-priority {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
   /* line-clamp si poradí s ořezem; nepotřebujeme nowrap */
 }
 
@@ -1357,5 +1654,26 @@ button.em-priority {
 @media (max-width: 900px) {
   .em-kanban-bottom {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Telefon: status-sloupce vedle sebe nedávají smysl ve 2 sloupcích — místo
+   toho vodorovně scrollovatelný board (Trello-style). Sloupec ~80 % šířky,
+   ať je vidět i kus dalšího a swipuje se s přichycením. */
+@media (max-width: 600px) {
+  .em-kanban-columns {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 80%;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+  .em-kanban-col {
+    scroll-snap-align: start;
+    max-height: none;
+  }
+  .em-kanban-bottom {
+    grid-template-columns: 1fr;
   }
 }
