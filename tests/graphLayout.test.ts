@@ -7,7 +7,6 @@ import {
   computeHiddenByCollapse,
   cellToPoint,
   computeLevels,
-  computeLevelRows,
   GRID,
   layoutBand,
   routeEdge,
@@ -149,19 +148,38 @@ describe('assignCells', () => {
     expect(cells.get(taskKey(automatic))).toEqual({ col: 1, row: 0 });
   });
 
-  it('does not let a manual cell in another row shift an automatic layer', () => {
+  it('automatically places the second card when two manual positions collide', () => {
+    const first = task('First', 0, { id: 'first' });
+    const second = task('Second', 1, { id: 'second' });
+    const occupied = task('Occupied', 2, { id: 'occupied' });
+    const levels = new Map([[taskKey(first), 1], [taskKey(second), 1], [taskKey(occupied), 1]]);
+    const cells = assignCells(
+      [first, second, occupied], levels,
+      new Map([
+        ['first', { col: 7, row: 3 }],
+        ['second', { col: 7, row: 3 }],
+        ['occupied', { col: 0, row: 1 }],
+      ]),
+      new Set(), '2026-09-08',
+    );
+    expect(cells.get(taskKey(first))).toEqual({ col: 7, row: 3 });
+    expect(cells.get(taskKey(second))).toEqual({ col: 1, row: 1 });
+    expect(cells.get(taskKey(second))).not.toEqual(cells.get(taskKey(occupied)));
+  });
+
+  it('does not let a manual cell in another row shift automatic level one', () => {
     const fixed = task('A fixed', 0, { id: 'fixed' });
     const first = task('B first', 1);
     const second = task('C second', 2);
     const levels = new Map([
-      [taskKey(fixed), 0], [taskKey(first), 0], [taskKey(second), 0],
+      [taskKey(fixed), 1], [taskKey(first), 1], [taskKey(second), 1],
     ]);
     const cells = assignCells(
       [fixed, first, second], levels, new Map([['fixed', { col: 7, row: 3 }]]),
       new Set(), '2026-09-08',
     );
-    expect(cells.get(taskKey(first))).toEqual({ col: 1, row: 0 });
-    expect(cells.get(taskKey(second))).toEqual({ col: 2, row: 0 });
+    expect(cells.get(taskKey(first))).toEqual({ col: 0, row: 1 });
+    expect(cells.get(taskKey(second))).toEqual({ col: 1, row: 1 });
   });
 
   it('keeps visible cells stable when a node is hidden', () => {
@@ -223,6 +241,25 @@ describe('buildGraphLayout', () => {
     expect(layout.nodes[0]).toMatchObject({ cell: { col: 3, row: 4 }, manual: true, inBand: false });
   });
 
+  it('finishes and stacks nothing under a manually placed anchor sharing a column with an automatic one', () => {
+    const l1 = task('L1', 0), l2 = task('L2', 1), m = task('M', 2, { id: 'm' }), a = task('A', 3);
+    link(l1, m); link(m, a); link(l2, a);
+    const layout = buildGraphLayout({ tasks: [l1, l2, m, a], seedKeys: new Set([taskKey(a)]), showCompleted: false, graceKeys: new Set<string>(), positions: { m: { col: 0, row: 1 } }, collapsedKeys: new Set<string>(), compact: false, viewportWidth: 800, zoom: 1, today: '2026-09-08' });
+    const cells = layout.nodes.map((node) => `${node.cell.col}:${node.cell.row}`);
+    expect(new Set(cells).size).toBe(cells.length);
+    const cellOf = (t: Task) => layout.nodes.find((node) => node.key === taskKey(t))!.cell;
+    expect(cellOf(m)).toEqual({ col: 0, row: 1 });
+    expect(cellOf(l2).row).toBeLessThan(cellOf(a).row);
+  });
+
+  it('keeps topRow stable when collapsing hides the highest automatic row', () => {
+    const t = [0, 1, 2, 3, 4].map((index) => task(`t${index}`, index, index === 4 ? { id: 't4' } : {}));
+    link(t[0], t[3]); link(t[1], t[4]); link(t[3], t[4]);
+    const input = { tasks: t, seedKeys: new Set(t.map(taskKey)), showCompleted: false, graceKeys: new Set<string>(), positions: { t4: { col: 0, row: 1 } }, compact: false, viewportWidth: 800, zoom: 1, today: '2026-09-08' };
+    const expanded = buildGraphLayout({ ...input, collapsedKeys: new Set<string>() }).topRow;
+    expect(buildGraphLayout({ ...input, collapsedKeys: new Set([taskKey(t[4])]) }).topRow).toBe(expanded);
+  });
+
   it('keeps topRow stable when a manually placed node is collapsed', () => {
     const blocker = task('Blocker', 0, { id: 'blocker' }), dependent = task('Dependent', 1);
     link(blocker, dependent);
@@ -230,87 +267,122 @@ describe('buildGraphLayout', () => {
     expect(buildGraphLayout({ ...input, collapsedKeys: new Set<string>() }).topRow).toBe(6);
     expect(buildGraphLayout({ ...input, collapsedKeys: new Set([taskKey(dependent)]) }).topRow).toBe(6);
   });
+
 });
 
-describe('level wrapping', () => {
-  // Kořen blokuje 7 karet v jedné úrovni; nad nimi jeden cíl, který čeká na všechny.
-  function wideLevel() {
-    const root = task('Root', 0);
-    const middle = Array.from({ length: 7 }, (_, index) => task(`M${index}`, index + 1));
-    const goal = task('Goal', 20);
-    for (const node of middle) { link(root, node); link(node, goal); }
-    return { root, middle, goal, nodes: [root, ...middle, goal] };
+describe('branch layout', () => {
+  function broadTree() {
+    const goal = task('Manažerský audit', 0);
+    const anchors = Array.from({ length: 20 }, (_, index) => task(`Větev ${index}`, index + 1));
+    const roots = anchors.flatMap((anchor, index) => {
+      const pair = [task(`Podklad ${index}a`, 100 + index * 2), task(`Podklad ${index}b`, 101 + index * 2)];
+      pair.forEach((root) => link(root, anchor));
+      link(anchor, goal);
+      return pair;
+    });
+    return { goal, anchors, roots, nodes: [goal, ...anchors, ...roots] };
   }
-  const WIDTH_FOR_3 = 3 * (GRID.full.w + GRID.gapX);
 
-  it('splits a level wider than the limit into stacked rows without breaking level order', () => {
-    const { root, middle, goal, nodes } = wideLevel();
-    const levels = computeLevels(nodes);
-    const cells = assignCells(nodes, levels, new Map(), new Set(), '2026-09-08', 3);
-    const middleRows = middle.map((node) => cells.get(taskKey(node))!.row);
-    expect(new Set(middleRows)).toEqual(new Set([1, 2, 3]));
-    for (const row of [1, 2, 3]) expect(middle.filter((node) => cells.get(taskKey(node))!.row === row).length).toBeLessThanOrEqual(3);
-    expect(Math.max(...middle.map((node) => cells.get(taskKey(node))!.col))).toBeLessThan(3);
-    expect(cells.get(taskKey(root))!.row).toBe(0);
-    expect(cells.get(taskKey(goal))!.row).toBe(4);
-    // První část úrovně (podle řazení M0, M1, ...) je nahoře, poslední dole.
-    expect(middle.slice(0, 3).map((node) => cells.get(taskKey(node))!.row)).toEqual([3, 3, 3]);
-    expect(cells.get(taskKey(middle[6]))!.row).toBe(1);
+  const layoutInput = (nodes: Task[]) => ({ tasks: nodes, seedKeys: new Set(nodes.map(taskKey)), showCompleted: false, graceKeys: new Set<string>(), positions: {}, collapsedKeys: new Set<string>(), compact: false, viewportWidth: 800, zoom: 1, today: '2026-09-08' });
+
+  it('keeps 20 anchors in one row and stacks both roots below each anchor without collisions', () => {
+    const { anchors, roots, nodes } = broadTree();
+    const layout = buildGraphLayout(layoutInput(nodes));
+    const cells = new Map(layout.nodes.map((node) => [node.key, node.cell]));
+    expect(new Set(anchors.map((anchor) => cells.get(taskKey(anchor))!.row))).toEqual(new Set([2]));
+    expect(new Set(anchors.map((anchor) => cells.get(taskKey(anchor))!.col)).size).toBe(20);
+    anchors.forEach((anchor, index) => {
+      const anchorCell = cells.get(taskKey(anchor))!;
+      expect(roots.slice(index * 2, index * 2 + 2).map((root) => cells.get(taskKey(root))))
+        .toEqual([{ col: anchorCell.col, row: 1 }, { col: anchorCell.col, row: 0 }]);
+    });
     expect(new Set([...cells.values()].map(({ col, row }) => `${col}:${row}`)).size).toBe(nodes.length);
   });
 
-  it('keeps the one-row-per-level layout when the level fits', () => {
-    const { nodes } = wideLevel();
-    const levels = computeLevels(nodes);
-    expect([...assignCells(nodes, levels, new Map(), new Set(), '2026-09-08', 7)])
-      .toEqual([...assignCells(nodes, levels, new Map(), new Set(), '2026-09-08')]);
+  it('places a shared root once below the lower-level anchor', () => {
+    const root = task('Root', 0), lower = task('Lower', 1), upper = task('Upper', 2, { id: 'upper' });
+    link(root, lower); link(lower, upper); link(root, upper);
+    const cells = assignCells([root, lower, upper], computeLevels([root, lower, upper]), new Map([['upper', { col: 5, row: 2 }]]), new Set(), '2026-09-08');
+    expect(cells.get(taskKey(root))!.col).toBe(cells.get(taskKey(lower))!.col);
+    expect(cells.get(taskKey(root))!.row + 1).toBe(cells.get(taskKey(lower))!.row);
+    expect([...cells.keys()].filter((key) => key === taskKey(root))).toHaveLength(1);
   });
 
-  it('leaves manual cells where they were and keeps wrapped cells stable when a node is hidden', () => {
-    const { middle, nodes } = wideLevel();
-    middle[0].id = 'fixed';
-    const manual = new Map([['fixed', { col: 9, row: 2 }]]);
-    const levels = computeLevels(nodes);
-    const expanded = assignCells(nodes, levels, manual, new Set(), '2026-09-08', 3);
-    expect(expanded.get(taskKey(middle[0]))).toEqual({ col: 9, row: 2 });
-    const hidden = taskKey(middle[3]);
-    const collapsed = assignCells(nodes, levels, manual, new Set([hidden]), '2026-09-08', 3);
-    for (const [key, cell] of collapsed) expect(expanded.get(key)).toEqual(cell);
-    expect(computeLevelRows(nodes, levels, manual, 3).count.get(1)).toBe(2);
+  it('routes the second root sideways while the first root has a direct edge', () => {
+    const anchor = task('Anchor', 0), first = task('A first', 1), second = task('B second', 2);
+    link(first, anchor); link(second, anchor);
+    const layout = buildGraphLayout(layoutInput([anchor, first, second]));
+    const nodes = new Map(layout.nodes.map((node) => [node.key, node]));
+    const firstEdge = layout.edges.find((edge) => edge.from === taskKey(first))!;
+    const secondEdge = layout.edges.find((edge) => edge.from === taskKey(second))!;
+    const source = cellToPoint(nodes.get(taskKey(second))!.cell, { ...GRID.full, gapX: GRID.gapX, gapY: GRID.gapY, topRow: layout.topRow });
+    expect(firstEdge.points).toHaveLength(2);
+    expect(secondEdge.points[0].x).toBe(source.x + GRID.full.w);
+    for (let index = 1; index < secondEdge.points.length; index++) {
+      const from = secondEdge.points[index - 1], to = secondEdge.points[index];
+      if (from.x !== to.x) continue;
+      for (const node of layout.nodes.filter((candidate) => candidate.key !== taskKey(second))) {
+        const corner = cellToPoint(node.cell, { ...GRID.full, gapX: GRID.gapX, gapY: GRID.gapY, topRow: layout.topRow });
+        const crosses = from.x > corner.x && from.x < corner.x + GRID.full.w
+          && Math.max(from.y, to.y) > corner.y && Math.min(from.y, to.y) < corner.y + GRID.full.h;
+        expect(crosses).toBe(false);
+      }
+    }
   });
 
-  it('treats a zero or fractional limit as one column instead of looping forever', () => {
-    const { nodes } = wideLevel();
-    const levels = computeLevels(nodes);
-    expect(computeLevelRows(nodes, levels, new Map(), 0).count.get(1)).toBe(7);
-    expect(computeLevelRows(nodes, levels, new Map(), 2.5).count.get(1)).toBe(4);
+  it('does not move linked cards when viewport width or zoom changes', () => {
+    const { nodes } = broadTree();
+    const input = layoutInput(nodes);
+    const cells = (viewportWidth: number, zoom: number) => buildGraphLayout({ ...input, viewportWidth, zoom }).nodes
+      .filter((node) => !node.inBand).map((node) => [node.key, node.cell]);
+    expect(cells(320, .25)).toEqual(cells(2400, 2));
   });
 
-  it('stays within the limit when a manual card sits inside the wrapped area', () => {
-    const { middle, nodes } = wideLevel();
-    middle[0].id = 'fixed';
-    const levels = computeLevels(nodes);
-    const cells = assignCells(nodes, levels, new Map([['fixed', { col: 0, row: 2 }]]), new Set(), '2026-09-08', 3);
-    const auto = middle.slice(1).map((node) => cells.get(taskKey(node))!);
-    expect(Math.max(...auto.map((cell) => cell.col))).toBeLessThan(3);
-    expect(new Set([...cells.values()].map(({ col, row }) => `${col}:${row}`)).size).toBe(nodes.length);
+  it('skips a manual cell inside a column below its anchor', () => {
+    const anchor = task('Anchor', 0), first = task('A first', 1), fixed = task('B fixed', 2, { id: 'fixed' }), last = task('C last', 3);
+    [first, fixed, last].forEach((root) => link(root, anchor));
+    const levels = computeLevels([anchor, first, fixed, last]);
+    const cells = assignCells([anchor, first, fixed, last], levels, new Map([['fixed', { col: 0, row: 1 }]]), new Set(), '2026-09-08');
+    expect(cells.get(taskKey(fixed))).toEqual({ col: 0, row: 1 });
+    expect(cells.get(taskKey(first))).toEqual({ col: 0, row: 2 });
+    expect(cells.get(taskKey(last))).toEqual({ col: 0, row: 0 });
+    expect(new Set([...cells.values()].map(({ col, row }) => `${col}:${row}`)).size).toBe(4);
   });
 
-  it('reports wrapped levels, lifts topRow, reflows when zoomed out but not when zoomed in', () => {
-    const { nodes } = wideLevel();
-    const input = { tasks: nodes, seedKeys: new Set(nodes.map(taskKey)), showCompleted: false, graceKeys: new Set<string>(), positions: {}, collapsedKeys: new Set<string>(), compact: false, viewportWidth: WIDTH_FOR_3, today: '2026-09-08' };
-    const layout = buildGraphLayout({ ...input, zoom: 1 });
-    expect(layout.levelBands).toEqual([{ level: 1, row: 1, rows: 3 }]);
-    expect(layout.topRow).toBe(5);
-    const zoomedIn = buildGraphLayout({ ...input, zoom: 2 });
-    expect(zoomedIn.nodes.map((node) => node.cell)).toEqual(layout.nodes.map((node) => node.cell));
-    // Při 50 % se vejde 6 karet vedle sebe: úroveň se 7 kartami má 2 řady.
-    expect(buildGraphLayout({ ...input, zoom: 0.5 }).levelBands).toEqual([{ level: 1, row: 1, rows: 2 }]);
-    // Při 25 % se vejde 12: úroveň zůstane v jedné řadě.
-    expect(buildGraphLayout({ ...input, zoom: 0.25 }).levelBands).toEqual([]);
-    // Každá hrana vede od blokujícího (níž, větší y) nahoru k blokovanému.
-    expect(layout.edges.length).toBe(14);
-    for (const edge of layout.edges) expect(edge.points[0].y).toBeGreaterThan(edge.points[edge.points.length - 1].y);
+  it('grows the stack without spilling into another column', () => {
+    const anchor = task('Anchor', 0), first = task('A first', 1), second = task('B second', 2);
+    const obstacle = task('Obstacle', 3, { id: 'obstacle' });
+    link(first, anchor); link(second, anchor);
+    const cells = assignCells(
+      [anchor, first, second, obstacle], computeLevels([anchor, first, second, obstacle]),
+      new Map([['obstacle', { col: 0, row: 0 }]]), new Set(), '2026-09-08',
+    );
+    expect(cells.get(taskKey(first))!.col).toBe(cells.get(taskKey(anchor))!.col);
+    expect(cells.get(taskKey(second))!.col).toBe(cells.get(taskKey(anchor))!.col);
+    expect(cells.get(taskKey(first))!.row).toBeGreaterThan(cells.get(taskKey(second))!.row);
+  });
+
+  it('places a stack to the right when its manual anchor has no row below it', () => {
+    const anchor = task('Anchor', 0, { id: 'anchor' }), first = task('A first', 1), second = task('B second', 2);
+    link(first, anchor); link(second, anchor);
+    const cells = assignCells(
+      [anchor, first, second], computeLevels([anchor, first, second]),
+      new Map([['anchor', { col: 0, row: 0 }]]), new Set(), '2026-09-08',
+    );
+    expect(cells.get(taskKey(first))).toEqual({ col: 1, row: 0 });
+    expect(cells.get(taskKey(second))).toEqual({ col: 2, row: 0 });
+  });
+
+  it('does not reserve a blank stack row for a manually placed root', () => {
+    const anchor = task('Anchor', 0), left = task('A left', 1, { id: 'left' });
+    const automatic = task('B automatic', 2), right = task('C right', 3, { id: 'right' });
+    link(left, anchor); link(automatic, anchor); link(right, anchor);
+    const cells = assignCells(
+      [anchor, left, automatic, right], computeLevels([anchor, left, automatic, right]),
+      new Map([['left', { col: 0, row: 0 }], ['right', { col: 10, row: 0 }]]), new Set(), '2026-09-08',
+    );
+    expect(cells.get(taskKey(anchor))!.row).toBe(1);
+    expect(cells.get(taskKey(automatic))).toEqual({ col: cells.get(taskKey(anchor))!.col, row: 0 });
   });
 });
 
@@ -324,11 +396,11 @@ describe('layoutBand', () => {
 });
 
 describe('coordinates and routeEdge', () => {
-  const geometry: Geometry = { w: 240, h: 112, gapX: 40, gapY: 48, topRow: 4 };
+  const geometry: Geometry = { w: 240, h: 112, gapX: 40, gapY: 64, topRow: 4 };
 
   it('maps graph and band cells to the specified coordinate systems', () => {
-    expect(cellToPoint({ col: 2, row: 1 }, geometry)).toEqual({ x: 560, y: 480 });
-    expect(cellToPoint({ col: 1, row: -2 }, geometry)).toEqual({ x: 280, y: 1000 });
+    expect(cellToPoint({ col: 2, row: 1 }, geometry)).toEqual({ x: 560, y: 528 });
+    expect(cellToPoint({ col: 1, row: -2 }, geometry)).toEqual({ x: 280, y: 1096 });
     const graphBottom = cellToPoint({ col: 0, row: 0 }, geometry).y + geometry.h;
     const bandTop = cellToPoint({ col: 0, row: -1 }, geometry).y;
     expect(graphBottom).toBeLessThan(bandTop);
@@ -346,6 +418,12 @@ describe('coordinates and routeEdge', () => {
         expect(route[index].x === route[index - 1].x || route[index].y === route[index - 1].y).toBe(true);
       }
     }
+  });
+
+  it('offsets a stack side exit from the general gutter', () => {
+    const side = routeEdge({ col: 0, row: 0 }, { col: 2, row: 2 }, geometry, true);
+    const general = routeEdge({ col: 0, row: 0 }, { col: 2, row: 2 }, geometry);
+    expect(side[1].x).toBe(general[2].x + 6);
   });
 
   it('keeps general routes outside foreign card interiors', () => {

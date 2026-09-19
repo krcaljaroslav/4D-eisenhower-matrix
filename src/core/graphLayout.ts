@@ -13,15 +13,13 @@ export type Geometry = {
 };
 export type GraphNode = { key: string; task: Task; cell: GridCell; level: number; manual: boolean; inSeed: boolean; collapsed: boolean; hiddenCount: number; inBand: boolean };
 export type GraphEdge = { from: string; to: string; points: Point[]; resolved: boolean; cycle: boolean };
-/** Úroveň zalomená do víc řad: `row` je její nejnižší řada, `rows` jejich počet. */
-export type LevelBand = { level: number; row: number; rows: number };
-export type GraphLayout = { nodes: GraphNode[]; edges: GraphEdge[]; hiddenKeys: Set<string>; columns: number; topRow: number; bandRows: number; bandColumns: number; size: { width: number; height: number }; bandTop: number; levelBands: LevelBand[] };
+export type GraphLayout = { nodes: GraphNode[]; edges: GraphEdge[]; hiddenKeys: Set<string>; columns: number; topRow: number; bandRows: number; bandColumns: number; size: { width: number; height: number }; bandTop: number };
 
 export const GRID = {
   full: { w: 240, h: 112 },
   compact: { w: 272, h: 64 },
   gapX: 40,
-  gapY: 48,
+  gapY: 64,
   bandGap: 40,
   bandMinColumns: 4,
 };
@@ -144,14 +142,11 @@ export function compareBarycentricValues(
   return left === right ? fallback : left - right;
 }
 
-/** Řada zalomené úrovně a její volné sloupce v limitu (ruční karty je zabírají). */
-export type LevelRowSlot = { row: number; free: number[] };
-export type LevelRows = { base: Map<number, number>; count: Map<number, number>; total: number; slots: Map<number, LevelRowSlot[]> };
-
 /** Ruční buňky vyhrávají; duplicitní buňku dostane jen první karta. */
-function placeManualCells(nodes: Task[], manual: Map<string, GridCell>): { cells: Map<string, GridCell>; occupied: Set<string> } {
+function placeManualCells(nodes: Task[], manual: Map<string, GridCell>): { cells: Map<string, GridCell>; occupied: Set<string>; placed: Set<string> } {
   const cells = new Map<string, GridCell>();
   const occupied = new Set<string>();
+  const placed = new Set<string>();
   for (const node of nodes) {
     if (!node.id) continue;
     const cell = manual.get(node.id);
@@ -161,58 +156,12 @@ function placeManualCells(nodes: Task[], manual: Map<string, GridCell>): { cells
       console.warn(`[4D Matrix] Duplicate manual graph cell: ${cellKey}`);
       continue;
     }
-    cells.set(taskKey(node), cell);
+    const key = taskKey(node);
+    cells.set(key, cell);
+    placed.add(key);
     occupied.add(cellKey);
   }
-  return { cells, occupied };
-}
-
-/**
- * Kolik řad zabere každá úroveň, když se do jedné řady vejde nejvýš `maxColumns`
- * karet. Ruční karta v limitu ubírá místo, takže úroveň může dostat řadu navíc.
- * Počítá i se skrytými (sbalenými) kartami, aby sbalení větve nepřeskládalo
- * zbytek grafu. Bez limitu je úroveň = řada. `slots` jsou seřazené shora dolů.
- */
-export function computeLevelRows(
-  nodes: Task[],
-  levels: Map<string, number>,
-  manual: Map<string, GridCell>,
-  maxColumns = Infinity,
-): LevelRows {
-  // Nula nebo zlomek by dal řady bez volného místa a smyčka níž by neskončila.
-  const limit = Number.isFinite(maxColumns) ? Math.max(1, Math.floor(maxColumns)) : Infinity;
-  const maxLevel = Math.max(0, ...levels.values());
-  const { cells: manualCells, occupied } = placeManualCells(nodes, manual);
-  const autoCounts = new Map<number, number>();
-  for (const node of nodes) {
-    if (manualCells.has(taskKey(node))) continue;
-    const level = levels.get(taskKey(node)) ?? 0;
-    autoCounts.set(level, (autoCounts.get(level) ?? 0) + 1);
-  }
-  const base = new Map<number, number>();
-  const count = new Map<number, number>();
-  const slots = new Map<number, LevelRowSlot[]>();
-  let next = 0;
-  for (let level = 0; level <= maxLevel; level++) {
-    const rows: LevelRowSlot[] = [];
-    if (Number.isFinite(limit)) {
-      const needed = autoCounts.get(level) ?? 0;
-      let capacity = 0;
-      while (rows.length === 0 || capacity < needed) {
-        const row = next + rows.length;
-        const free = Array.from({ length: limit }, (_, col) => col).filter((col) => !occupied.has(`${col}:${row}`));
-        rows.push({ row, free });
-        capacity += free.length;
-      }
-    } else {
-      rows.push({ row: next, free: [] });
-    }
-    base.set(level, next);
-    count.set(level, rows.length);
-    slots.set(level, rows.reverse());
-    next += rows.length;
-  }
-  return { base, count, total: next, slots };
+  return { cells, occupied, placed };
 }
 
 export function assignCells(
@@ -221,7 +170,6 @@ export function assignCells(
   manual: Map<string, GridCell>,
   hidden: Set<string>,
   today: string,
-  maxColumns = Infinity,
 ): Map<string, GridCell> {
   const compareTask = makeCompareTask(today);
   const byKey = new Map(nodes.map((node) => [taskKey(node), node]));
@@ -252,51 +200,128 @@ export function assignCells(
   for (let level = maxLevel - 1; level >= 0; level--) sortLayer(level, (node) => visibleNeighbors(node.blocksTasks));
   for (let level = 1; level <= maxLevel; level++) sortLayer(level, (node) => visibleNeighbors(node.blockedByTasks));
 
-  const { cells, occupied } = placeManualCells(nodes, manual);
-  const desiredColumn = (node: Task): number => {
+  const { cells, occupied, placed: manuallyPlaced } = placeManualCells(nodes, manual);
+  const desiredColumn = (node: Task): number | undefined => {
     const neighborColumns = node.blockedByTasks
       .map((neighbor) => cells.get(taskKey(neighbor))?.col)
       .filter((column): column is number => column !== undefined);
-    return Math.round(average(neighborColumns) ?? (positions.get(taskKey(node)) ?? 0));
+    const mean = average(neighborColumns);
+    return mean === undefined ? undefined : Math.round(mean);
   };
 
-  // Bez limitu: jedna řada na úroveň. S limitem se široká úroveň zalomí do víc
-  // řad (první část nahoře) a karty jdou jen do volných sloupců v limitu.
-  // Ruční buňky zůstávají, kde je uživatel položil.
-  const levelRows = computeLevelRows(nodes, levels, manual, maxColumns);
-  for (let level = 0; level <= maxLevel; level++) {
+  // Vyšší úrovně musí být hotové dřív, protože jejich sloupce kotví úroveň nula.
+  for (let level = 1; level <= maxLevel; level++) {
     const auto = (ordered.get(level) ?? []).filter((node) => !cells.has(taskKey(node)));
-    if (!Number.isFinite(maxColumns)) {
-      const row = levelRows.base.get(level) ?? level;
+    let previousColumn = -1;
+    for (const node of auto) {
+      let column = Math.max(desiredColumn(node) ?? 0, previousColumn + 1);
+      cells.set(taskKey(node), { col: column, row: level });
+      previousColumn = column;
+    }
+  }
+
+  const zeroLevel = ordered.get(0) ?? [];
+  // Kotvou je jen automaticky umístěná karta: ta leží vždy nad celým pásem
+  // úrovně nula, takže sloupec pod ní nikdy neskončí nad blokovaným taskem.
+  // Task, který blokuje jen ručně umístěné karty, jde do spodní řady vedle.
+  const anchorFor = (node: Task): Task | undefined => visibleNeighbors(node.blocksTasks)
+    .filter((candidate) => !manuallyPlaced.has(taskKey(candidate)) && cells.has(taskKey(candidate)))
+    .sort((left, right) => {
+      const levelDifference = (levels.get(taskKey(left)) ?? 0) - (levels.get(taskKey(right)) ?? 0);
+      if (levelDifference !== 0) return levelDifference;
+      return (cells.get(taskKey(left))?.col ?? 0) - (cells.get(taskKey(right))?.col ?? 0);
+    })[0];
+  const collectAnchored = () => {
+    const result = new Map<number, { anchor: Task; tasks: Task[] }[]>();
+    for (const node of zeroLevel) {
+      if (cells.has(taskKey(node))) continue;
+      const anchor = anchorFor(node);
+      if (!anchor) continue;
+      const column = cells.get(taskKey(anchor))?.col ?? 0;
+      const groups = result.get(column) ?? [];
+      let group = groups.find((candidate) => taskKey(candidate.anchor) === taskKey(anchor));
+      if (!group) { group = { anchor, tasks: [] }; groups.push(group); result.set(column, groups); }
+      group.tasks.push(node);
+    }
+    for (const groups of result.values()) groups.sort((left, right) => {
+      const levelDifference = (levels.get(taskKey(left.anchor)) ?? 0) - (levels.get(taskKey(right.anchor)) ?? 0);
+      return levelDifference || compareTask(left.anchor, right.anchor);
+    });
+    return result;
+  };
+  const stackHeight = (groups: Map<number, { anchor: Task; tasks: Task[] }[]>) =>
+    Math.max(1, ...[...groups.values()].map((columnGroups) => columnGroups.reduce((sum, group) => sum + group.tasks.length, 0)));
+
+  const stacksFit = (groups: Map<number, { anchor: Task; tasks: Task[] }[]>, size: number): boolean => {
+    const manualCells = new Set([...cells.entries()]
+      .filter(([key]) => manuallyPlaced.has(key))
+      .map(([, cell]) => `${cell.col}:${cell.row}`));
+    for (const [column, columnGroups] of groups) {
+      const needed = columnGroups.reduce((sum, group) => sum + group.tasks.length, 0);
+      let free = 0;
+      for (let row = 0; row < size; row++) if (!manualCells.has(`${column}:${row}`)) free++;
+      if (free < needed) return false;
+    }
+    return true;
+  };
+
+  let anchored = collectAnchored();
+  let stackSize = stackHeight(anchored);
+  // Po posunu mohou ruční buňky ve vyšších řadách změnit sloupec kotvy. Krátká
+  // pevná iterace přepočítá i případ, kdy se tím spojí dva kotevní sloupce.
+  for (let pass = 0; pass <= nodes.length; pass++) {
+    let changed = false;
+    const reserved = new Set([...cells.entries()]
+      .filter(([key]) => manuallyPlaced.has(key))
+      .map(([, cell]) => `${cell.col}:${cell.row}`));
+    for (let level = 1; level <= maxLevel; level++) {
+      const row = stackSize - 1 + level;
       let previousColumn = -1;
-      for (const node of auto) {
-        let column = Math.max(desiredColumn(node), previousColumn + 1);
-        while (occupied.has(`${column}:${row}`)) column++;
-        cells.set(taskKey(node), { col: column, row });
-        occupied.add(`${column}:${row}`);
+      for (const node of ordered.get(level) ?? []) {
+        const key = taskKey(node);
+        if (manuallyPlaced.has(key)) continue;
+        let column = Math.max(cells.get(key)?.col ?? 0, previousColumn + 1);
+        while (reserved.has(`${column}:${row}`)) column++;
+        const cell = cells.get(key)!;
+        if (cell.col !== column || cell.row !== row) changed = true;
+        cell.col = column; cell.row = row;
+        reserved.add(`${column}:${row}`);
         previousColumn = column;
       }
-      continue;
     }
-    let offset = 0;
-    for (const { row, free } of levelRows.slots.get(level) ?? []) {
-      const members = auto.slice(offset, offset + free.length);
-      offset += members.length;
-      // Monotónní výběr z volných sloupců: co nejblíž ideálu, ale tak, aby na
-      // zbylé karty řady ještě zbyla volná místa.
-      let previousIndex = -1;
-      members.forEach((node, index) => {
-        const last = free.length - (members.length - index);
-        const desired = desiredColumn(node);
-        let slot = last;
-        for (let candidate = previousIndex + 1; candidate <= last; candidate++) {
-          if (free[candidate] >= desired) { slot = candidate; break; }
-        }
-        cells.set(taskKey(node), { col: free[slot], row });
-        occupied.add(`${free[slot]}:${row}`);
-        previousIndex = slot;
-      });
+    anchored = collectAnchored();
+    let nextStackSize = stackHeight(anchored);
+    // Každá řada navíc přidá volné místo ve všech sloupcích kromě konečného
+    // počtu ručních buněk, takže smyčka skončí; strop je jen pojistka.
+    const stackLimit = nextStackSize + nodes.length + 1;
+    while (!stacksFit(anchored, nextStackSize) && nextStackSize < stackLimit) nextStackSize++;
+    if (nextStackSize !== stackSize) { stackSize = nextStackSize; changed = true; }
+    if (!changed) break;
+    if (pass === nodes.length) console.warn('[4D Matrix] Graph layout did not converge');
+  }
+  occupied.clear();
+  for (const cell of cells.values()) occupied.add(`${cell.col}:${cell.row}`);
+  for (const [column, groups] of anchored) {
+    let row = stackSize - 1;
+    for (const group of groups) {
+      for (const node of group.tasks.sort(compareTask)) {
+        while (row >= 0 && occupied.has(`${column}:${row}`)) row--;
+        // Nemá nastat (stacksFit to hlídá); karta pak spadne do spodní řady níž.
+        if (row < 0) break;
+        cells.set(taskKey(node), { col: column, row });
+        occupied.add(`${column}:${row}`);
+        row--;
+      }
     }
+  }
+  let unanchoredColumn = 0;
+  for (const node of zeroLevel) {
+    const key = taskKey(node);
+    if (cells.has(key)) continue;
+    while (occupied.has(`${unanchoredColumn}:0`)) unanchoredColumn++;
+    cells.set(key, { col: unanchoredColumn, row: 0 });
+    occupied.add(`${unanchoredColumn}:0`);
+    unanchoredColumn++;
   }
 
   for (const key of hidden) cells.delete(key);
@@ -324,13 +349,25 @@ export function cellToPoint(cell: GridCell, geometry: Geometry): Point {
   };
 }
 
-export function routeEdge(from: GridCell, to: GridCell, geometry: Geometry): Point[] {
+export function routeEdge(from: GridCell, to: GridCell, geometry: Geometry, sideExit = false): Point[] {
   const source = cellToPoint(from, geometry);
   const target = cellToPoint(to, geometry);
   const sourceCenter = { x: source.x + geometry.w / 2, y: source.y };
   const targetCenter = { x: target.x + geometry.w / 2, y: target.y + geometry.h };
   const sourceRenderRow = geometry.topRow - from.row;
   const targetRenderRow = geometry.topRow - to.row;
+
+  if (sideExit) {
+    const gutterX = source.x + geometry.w + geometry.gapX / 2 + 6;
+    const targetChannelY = target.y + geometry.h + geometry.gapY / 2;
+    return [
+      { x: source.x + geometry.w, y: source.y + geometry.h / 2 },
+      { x: gutterX, y: source.y + geometry.h / 2 },
+      { x: gutterX, y: targetChannelY },
+      { x: targetCenter.x, y: targetChannelY },
+      targetCenter,
+    ];
+  }
 
   if (sourceRenderRow === targetRenderRow + 1 && from.col === to.col) {
     return [sourceCenter, targetCenter];
@@ -364,18 +401,11 @@ export function buildGraphLayout(input: { tasks: Task[]; seedKeys: Set<string>; 
   const levels = computeLevels(linked);
   const collapsed = computeHiddenByCollapse(linked, input.collapsedKeys);
   const geometryBase = input.compact ? GRID.compact : GRID.full;
-  // Limit řady = kolik karet se vejde na šířku okna. Při oddálení se vejde víc
-  // a karty se přeskládají, aby plochu využily; nad 100 % se počítá jako při
-  // 100 %, takže přiblížení karty nepřehazuje.
-  const fitZoom = Math.min(1, Math.max(input.zoom, .25));
-  const fitColumns = Math.max(1, Math.floor(input.viewportWidth / fitZoom / (geometryBase.w + GRID.gapX)));
-  const levelRows = computeLevelRows(linked, levels, manual, fitColumns);
-  const graphCells = assignCells(linked, levels, manual, collapsed.hidden, input.today, fitColumns);
+  // topRow se počítá i ze skrytých karet, aby sbalení větve neposunulo graf.
+  const allCells = assignCells(linked, levels, manual, new Set(), input.today);
+  const graphCells = new Map([...allCells].filter(([key]) => !collapsed.hidden.has(key)));
   let columns = Math.max(1, ...[...graphCells.values()].map((cell) => cell.col + 1));
-  const topRow = Math.max(0, levelRows.total - 1, ...[...manual.values()].map((cell) => cell.row)) + 1;
-  const levelBands: LevelBand[] = linked.length === 0 ? [] : [...levelRows.count.entries()]
-    .filter(([, rows]) => rows > 1)
-    .map(([level, rows]) => ({ level, row: levelRows.base.get(level)!, rows }));
+  const topRow = Math.max(0, ...[...allCells.values()].map((cell) => cell.row), ...[...manual.values()].map((cell) => cell.row)) + 1;
   const bandColumns = Math.max(columns, GRID.bandMinColumns, Math.floor(input.viewportWidth / Math.max(input.zoom, .25) / (geometryBase.w + GRID.gapX)));
   const bandCells = layoutBand(unlinked, bandColumns, input.today);
   columns = Math.max(columns, bandColumns);
@@ -390,10 +420,11 @@ export function buildGraphLayout(input: { tasks: Task[]; seedKeys: Set<string>; 
     const from = taskKey(blocker), to = taskKey(dependent);
     if (!keys.has(to) || collapsed.hidden.has(from) || collapsed.hidden.has(to)) continue;
     const fromCell = graphCells.get(from), toCell = graphCells.get(to); if (!fromCell || !toCell) continue;
-    edges.push({ from, to, points: routeEdge(fromCell, toCell, geometry), resolved: isClosedStatus(blocker.status), cycle: blocker.hasCircularDependency && dependent.hasCircularDependency });
+    const sideExit = (levels.get(from) ?? 0) === 0 && !(fromCell.col === toCell.col && fromCell.row + 1 === toCell.row);
+    edges.push({ from, to, points: routeEdge(fromCell, toCell, geometry, sideExit), resolved: isClosedStatus(blocker.status), cycle: blocker.hasCircularDependency && dependent.hasCircularDependency });
   }
   const bandRows = Math.ceil(unlinked.length / bandColumns);
   const bandTop = (topRow + 1) * (geometry.h + geometry.gapY) + GRID.bandGap / 2;
   const height = bandRows > 0 ? cellToPoint({ col: 0, row: -bandRows }, geometry).y + geometry.h + geometry.gapY : bandTop + geometry.gapY;
-  return { nodes, edges, hiddenKeys: collapsed.hidden, columns, topRow, bandRows, bandColumns, size: { width: columns * (geometry.w + geometry.gapX), height }, bandTop, levelBands };
+  return { nodes, edges, hiddenKeys: collapsed.hidden, columns, topRow, bandRows, bandColumns, size: { width: columns * (geometry.w + geometry.gapX), height }, bandTop };
 }
