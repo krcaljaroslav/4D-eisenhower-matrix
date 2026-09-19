@@ -56,7 +56,10 @@
 .em-graph .em-task-overdue { border-color: var(--color-red); }
 .em-graph-manual-pin { position: absolute; top: 4px; right: 4px; color: var(--text-muted); }
 .em-graph-manual-pin svg { width: 14px; height: 14px; }
-.em-graph-collapse { position: absolute; left: 50%; bottom: -34px; transform: translateX(-50%); width: 34px; height: 30px; min-width: 34px; padding: 0; border: 0; background: transparent; color: var(--text-muted); font-size: 20px; line-height: 30px; z-index: 24; }
+.em-graph-collapse { position: absolute; left: calc(50% + 6px); bottom: -19px; width: 17px; height: 15px; min-width: 17px; padding: 0; border: 0; background: transparent; color: var(--text-muted); font-size: 10px; line-height: 15px; z-index: 24; }
+/* Poloviční velikost a kousek vpravo od středu: uprostřed pod kartou vede příchozí spojnice.
+   Vyšší specificita, jinak by Obsidian `button:not(.clickable-icon)` vnutil svou výšku. */
+.em-graph button.em-graph-collapse { height: 15px; min-height: 15px; }
 .em-graph-task-collapsed { outline: 2px dashed var(--interactive-accent); outline-offset: 2px; }
 /* Podklad úrovně zalomené do víc řad - ukazuje, které řady patří k sobě. */
 .em-graph-level-band { position: absolute; left: 0; right: 0; pointer-events: none; background: color-mix(in srgb, var(--interactive-accent) 5%, transparent); border-left: 3px solid color-mix(in srgb, var(--interactive-accent) 40%, transparent); border-radius: var(--radius-s); }
