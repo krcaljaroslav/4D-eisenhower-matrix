@@ -22,7 +22,7 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 |--------|---------|
 | **5-polová matice** | DO / DECIDE / DELEGATE / DELETE + záchytný **OPEN**. Kvadrant určuje první `#tag` za checkboxem (`#DO`, `#DECIDE`, `#DELEGATE`, `#DELETE`); cokoli jiného spadne do OPEN. |
 | **Kanban zobrazení** | Rozbalí libovolný kvadrant na celou šířku se sloupci **To-do · In progress · Scheduled · Done**. Na desktopu drag karet mezi sloupci mění stav, na jiný kvadrant je přesune, nebo task rovnou přidáš do sloupce. Na mobilu/tabletu board scrolluje vodorovně a stav měníš přes menu karty (*Mark as…*). |
-| **Graf závislostí** | Ukazuje cíle nad jejich blokátory v pravoúhlé mřížce a úkoly bez vazeb v odděleném pásmu. Větve lze sbalit, graf zoomovat a na desktopu karty ručně rozmístit; první ruční posun přidá `🆔`, souřadnice zůstávají v `data.json`. Mobil nabízí čtení, navigaci, menu a zakládání bez dragu. |
+| **Graf závislostí** | Ukazuje cíle nad jejich blokátory v pravoúhlé mřížce a úkoly bez vazeb v odděleném pásmu. Úroveň širší než okno se zalomí do víc podbarvených řad (při zmenšení okna nebo oddálení se přeskládá, nad 100 % zůstává). Větve lze sbalit, graf zoomovat a na desktopu karty ručně rozmístit; první ruční posun přidá `🆔`, souřadnice zůstávají v `data.json`. Mobil nabízí čtení, navigaci, menu a zakládání bez dragu. |
 | **Cross-vault agregace** | Sbírá tasky ze **všech `.md` souborů** ve vaultu (Dataview-like), ne jen z dnešní daily note — jeden board nad celým druhým mozkem. |
 | **6 stavů tasku** | Things-style `[ ]` to-do · `[/]` in progress · `[x]` done · `[-]` canceled · `[>]` forwarded · `[<]` scheduling. Každá karta má status box; libovolný stav nastavíš pravým klikem → *Mark as…*. |
 | **Plné CRUD** | Přidání (text + tagy + due date + priorita), inline editace, odškrtnutí, přesun mezi kvadranty — vše se zapíše přímo do Markdownu. |
@@ -171,6 +171,8 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 [Issues](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) · Pull requesty vítané.
 
 ## Changelog
+
+**1.0.38** — Navázané tasky přímo z kontextového menu: nový poslední blok **Add previous task** / **Add follow-up task** otevře formulář u karty a nový task naváže zvoleným směrem, v matici, Kanbanu i grafu (v grafu nahrazuje *Add blocker below* / *Add dependent above*). Pole závislostí v editaci se k tomu přejmenovala na **Previous task** / **Follow-up task**. V grafu závislostí se úroveň širší než okno zalomí do víc řad s podbarveným podkladem místo roztažení do šířky; zmenšení okna nebo oddálení karty přeskládá, aby využily plochu, přiblížení nad 100 % je nechá na místě a ručně umístěné karty se nehýbou.
 
 **1.0.37** — Úklid nálezů z kontroly pluginu od Obsidianu, ovládání se nemění. Obě potvrzovací hlášky (reset pozic v grafu, dokončení blokovaného tasku) používají místo prohlížečového `confirm()` Obsidian modal - ten se v popout okně otvíral nad špatným oknem a na mobilu mohl být potlačený úplně; ze stejného důvodu plánuje graf animační snímky přes `window`. Zmizela obě pravidla s `!important`: editovaná karta v grafu si pevnou výšku zahazuje už u zdroje a mobilní pravidlo skrývající porty vyhrálo specificitou. `minAppVersion` se posouvá na **1.8.7**, což je verze, ve které vzniklo použité `Notice` API.
 
