@@ -296,14 +296,18 @@ describe('level wrapping', () => {
     expect(new Set([...cells.values()].map(({ col, row }) => `${col}:${row}`)).size).toBe(nodes.length);
   });
 
-  it('reports wrapped levels, lifts topRow, and ignores zoom', () => {
+  it('reports wrapped levels, lifts topRow, reflows when zoomed out but not when zoomed in', () => {
     const { nodes } = wideLevel();
     const input = { tasks: nodes, seedKeys: new Set(nodes.map(taskKey)), showCompleted: false, graceKeys: new Set<string>(), positions: {}, collapsedKeys: new Set<string>(), compact: false, viewportWidth: WIDTH_FOR_3, today: '2026-09-08' };
     const layout = buildGraphLayout({ ...input, zoom: 1 });
     expect(layout.levelBands).toEqual([{ level: 1, row: 1, rows: 3 }]);
     expect(layout.topRow).toBe(5);
-    const zoomedOut = buildGraphLayout({ ...input, zoom: 0.25 });
-    expect(zoomedOut.nodes.map((node) => node.cell)).toEqual(layout.nodes.map((node) => node.cell));
+    const zoomedIn = buildGraphLayout({ ...input, zoom: 2 });
+    expect(zoomedIn.nodes.map((node) => node.cell)).toEqual(layout.nodes.map((node) => node.cell));
+    // Při 50 % se vejde 6 karet vedle sebe: úroveň se 7 kartami má 2 řady.
+    expect(buildGraphLayout({ ...input, zoom: 0.5 }).levelBands).toEqual([{ level: 1, row: 1, rows: 2 }]);
+    // Při 25 % se vejde 12: úroveň zůstane v jedné řadě.
+    expect(buildGraphLayout({ ...input, zoom: 0.25 }).levelBands).toEqual([]);
     // Každá hrana vede od blokujícího (níž, větší y) nahoru k blokovanému.
     expect(layout.edges.length).toBe(14);
     for (const edge of layout.edges) expect(edge.points[0].y).toBeGreaterThan(edge.points[edge.points.length - 1].y);

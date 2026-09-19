@@ -364,9 +364,11 @@ export function buildGraphLayout(input: { tasks: Task[]; seedKeys: Set<string>; 
   const levels = computeLevels(linked);
   const collapsed = computeHiddenByCollapse(linked, input.collapsedKeys);
   const geometryBase = input.compact ? GRID.compact : GRID.full;
-  // Limit řady bere šířku okna při zoomu 100 %: kdyby sledoval zoom, oddálení
-  // by úrovně zase roztáhlo do šířky a tlačítko Fit by se honilo samo za sebou.
-  const fitColumns = Math.max(1, Math.floor(input.viewportWidth / (geometryBase.w + GRID.gapX)));
+  // Limit řady = kolik karet se vejde na šířku okna. Při oddálení se vejde víc
+  // a karty se přeskládají, aby plochu využily; nad 100 % se počítá jako při
+  // 100 %, takže přiblížení karty nepřehazuje.
+  const fitZoom = Math.min(1, Math.max(input.zoom, .25));
+  const fitColumns = Math.max(1, Math.floor(input.viewportWidth / fitZoom / (geometryBase.w + GRID.gapX)));
   const levelRows = computeLevelRows(linked, levels, manual, fitColumns);
   const graphCells = assignCells(linked, levels, manual, collapsed.hidden, input.today, fitColumns);
   let columns = Math.max(1, ...[...graphCells.values()].map((cell) => cell.col + 1));
