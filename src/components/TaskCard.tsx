@@ -13,6 +13,7 @@ import { DueDatePicker } from './DueDatePicker.tsx';
 import { HiddenDateInput, type HiddenDateInputHandle } from './HiddenDateInput.tsx';
 import { PriorityPicker } from './PriorityPicker.tsx';
 import { TaskSuggest } from './TaskSuggest.ts';
+import { AddTaskInput } from './AddTaskInput.tsx';
 import { renderInlineMarkdown, type InlineLinkHandler } from './inlineMarkdown.tsx';
 
 export const GRACE_MS = 3000;
@@ -32,6 +33,17 @@ export const SearchHighlightContext = createContext<{
   matchKeys: Set<string>;
   currentKey: string | null;
 }>({ matchKeys: new Set(), currentKey: null });
+
+/** Směr nově zakládaného navázaného tasku: předchozí (blokuje) / návazný (čeká). */
+export type LinkedTaskKind = 'blocker' | 'dependent';
+
+export type LinkedTaskInput = {
+  text: string;
+  quadrant: Quadrant;
+  dueDate: string | null;
+  priority: Priority | null;
+  status?: string;
+};
 
 export type DependencySelection = {
   beforeTasks: Task[];
@@ -75,6 +87,10 @@ type Props = {
   className?: string;
   children?: ReactNode;
   extendMenu?: (menu: Menu) => void;
+  /** Založí navázaný task z inline formuláře pod kartou. */
+  onAddLinked?: (kind: LinkedTaskKind, input: LinkedTaskInput) => Promise<void>;
+  /** Přebije inline formulář — graf má pevné rozměry karet a formulář kreslí sám. */
+  onRequestAddLinked?: (kind: LinkedTaskKind) => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 };
@@ -97,12 +113,17 @@ export function TaskCard({
   className = '',
   children,
   extendMenu,
+  onAddLinked,
+  onRequestAddLinked,
   onMouseEnter,
   onMouseLeave,
 }: Props) {
   const navigateToDependency = useContext(DependencyNavigationContext);
   const overdue = isOverdue(task, today);
   const [editing, setEditing] = useState(false);
+  const [linkedKind, setLinkedKind] = useState<LinkedTaskKind | null>(null);
+  // Otevřený formulář navázaného tasku se chová jako editace: bez dragu a menu.
+  const busy = editing || linkedKind !== null;
 
   const draggableId = `${task.sourceFile}:${task.lineIndex}`;
   const search = useContext(SearchHighlightContext);
@@ -113,7 +134,7 @@ export function TaskCard({
   // context menu „Přesunout do…".
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: draggableId,
-    disabled: editing || Platform.isMobile,
+    disabled: busy || Platform.isMobile,
   });
 
   const now = Date.now();
@@ -127,7 +148,7 @@ export function TaskCard({
   const gracePct = (graceRemaining / GRACE_MS) * 100;
 
   const enterEdit = () => {
-    if (editing) return;
+    if (busy) return;
     setEditing(true);
   };
 
@@ -191,6 +212,23 @@ export function TaskCard({
           }),
       );
     }
+    if (onAddLinked || onRequestAddLinked) {
+      const startLinked = (kind: LinkedTaskKind) =>
+        onRequestAddLinked ? onRequestAddLinked(kind) : setLinkedKind(kind);
+      menu.addSeparator();
+      menu.addItem((item) =>
+        item
+          .setTitle('Add previous task')
+          .setIcon('arrow-left-to-line')
+          .onClick(() => startLinked('blocker')),
+      );
+      menu.addItem((item) =>
+        item
+          .setTitle('Add follow-up task')
+          .setIcon('arrow-right-to-line')
+          .onClick(() => startLinked('dependent')),
+      );
+    }
     return menu;
   };
 
@@ -198,7 +236,7 @@ export function TaskCard({
    * Kontextové menu — desktop: pravý klik · mobil: long-press i double-tap.
    */
   const showContextMenu = (e: React.MouseEvent) => {
-    if (editing) return;
+    if (busy) return;
     e.preventDefault();
     e.stopPropagation();
     buildMenu().showAtMouseEvent(e.nativeEvent);
@@ -208,7 +246,7 @@ export function TaskCard({
    * Double-tap: desktop → rovnou edit (rychlá cesta) · mobil → kontextové menu.
    */
   const handleDoubleClick = (e: React.MouseEvent) => {
-    if (editing) return;
+    if (busy) return;
     if (Platform.isMobile) {
       e.preventDefault();
       e.stopPropagation();
@@ -347,8 +385,8 @@ export function TaskCard({
   return (
     <li
       ref={setNodeRef}
-      {...(editing ? {} : attributes)}
-      {...(editing ? {} : listeners)}
+      {...(busy ? {} : attributes)}
+      {...(busy ? {} : listeners)}
       onDoubleClick={handleDoubleClick}
       onContextMenu={showContextMenu}
       onMouseEnter={onMouseEnter}
@@ -425,6 +463,31 @@ export function TaskCard({
       )}
       {inGrace && !editing && (
         <div className="em-grace-bar" style={{ width: `${gracePct}%` }} aria-hidden />
+      )}
+      {linkedKind && onAddLinked && (
+        <div
+          className="em-task-linked-add"
+          onPointerDown={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <p className="em-task-linked-add-label">
+            {linkedKind === 'blocker'
+              ? 'Previous task (must be done first)'
+              : 'Follow-up task (waits for this one)'}
+          </p>
+          <AddTaskInput
+            quadrant={task.quadrant}
+            initialTags={task.contextTags}
+            createTagSuggest={createTagSuggest}
+            onCancel={() => setLinkedKind(null)}
+            onSubmit={async (input) => {
+              await onAddLinked(linkedKind, input);
+              setLinkedKind(null);
+            }}
+          />
+        </div>
       )}
       {children}
     </li>

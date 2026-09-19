@@ -15,7 +15,7 @@ import {
   type DragStartEvent,
   type Modifier,
 } from '@dnd-kit/core';
-import type { ObsidianTaskRepo } from '../obsidian-adapter/ObsidianTaskRepo.ts';
+import type { NewTaskInput, ObsidianTaskRepo } from '../obsidian-adapter/ObsidianTaskRepo.ts';
 import { showError, showInfo } from '../obsidian-adapter/toast.ts';
 import { confirmDialog } from '../obsidian-adapter/ConfirmModal.ts';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
@@ -435,6 +435,19 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       }
     },
     [repo],
+  );
+
+  const handleAddLinked = useCallback(
+    async (target: Task, kind: 'blocker' | 'dependent', input: NewTaskInput) => {
+      try {
+        const result = await repo.addLinkedTask(date, input, { target, kind });
+        setGraphHighlightKey(taskKey(result.sourceFile, result.lineIndex));
+      } catch (e) {
+        showError(`Adding linked task failed: ${String((e as Error).message ?? e)}`);
+        throw e;
+      }
+    },
+    [repo, date],
   );
 
   const handleAdd = useCallback(
@@ -1087,7 +1100,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             onOpenSource={handleOpenSource} onOpenLink={handleOpenLink} onMoveQuadrant={(task, quadrant) => void handleMove(task, quadrant)}
             onAddTask={handleAdd}
             onAddAtCell={async (cell, input) => { const result = await repo.addTaskAtCell(date, input); setGraphPositions((current) => ({ ...current, [result.newId]: cell })); setGraphHighlightKey(taskKey(result.sourceFile, result.lineIndex)); const parsed = parseTaskLine(result.newLine, result.lineIndex); if (parsed) setTasks((current) => [...current, { ...parsed, sourceFile: result.sourceFile, isFromDnes: true, isBlocked: false, blockedByTasks: [], blocksTasks: [], missingBlockers: [], hasCircularDependency: false }]); }}
-            onAddLinked={async (target, kind, input) => { const result = await repo.addLinkedTask(date, input, { target, kind }); setGraphHighlightKey(taskKey(result.sourceFile, result.lineIndex)); }}
+            onAddLinked={handleAddLinked}
             onLinkTasks={async (source, target) => { await repo.linkTasks(source, target); setTasks((await repo.getMatrixTasks(date)).tasks); }}
             onRemoveDependency={async (source, target) => { await repo.unlinkTasks(source, target); setTasks((await repo.getMatrixTasks(date)).tasks); }}
             createTagSuggest={createTagSuggest}
@@ -1110,6 +1123,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             onSetDueDate={handleSetDueDate}
             onUpdateTask={handleUpdate}
             onAddTask={handleAdd}
+            onAddLinked={handleAddLinked}
             onOpenSource={handleOpenSource}
             onOpenLink={handleOpenLink}
             onMoveQuadrant={(t, q) => void handleMove(t, q)}
@@ -1133,6 +1147,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             onSetDueDate={handleSetDueDate}
             onUpdateTask={handleUpdate}
             onAddTask={handleAdd}
+            onAddLinked={handleAddLinked}
             onOpenSource={handleOpenSource}
             onOpenLink={handleOpenLink}
             onMoveQuadrant={(t, q) => void handleMove(t, q)}

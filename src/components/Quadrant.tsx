@@ -3,7 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { type PaneType } from 'obsidian';
 import type { Priority, Quadrant as QuadrantKind, Task } from '../core/types.ts';
 import { QUADRANT_META } from '../core/types.ts';
-import { TaskCard, type DependencySelection } from './TaskCard.tsx';
+import { TaskCard, type DependencySelection, type LinkedTaskInput, type LinkedTaskKind } from './TaskCard.tsx';
 import { AddTaskInput } from './AddTaskInput.tsx';
 import { Icon } from './Icon.tsx';
 import type { InlineLinkTarget } from './inlineMarkdown.tsx';
@@ -35,6 +35,7 @@ type Props = {
     dueDate: string | null;
     priority: Priority | null;
   }) => Promise<void>;
+  onAddLinked: (task: Task, kind: LinkedTaskKind, input: LinkedTaskInput) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
   onOpenLink: (task: Task, link: InlineLinkTarget) => void;
   onMoveQuadrant: (task: Task, target: QuadrantKind) => void;
@@ -58,6 +59,7 @@ export function Quadrant({
   onUpdateTask,
   onAddTask,
   onOpenSource,
+  onAddLinked,
   onOpenLink,
   onMoveQuadrant,
   createTagSuggest,
@@ -155,6 +157,7 @@ export function Quadrant({
                     onOpenSource={(mode) => onOpenSource(t, mode)}
                     onOpenLink={(link) => onOpenLink(t, link)}
                     onMoveQuadrant={(target) => onMoveQuadrant(t, target)}
+                    onAddLinked={(linkKind, input) => onAddLinked(t, linkKind, input)}
                     createTagSuggest={createTagSuggest}
                   />
                 );

@@ -3,7 +3,7 @@ import type { PaneType } from 'obsidian';
 import { useState, type ReactNode } from 'react';
 import type { Priority, Quadrant as QuadrantKind, Task } from '../core/types.ts';
 import { QUADRANTS, QUADRANT_META } from '../core/types.ts';
-import { TaskCard, type DependencySelection } from './TaskCard.tsx';
+import { TaskCard, type DependencySelection, type LinkedTaskInput, type LinkedTaskKind } from './TaskCard.tsx';
 import { Quadrant } from './Quadrant.tsx';
 import { AddTaskInput } from './AddTaskInput.tsx';
 import { Icon } from './Icon.tsx';
@@ -57,6 +57,7 @@ type Props = {
     priority: Priority | null;
     status?: string;
   }) => Promise<void>;
+  onAddLinked: (task: Task, kind: LinkedTaskKind, input: LinkedTaskInput) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
   onOpenLink: (task: Task, link: InlineLinkTarget) => void;
   onMoveQuadrant: (task: Task, target: QuadrantKind) => void;
@@ -97,6 +98,7 @@ export function KanbanView(props: Props) {
         onOpenSource={(mode) => props.onOpenSource(t, mode)}
         onOpenLink={(link) => props.onOpenLink(t, link)}
         onMoveQuadrant={(target) => props.onMoveQuadrant(t, target)}
+        onAddLinked={(kind, input) => props.onAddLinked(t, kind, input)}
         createTagSuggest={props.createTagSuggest}
       />
     );
@@ -158,6 +160,7 @@ export function KanbanView(props: Props) {
             onToggleCollapsed={() => props.onToggleCollapsed(q)}
             onToggleTask={props.onToggleTask}
             onSetStatus={props.onSetStatus}
+            onAddLinked={props.onAddLinked}
             onSetDueDate={props.onSetDueDate}
             onUpdateTask={props.onUpdateTask}
             onAddTask={props.onAddTask}

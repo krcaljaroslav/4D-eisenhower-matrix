@@ -3,7 +3,7 @@ import type { PaneType } from 'obsidian';
 import type { Priority, Task, Quadrant as QuadrantKind } from '../core/types.ts';
 import { QUADRANTS } from '../core/types.ts';
 import { Quadrant } from './Quadrant.tsx';
-import type { DependencySelection } from './TaskCard.tsx';
+import type { DependencySelection, LinkedTaskInput, LinkedTaskKind } from './TaskCard.tsx';
 import type { InlineLinkTarget } from './inlineMarkdown.tsx';
 
 type Props = {
@@ -32,6 +32,7 @@ type Props = {
     dueDate: string | null;
     priority: Priority | null;
   }) => Promise<void>;
+  onAddLinked: (task: Task, kind: LinkedTaskKind, input: LinkedTaskInput) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void;
   onOpenLink: (task: Task, link: InlineLinkTarget) => void;
   onMoveQuadrant: (task: Task, target: QuadrantKind) => void;
@@ -68,6 +69,7 @@ export function Matrix(props: Props) {
       onToggleCollapsed={() => props.onToggleCollapsed(q)}
       onToggleTask={props.onToggleTask}
       onSetStatus={props.onSetStatus}
+      onAddLinked={props.onAddLinked}
       onSetDueDate={props.onSetDueDate}
       onUpdateTask={props.onUpdateTask}
       onAddTask={props.onAddTask}
