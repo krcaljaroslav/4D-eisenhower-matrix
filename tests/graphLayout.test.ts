@@ -7,6 +7,7 @@ import {
   computeHiddenByCollapse,
   cellToPoint,
   computeLevels,
+  computeLevelRows,
   GRID,
   layoutBand,
   routeEdge,
@@ -228,6 +229,84 @@ describe('buildGraphLayout', () => {
     const input = { tasks: [blocker, dependent], seedKeys: new Set([taskKey(dependent)]), showCompleted: false, graceKeys: new Set<string>(), positions: { blocker: { col: 0, row: 5 } }, compact: false, viewportWidth: 800, zoom: 1, today: '2026-09-08' };
     expect(buildGraphLayout({ ...input, collapsedKeys: new Set<string>() }).topRow).toBe(6);
     expect(buildGraphLayout({ ...input, collapsedKeys: new Set([taskKey(dependent)]) }).topRow).toBe(6);
+  });
+});
+
+describe('level wrapping', () => {
+  // Kořen blokuje 7 karet v jedné úrovni; nad nimi jeden cíl, který čeká na všechny.
+  function wideLevel() {
+    const root = task('Root', 0);
+    const middle = Array.from({ length: 7 }, (_, index) => task(`M${index}`, index + 1));
+    const goal = task('Goal', 20);
+    for (const node of middle) { link(root, node); link(node, goal); }
+    return { root, middle, goal, nodes: [root, ...middle, goal] };
+  }
+  const WIDTH_FOR_3 = 3 * (GRID.full.w + GRID.gapX);
+
+  it('splits a level wider than the limit into stacked rows without breaking level order', () => {
+    const { root, middle, goal, nodes } = wideLevel();
+    const levels = computeLevels(nodes);
+    const cells = assignCells(nodes, levels, new Map(), new Set(), '2026-09-08', 3);
+    const middleRows = middle.map((node) => cells.get(taskKey(node))!.row);
+    expect(new Set(middleRows)).toEqual(new Set([1, 2, 3]));
+    for (const row of [1, 2, 3]) expect(middle.filter((node) => cells.get(taskKey(node))!.row === row).length).toBeLessThanOrEqual(3);
+    expect(Math.max(...middle.map((node) => cells.get(taskKey(node))!.col))).toBeLessThan(3);
+    expect(cells.get(taskKey(root))!.row).toBe(0);
+    expect(cells.get(taskKey(goal))!.row).toBe(4);
+    // První část úrovně (podle řazení M0, M1, ...) je nahoře, poslední dole.
+    expect(middle.slice(0, 3).map((node) => cells.get(taskKey(node))!.row)).toEqual([3, 3, 3]);
+    expect(cells.get(taskKey(middle[6]))!.row).toBe(1);
+    expect(new Set([...cells.values()].map(({ col, row }) => `${col}:${row}`)).size).toBe(nodes.length);
+  });
+
+  it('keeps the one-row-per-level layout when the level fits', () => {
+    const { nodes } = wideLevel();
+    const levels = computeLevels(nodes);
+    expect([...assignCells(nodes, levels, new Map(), new Set(), '2026-09-08', 7)])
+      .toEqual([...assignCells(nodes, levels, new Map(), new Set(), '2026-09-08')]);
+  });
+
+  it('leaves manual cells where they were and keeps wrapped cells stable when a node is hidden', () => {
+    const { middle, nodes } = wideLevel();
+    middle[0].id = 'fixed';
+    const manual = new Map([['fixed', { col: 9, row: 2 }]]);
+    const levels = computeLevels(nodes);
+    const expanded = assignCells(nodes, levels, manual, new Set(), '2026-09-08', 3);
+    expect(expanded.get(taskKey(middle[0]))).toEqual({ col: 9, row: 2 });
+    const hidden = taskKey(middle[3]);
+    const collapsed = assignCells(nodes, levels, manual, new Set([hidden]), '2026-09-08', 3);
+    for (const [key, cell] of collapsed) expect(expanded.get(key)).toEqual(cell);
+    expect(computeLevelRows(nodes, levels, manual, 3).count.get(1)).toBe(2);
+  });
+
+  it('treats a zero or fractional limit as one column instead of looping forever', () => {
+    const { nodes } = wideLevel();
+    const levels = computeLevels(nodes);
+    expect(computeLevelRows(nodes, levels, new Map(), 0).count.get(1)).toBe(7);
+    expect(computeLevelRows(nodes, levels, new Map(), 2.5).count.get(1)).toBe(4);
+  });
+
+  it('stays within the limit when a manual card sits inside the wrapped area', () => {
+    const { middle, nodes } = wideLevel();
+    middle[0].id = 'fixed';
+    const levels = computeLevels(nodes);
+    const cells = assignCells(nodes, levels, new Map([['fixed', { col: 0, row: 2 }]]), new Set(), '2026-09-08', 3);
+    const auto = middle.slice(1).map((node) => cells.get(taskKey(node))!);
+    expect(Math.max(...auto.map((cell) => cell.col))).toBeLessThan(3);
+    expect(new Set([...cells.values()].map(({ col, row }) => `${col}:${row}`)).size).toBe(nodes.length);
+  });
+
+  it('reports wrapped levels, lifts topRow, and ignores zoom', () => {
+    const { nodes } = wideLevel();
+    const input = { tasks: nodes, seedKeys: new Set(nodes.map(taskKey)), showCompleted: false, graceKeys: new Set<string>(), positions: {}, collapsedKeys: new Set<string>(), compact: false, viewportWidth: WIDTH_FOR_3, today: '2026-09-08' };
+    const layout = buildGraphLayout({ ...input, zoom: 1 });
+    expect(layout.levelBands).toEqual([{ level: 1, row: 1, rows: 3 }]);
+    expect(layout.topRow).toBe(5);
+    const zoomedOut = buildGraphLayout({ ...input, zoom: 0.25 });
+    expect(zoomedOut.nodes.map((node) => node.cell)).toEqual(layout.nodes.map((node) => node.cell));
+    // Každá hrana vede od blokujícího (níž, větší y) nahoru k blokovanému.
+    expect(layout.edges.length).toBe(14);
+    for (const edge of layout.edges) expect(edge.points[0].y).toBeGreaterThan(edge.points[edge.points.length - 1].y);
   });
 });
 

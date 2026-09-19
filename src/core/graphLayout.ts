@@ -13,7 +13,9 @@ export type Geometry = {
 };
 export type GraphNode = { key: string; task: Task; cell: GridCell; level: number; manual: boolean; inSeed: boolean; collapsed: boolean; hiddenCount: number; inBand: boolean };
 export type GraphEdge = { from: string; to: string; points: Point[]; resolved: boolean; cycle: boolean };
-export type GraphLayout = { nodes: GraphNode[]; edges: GraphEdge[]; hiddenKeys: Set<string>; columns: number; topRow: number; bandRows: number; bandColumns: number; size: { width: number; height: number }; bandTop: number };
+/** Úroveň zalomená do víc řad: `row` je její nejnižší řada, `rows` jejich počet. */
+export type LevelBand = { level: number; row: number; rows: number };
+export type GraphLayout = { nodes: GraphNode[]; edges: GraphEdge[]; hiddenKeys: Set<string>; columns: number; topRow: number; bandRows: number; bandColumns: number; size: { width: number; height: number }; bandTop: number; levelBands: LevelBand[] };
 
 export const GRID = {
   full: { w: 240, h: 112 },
@@ -142,12 +144,84 @@ export function compareBarycentricValues(
   return left === right ? fallback : left - right;
 }
 
+/** Řada zalomené úrovně a její volné sloupce v limitu (ruční karty je zabírají). */
+export type LevelRowSlot = { row: number; free: number[] };
+export type LevelRows = { base: Map<number, number>; count: Map<number, number>; total: number; slots: Map<number, LevelRowSlot[]> };
+
+/** Ruční buňky vyhrávají; duplicitní buňku dostane jen první karta. */
+function placeManualCells(nodes: Task[], manual: Map<string, GridCell>): { cells: Map<string, GridCell>; occupied: Set<string> } {
+  const cells = new Map<string, GridCell>();
+  const occupied = new Set<string>();
+  for (const node of nodes) {
+    if (!node.id) continue;
+    const cell = manual.get(node.id);
+    if (!cell) continue;
+    const cellKey = `${cell.col}:${cell.row}`;
+    if (occupied.has(cellKey)) {
+      console.warn(`[4D Matrix] Duplicate manual graph cell: ${cellKey}`);
+      continue;
+    }
+    cells.set(taskKey(node), cell);
+    occupied.add(cellKey);
+  }
+  return { cells, occupied };
+}
+
+/**
+ * Kolik řad zabere každá úroveň, když se do jedné řady vejde nejvýš `maxColumns`
+ * karet. Ruční karta v limitu ubírá místo, takže úroveň může dostat řadu navíc.
+ * Počítá i se skrytými (sbalenými) kartami, aby sbalení větve nepřeskládalo
+ * zbytek grafu. Bez limitu je úroveň = řada. `slots` jsou seřazené shora dolů.
+ */
+export function computeLevelRows(
+  nodes: Task[],
+  levels: Map<string, number>,
+  manual: Map<string, GridCell>,
+  maxColumns = Infinity,
+): LevelRows {
+  // Nula nebo zlomek by dal řady bez volného místa a smyčka níž by neskončila.
+  const limit = Number.isFinite(maxColumns) ? Math.max(1, Math.floor(maxColumns)) : Infinity;
+  const maxLevel = Math.max(0, ...levels.values());
+  const { cells: manualCells, occupied } = placeManualCells(nodes, manual);
+  const autoCounts = new Map<number, number>();
+  for (const node of nodes) {
+    if (manualCells.has(taskKey(node))) continue;
+    const level = levels.get(taskKey(node)) ?? 0;
+    autoCounts.set(level, (autoCounts.get(level) ?? 0) + 1);
+  }
+  const base = new Map<number, number>();
+  const count = new Map<number, number>();
+  const slots = new Map<number, LevelRowSlot[]>();
+  let next = 0;
+  for (let level = 0; level <= maxLevel; level++) {
+    const rows: LevelRowSlot[] = [];
+    if (Number.isFinite(limit)) {
+      const needed = autoCounts.get(level) ?? 0;
+      let capacity = 0;
+      while (rows.length === 0 || capacity < needed) {
+        const row = next + rows.length;
+        const free = Array.from({ length: limit }, (_, col) => col).filter((col) => !occupied.has(`${col}:${row}`));
+        rows.push({ row, free });
+        capacity += free.length;
+      }
+    } else {
+      rows.push({ row: next, free: [] });
+    }
+    base.set(level, next);
+    count.set(level, rows.length);
+    slots.set(level, rows.reverse());
+    next += rows.length;
+  }
+  return { base, count, total: next, slots };
+}
+
 export function assignCells(
   nodes: Task[],
   levels: Map<string, number>,
   manual: Map<string, GridCell>,
   hidden: Set<string>,
   today: string,
+  maxColumns = Infinity,
 ): Map<string, GridCell> {
   const compareTask = makeCompareTask(today);
   const byKey = new Map(nodes.map((node) => [taskKey(node), node]));
@@ -178,35 +252,50 @@ export function assignCells(
   for (let level = maxLevel - 1; level >= 0; level--) sortLayer(level, (node) => visibleNeighbors(node.blocksTasks));
   for (let level = 1; level <= maxLevel; level++) sortLayer(level, (node) => visibleNeighbors(node.blockedByTasks));
 
-  const cells = new Map<string, GridCell>();
-  const occupied = new Set<string>();
-  for (const node of nodes) {
-    if (!node.id) continue;
-    const cell = manual.get(node.id);
-    if (!cell) continue;
-    const cellKey = `${cell.col}:${cell.row}`;
-    if (occupied.has(cellKey)) {
-      console.warn(`[4D Matrix] Duplicate manual graph cell: ${cellKey}`);
+  const { cells, occupied } = placeManualCells(nodes, manual);
+  const desiredColumn = (node: Task): number => {
+    const neighborColumns = node.blockedByTasks
+      .map((neighbor) => cells.get(taskKey(neighbor))?.col)
+      .filter((column): column is number => column !== undefined);
+    return Math.round(average(neighborColumns) ?? (positions.get(taskKey(node)) ?? 0));
+  };
+
+  // Bez limitu: jedna řada na úroveň. S limitem se široká úroveň zalomí do víc
+  // řad (první část nahoře) a karty jdou jen do volných sloupců v limitu.
+  // Ruční buňky zůstávají, kde je uživatel položil.
+  const levelRows = computeLevelRows(nodes, levels, manual, maxColumns);
+  for (let level = 0; level <= maxLevel; level++) {
+    const auto = (ordered.get(level) ?? []).filter((node) => !cells.has(taskKey(node)));
+    if (!Number.isFinite(maxColumns)) {
+      const row = levelRows.base.get(level) ?? level;
+      let previousColumn = -1;
+      for (const node of auto) {
+        let column = Math.max(desiredColumn(node), previousColumn + 1);
+        while (occupied.has(`${column}:${row}`)) column++;
+        cells.set(taskKey(node), { col: column, row });
+        occupied.add(`${column}:${row}`);
+        previousColumn = column;
+      }
       continue;
     }
-    cells.set(taskKey(node), cell);
-    occupied.add(cellKey);
-  }
-
-  for (let level = 0; level <= maxLevel; level++) {
-    let previousColumn = -1;
-    for (const node of ordered.get(level) ?? []) {
-      const key = taskKey(node);
-      const fixed = cells.get(key);
-      if (fixed) continue;
-      const neighborColumns = node.blockedByTasks
-        .map((neighbor) => cells.get(taskKey(neighbor))?.col)
-        .filter((column): column is number => column !== undefined);
-      let column = Math.max(Math.round(average(neighborColumns) ?? (positions.get(key) ?? 0)), previousColumn + 1);
-      while (occupied.has(`${column}:${level}`)) column++;
-      cells.set(key, { col: column, row: level });
-      occupied.add(`${column}:${level}`);
-      previousColumn = column;
+    let offset = 0;
+    for (const { row, free } of levelRows.slots.get(level) ?? []) {
+      const members = auto.slice(offset, offset + free.length);
+      offset += members.length;
+      // Monotónní výběr z volných sloupců: co nejblíž ideálu, ale tak, aby na
+      // zbylé karty řady ještě zbyla volná místa.
+      let previousIndex = -1;
+      members.forEach((node, index) => {
+        const last = free.length - (members.length - index);
+        const desired = desiredColumn(node);
+        let slot = last;
+        for (let candidate = previousIndex + 1; candidate <= last; candidate++) {
+          if (free[candidate] >= desired) { slot = candidate; break; }
+        }
+        cells.set(taskKey(node), { col: free[slot], row });
+        occupied.add(`${free[slot]}:${row}`);
+        previousIndex = slot;
+      });
     }
   }
 
@@ -274,10 +363,17 @@ export function buildGraphLayout(input: { tasks: Task[]; seedKeys: Set<string>; 
   const unlinked = graphSet.nodes.filter((node) => !linkedKeys.has(taskKey(node)));
   const levels = computeLevels(linked);
   const collapsed = computeHiddenByCollapse(linked, input.collapsedKeys);
-  const graphCells = assignCells(linked, levels, manual, collapsed.hidden, input.today);
   const geometryBase = input.compact ? GRID.compact : GRID.full;
+  // Limit řady bere šířku okna při zoomu 100 %: kdyby sledoval zoom, oddálení
+  // by úrovně zase roztáhlo do šířky a tlačítko Fit by se honilo samo za sebou.
+  const fitColumns = Math.max(1, Math.floor(input.viewportWidth / (geometryBase.w + GRID.gapX)));
+  const levelRows = computeLevelRows(linked, levels, manual, fitColumns);
+  const graphCells = assignCells(linked, levels, manual, collapsed.hidden, input.today, fitColumns);
   let columns = Math.max(1, ...[...graphCells.values()].map((cell) => cell.col + 1));
-  const topRow = Math.max(0, ...[...levels.values()], ...[...manual.values()].map((cell) => cell.row)) + 1;
+  const topRow = Math.max(0, levelRows.total - 1, ...[...manual.values()].map((cell) => cell.row)) + 1;
+  const levelBands: LevelBand[] = linked.length === 0 ? [] : [...levelRows.count.entries()]
+    .filter(([, rows]) => rows > 1)
+    .map(([level, rows]) => ({ level, row: levelRows.base.get(level)!, rows }));
   const bandColumns = Math.max(columns, GRID.bandMinColumns, Math.floor(input.viewportWidth / Math.max(input.zoom, .25) / (geometryBase.w + GRID.gapX)));
   const bandCells = layoutBand(unlinked, bandColumns, input.today);
   columns = Math.max(columns, bandColumns);
@@ -297,5 +393,5 @@ export function buildGraphLayout(input: { tasks: Task[]; seedKeys: Set<string>; 
   const bandRows = Math.ceil(unlinked.length / bandColumns);
   const bandTop = (topRow + 1) * (geometry.h + geometry.gapY) + GRID.bandGap / 2;
   const height = bandRows > 0 ? cellToPoint({ col: 0, row: -bandRows }, geometry).y + geometry.h + geometry.gapY : bandTop + geometry.gapY;
-  return { nodes, edges, hiddenKeys: collapsed.hidden, columns, topRow, bandRows, bandColumns, size: { width: columns * (geometry.w + geometry.gapX), height }, bandTop };
+  return { nodes, edges, hiddenKeys: collapsed.hidden, columns, topRow, bandRows, bandColumns, size: { width: columns * (geometry.w + geometry.gapX), height }, bandTop, levelBands };
 }
