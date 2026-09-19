@@ -42,7 +42,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 | **Deterministic sorting** | Within a quadrant: overdue → priority → due date → alphabetical. No accidental drag-reordering. |
 | **Daily note integration** | New tasks go under a **configurable section heading**; if today's daily note is missing it's created automatically, honoring your core "Daily notes" template (`{{date}}`, `{{title}}`, `{{time}}`). |
 | **Excluded folders** | Point the matrix away from templates, archives or anything you don't want scanned. |
-| **Task dependencies** | Reads Obsidian Tasks `🆔` / `⛔` links, puts prerequisites first, and edits Before this / After this relationships by task name. |
+| **Task dependencies** | Reads Obsidian Tasks `🆔` / `⛔` links, puts prerequisites first, and edits Previous task / Follow-up task relationships by task name; the right-click menu creates a new previous or follow-up task directly. |
 | **Desktop & mobile** | Works on desktop and Android (`isDesktopOnly: false`); responsive layout with touch-friendly controls. |
 | **Theme-aware** | Built entirely on Obsidian CSS variables, so it adapts to your light/dark theme and accent colour. |
 
@@ -117,7 +117,7 @@ The manual lever for reordering is **priority** — set it and the task jumps up
 
 ### Task dependencies
 
-The matrix reads `🆔 id` and `⛔ id1,id2`. Blocked cards are dimmed and link to their prerequisites; tasks that block others link back to them. Edit relationships inline with **Before this** and **After this**. Prerequisites sort first within the same quadrant; cross-quadrant dependencies still mark a task as blocked but do not affect ordering.
+The matrix reads `🆔 id` and `⛔ id1,id2`. Blocked cards are dimmed and link to their prerequisites; tasks that block others link back to them. Edit relationships inline with **Previous task** and **Follow-up task**, or create a new linked task from the right-click menu (**Add previous task** / **Add follow-up task**). Prerequisites sort first within the same quadrant; cross-quadrant dependencies still mark a task as blocked but do not affect ordering.
 
 Missing IDs and cycles display warnings. Completing a blocked task is allowed after confirmation, and completing a prerequisite reports how many tasks became unblocked. Tasks in excluded folders are not indexed, so links to them appear as unknown and do not block or affect sorting.
 

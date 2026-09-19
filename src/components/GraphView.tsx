@@ -9,7 +9,7 @@ import { isClosedStatus } from '../core/types.ts';
 import { showInfo } from '../obsidian-adapter/toast.ts';
 import type { InlineLinkTarget } from './inlineMarkdown.tsx';
 import { AddTaskInput } from './AddTaskInput.tsx';
-import { TaskCard as UnmemoizedTaskCard, type DependencySelection } from './TaskCard.tsx';
+import { TaskCard as UnmemoizedTaskCard, type DependencySelection, type LinkedTaskKind } from './TaskCard.tsx';
 import { Icon } from './Icon.tsx';
 
 type NewTaskInput = { text: string; quadrant: Quadrant; dueDate: string | null; priority: Priority | null; status?: string };
@@ -20,7 +20,7 @@ type Props = {
   onToggleTask: (task: Task) => void; onSetStatus: (task: Task, status: string) => Promise<void>; onSetDueDate: (task: Task, due: string | null) => Promise<void>;
   onUpdateTask: (task: Task, text: string, tags: string[], options: { dueDate: string | null; priority: Priority | null }, dependencies: DependencySelection) => Promise<void>;
   onOpenSource: (task: Task, mode?: PaneType | boolean) => void; onOpenLink: (task: Task, link: InlineLinkTarget) => void; onMoveQuadrant: (task: Task, quadrant: Quadrant) => void;
-  onAddTask: (input: NewTaskInput) => Promise<void>; onAddAtCell: (cell: GridCell, input: NewTaskInput) => Promise<void>; onAddLinked: (target: Task, kind: 'blocker' | 'dependent', input: NewTaskInput) => Promise<void>;
+  onAddTask: (input: NewTaskInput) => Promise<void>; onAddAtCell: (cell: GridCell, input: NewTaskInput) => Promise<void>; onAddLinked: (target: Task, kind: LinkedTaskKind, input: NewTaskInput) => Promise<void>;
   onLinkTasks: (source: Task, target: Task) => Promise<void>; onRemoveDependency: (source: Task, target: Task) => Promise<void>;
   createTagSuggest: (input: HTMLInputElement) => void; onRevealed: (key: string, present: boolean) => void; onResetAll: () => void;
 };
@@ -36,7 +36,7 @@ export function GraphView(props: Props) {
   const panRef = useRef<{ x: number; y: number; left: number; top: number; id: number } | null>(null);
   const [collapsedKeys, setCollapsedKeys] = useState<Set<string>>(() => new Set());
   const [hoverKey, setHoverKey] = useState<string | null>(null);
-  const [addPanel, setAddPanel] = useState<{ cell: GridCell; target?: Task; kind?: 'blocker' | 'dependent' } | null>(null);
+  const [addPanel, setAddPanel] = useState<{ cell: GridCell } | null>(null);
   const [linkDrag, setLinkDrag] = useState<{ source: Task; port: GraphLinkPort; start: { x: number; y: number }; pointer: { x: number; y: number }; target: Task | null } | null>(null);
   const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
   const { setNodeRef } = useDroppable({ id: 'graph-canvas' });
@@ -207,9 +207,7 @@ export function GraphView(props: Props) {
           <ul className="em-graph-nodes">{layout.nodes.map((node) => {
             const point = cellToPoint(node.cell, { ...geometry, gapX: GRID.gapX, gapY: GRID.gapY, topRow: layout.topRow });
             const canToggleBranch = canToggleGraphBranch(node.task, collapsedKeys);
-            return <TaskCard key={node.key} task={node.task} today={props.today} graceExpiresAt={props.graceMap.get(node.key)} isActiveDrag={props.activeTaskId === node.key} compact={props.compact} style={{ left: point.x, top: point.y, width: geometry.w, height: geometry.h }} className={`${node.manual ? 'em-task-manual' : ''} ${node.collapsed ? 'em-graph-task-collapsed' : ''} ${(!node.inSeed && props.selectedTags.length) || (isClosedStatus(node.task.status) && !props.graceMap.has(node.key)) ? 'em-task-dimmed' : ''}`} onToggle={() => props.onToggleTask(node.task)} onSetStatus={(status) => props.onSetStatus(node.task, status)} onSetDueDate={(due) => props.onSetDueDate(node.task, due)} onUpdateTask={(text, tags, options, dependencies) => props.onUpdateTask(node.task, text, tags, options, dependencies)} onOpenSource={(mode) => props.onOpenSource(node.task, mode)} onOpenLink={(link) => props.onOpenLink(node.task, link)} onMoveQuadrant={(quadrant) => props.onMoveQuadrant(node.task, quadrant)} createTagSuggest={props.createTagSuggest} onRequestAddLinked={(kind) => setAddPanel(kind === 'blocker'
-              ? { cell: { col: node.cell.col, row: Math.max(0, node.cell.row - 1) }, target: node.task, kind }
-              : { cell: { col: node.cell.col, row: node.cell.row + 1 }, target: node.task, kind })} extendMenu={(menu: Menu) => {
+            return <TaskCard key={node.key} task={node.task} today={props.today} graceExpiresAt={props.graceMap.get(node.key)} isActiveDrag={props.activeTaskId === node.key} compact={props.compact} style={{ left: point.x, top: point.y, width: geometry.w, height: geometry.h }} className={`${node.manual ? 'em-task-manual' : ''} ${node.collapsed ? 'em-graph-task-collapsed' : ''} ${(!node.inSeed && props.selectedTags.length) || (isClosedStatus(node.task.status) && !props.graceMap.has(node.key)) ? 'em-task-dimmed' : ''}`} onToggle={() => props.onToggleTask(node.task)} onSetStatus={(status) => props.onSetStatus(node.task, status)} onSetDueDate={(due) => props.onSetDueDate(node.task, due)} onUpdateTask={(text, tags, options, dependencies) => props.onUpdateTask(node.task, text, tags, options, dependencies)} onOpenSource={(mode) => props.onOpenSource(node.task, mode)} onOpenLink={(link) => props.onOpenLink(node.task, link)} onMoveQuadrant={(quadrant) => props.onMoveQuadrant(node.task, quadrant)} createTagSuggest={props.createTagSuggest} onAddLinked={(kind, input) => props.onAddLinked(node.task, kind, input)} extendMenu={(menu: Menu) => {
               if (node.manual) menu.addItem((item) => item.setTitle('Reset position').setIcon('rotate-ccw').onClick(() => void props.onSetPosition(node.task, null)));
               if (canToggleBranch) menu.addItem((item) => item.setTitle(node.collapsed ? 'Expand branch' : 'Collapse branch').onClick(() => setCollapsedKeys((current) => { const next = new Set(current); node.collapsed ? next.delete(node.key) : next.add(node.key); return next; })));
             }} onMouseEnter={() => setHoverKey(node.key)} onMouseLeave={() => setHoverKey(null)}>
@@ -218,7 +216,7 @@ export function GraphView(props: Props) {
               {canToggleBranch && <button aria-label={node.collapsed ? `Expand branch (${node.hiddenCount} hidden)` : 'Collapse branch'} className="em-graph-collapse" onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); setCollapsedKeys((current) => { const next = new Set(current); node.collapsed ? next.delete(node.key) : next.add(node.key); return next; }); }}>{node.collapsed ? '▼' : '▲'}</button>}
             </TaskCard>;
           })}</ul>
-          {addPanel && <div className="em-graph-add-panel" onPointerDown={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} style={{ left: addPanel.cell.col * (geometry.w + GRID.gapX), top: cellToPoint(addPanel.cell, { ...geometry, gapX: GRID.gapX, gapY: GRID.gapY, topRow: layout.topRow }).y, width: geometry.w * 2 + GRID.gapX }}><AddTaskInput quadrant={addPanel.target?.quadrant ?? 'OPEN'} initialTags={initialTags} createTagSuggest={props.createTagSuggest} onCancel={() => setAddPanel(null)} onSubmit={async (input) => { if (addPanel.target && addPanel.kind) await props.onAddLinked(addPanel.target, addPanel.kind, input); else if (addPanel.cell.row < 0) await props.onAddTask(input); else await props.onAddAtCell(addPanel.cell, { ...input, quadrant: 'OPEN' }); setAddPanel(null); }} /></div>}
+          {addPanel && <div className="em-graph-add-panel" onPointerDown={(event) => event.stopPropagation()} onDoubleClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} style={{ left: addPanel.cell.col * (geometry.w + GRID.gapX), top: cellToPoint(addPanel.cell, { ...geometry, gapX: GRID.gapX, gapY: GRID.gapY, topRow: layout.topRow }).y, width: geometry.w * 2 + GRID.gapX }}><AddTaskInput quadrant="OPEN" initialTags={initialTags} createTagSuggest={props.createTagSuggest} onCancel={() => setAddPanel(null)} onSubmit={async (input) => { if (addPanel.cell.row < 0) await props.onAddTask(input); else await props.onAddAtCell(addPanel.cell, { ...input, quadrant: 'OPEN' }); setAddPanel(null); }} /></div>}
         </div>
       </div>
     </div>

@@ -42,6 +42,10 @@
 .em-graph-port-top { top: -5px; left: calc(50% - 5px); }
 .em-graph-port-bottom { bottom: -5px; left: calc(50% - 5px); }
 .em-graph .em-task-editing { height: auto; overflow: visible; z-index: 20; }
+/* Formulář navázaného tasku visí pod kartou, takže ji nikdy nepřekryje. Nahoru ne:
+   u karty v horní řadě by utekl do záporných souřadnic plátna, kam scroll nedosáhne. */
+.em-graph .em-task-linked-open { overflow: visible; z-index: 30; }
+.em-graph .em-task-linked-add { position: absolute; z-index: 26; top: calc(100% + 8px); left: 0; width: calc(200% + 40px); margin: 0; background: var(--background-primary); border: 1px solid var(--interactive-accent); border-radius: var(--radius-m); padding: var(--size-4-2); }
 .em-graph .em-task-blocked { opacity: 1; }
 .em-graph .em-task-dimmed { opacity: .45; }
 .em-graph .em-task-q-do { background: color-mix(in srgb, var(--color-red) 12%, var(--background-primary)); }

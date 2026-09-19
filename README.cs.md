@@ -42,7 +42,7 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 | **Deterministické řazení** | V kvadrantu: overdue → priorita → due date → abecedně. Žádné nechtěné přeskupení dragem. |
 | **Daily note integrace** | Nové tasky jdou pod **konfigurovatelný nadpis sekce**; pokud dnešní daily note chybí, vytvoří se automaticky podle tvého core „Daily notes" template (`{{date}}`, `{{title}}`, `{{time}}`). |
 | **Vyloučené složky** | Odkloní matici od šablon, archivů nebo čehokoli, co nechceš skenovat. |
-| **Závislosti tasků** | Čte vazby Obsidian Tasks `🆔` / `⛔`, řadí předpoklady první a umožňuje editovat Before this / After this podle názvu tasku. |
+| **Závislosti tasků** | Čte vazby Obsidian Tasks `🆔` / `⛔`, řadí předpoklady první a umožňuje editovat Previous task / Follow-up task podle názvu tasku; z kontextového menu jde rovnou založit nový předchozí nebo návazný task. |
 | **Desktop i mobil** | Funguje na desktopu i Androidu (`isDesktopOnly: false`); responzivní layout s ovládáním pro dotyk. |
 | **Theme-aware** | Postavené čistě na Obsidian CSS proměnných — přizpůsobí se světlému/tmavému theme i accent barvě. |
 
@@ -117,7 +117,7 @@ Manuální páka přeskupování je **priorita** — nastav ji a task se vyhoupn
 
 ### Závislosti tasků
 
-Matice čte `🆔 id` a `⛔ id1,id2`. Blokované karty jsou ztlumené a odkazují na předpoklady; tasky, které blokují jiné, odkazují zpět. Vazby lze upravit inline přes **Before this** a **After this**. Předpoklady se řadí první v témže kvadrantu; vazba mezi kvadranty stále označí task jako blokovaný, ale pořadí neovlivní.
+Matice čte `🆔 id` a `⛔ id1,id2`. Blokované karty jsou ztlumené a odkazují na předpoklady; tasky, které blokují jiné, odkazují zpět. Vazby lze upravit inline přes **Previous task** a **Follow-up task**, nebo z kontextového menu založit nový navázaný task (**Add previous task** / **Add follow-up task**). Předpoklady se řadí první v témže kvadrantu; vazba mezi kvadranty stále označí task jako blokovaný, ale pořadí neovlivní.
 
 Chybějící ID a cykly se zobrazí jako varování. Blokovaný task lze po potvrzení dokončit a dokončení předpokladu oznámí počet odblokovaných tasků. Tasky ve vyloučených složkách se neindexují, takže vazby na ně vypadají jako neznámé a neblokují ani neovlivňují řazení.
 

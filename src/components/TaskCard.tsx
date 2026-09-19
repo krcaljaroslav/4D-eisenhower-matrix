@@ -87,10 +87,8 @@ type Props = {
   className?: string;
   children?: ReactNode;
   extendMenu?: (menu: Menu) => void;
-  /** Založí navázaný task z inline formuláře pod kartou. */
+  /** Založí navázaný task z inline formuláře u karty. */
   onAddLinked?: (kind: LinkedTaskKind, input: LinkedTaskInput) => Promise<void>;
-  /** Přebije inline formulář — graf má pevné rozměry karet a formulář kreslí sám. */
-  onRequestAddLinked?: (kind: LinkedTaskKind) => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 };
@@ -114,7 +112,6 @@ export function TaskCard({
   children,
   extendMenu,
   onAddLinked,
-  onRequestAddLinked,
   onMouseEnter,
   onMouseLeave,
 }: Props) {
@@ -212,21 +209,19 @@ export function TaskCard({
           }),
       );
     }
-    if (onAddLinked || onRequestAddLinked) {
-      const startLinked = (kind: LinkedTaskKind) =>
-        onRequestAddLinked ? onRequestAddLinked(kind) : setLinkedKind(kind);
+    if (onAddLinked) {
       menu.addSeparator();
       menu.addItem((item) =>
         item
           .setTitle('Add previous task')
           .setIcon('arrow-left-to-line')
-          .onClick(() => startLinked('blocker')),
+          .onClick(() => setLinkedKind('blocker')),
       );
       menu.addItem((item) =>
         item
           .setTitle('Add follow-up task')
           .setIcon('arrow-right-to-line')
-          .onClick(() => startLinked('dependent')),
+          .onClick(() => setLinkedKind('dependent')),
       );
     }
     return menu;
@@ -285,6 +280,7 @@ export function TaskCard({
       onContextMenu={(e) => {
         e.preventDefault();
         e.stopPropagation();
+        if (busy) return;
         buildMenu().showAtMouseEvent(e.nativeEvent);
       }}
       className="em-task-checkbox em-task-status"
@@ -396,7 +392,7 @@ export function TaskCard({
       style={cardStyle}
       className={`em-task ${overdue ? 'em-task-overdue' : ''} ${
         inGrace ? 'em-task-grace' : ''
-      } ${editing ? 'em-task-editing' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${
+      } ${editing ? 'em-task-editing' : ''} ${linkedKind ? 'em-task-linked-open' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${
         task.status === '-' && !editing ? 'em-task-canceled' : ''
       } ${task.isBlocked && !editing ? 'em-task-blocked' : ''} ${
         isActiveDrag && !Platform.isMobile ? 'em-task-active-drag' : ''
@@ -641,8 +637,8 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
       <div className="em-edit-dependencies">
         <DependencyField
           icon="⛔"
-          placeholder="Before this"
-          title="Type to search tasks that must be completed before this task"
+          placeholder="Previous task"
+          title="Type to search previous tasks (must be completed before this one)"
           inputRef={beforeRef}
           tasks={beforeTasks}
           missingIds={missingBlockerIds}
@@ -656,8 +652,8 @@ function EditForm({ task, onCancel, onSaved, onUpdate, createTagSuggest }: EditF
         />
         <DependencyField
           icon="🆔"
-          placeholder="After this"
-          title="Type to search tasks that must be completed after this task"
+          placeholder="Follow-up task"
+          title="Type to search follow-up tasks (wait for this one)"
           inputRef={afterRef}
           tasks={afterTasks}
           missingIds={[]}
