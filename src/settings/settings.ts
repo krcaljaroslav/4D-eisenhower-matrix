@@ -1,6 +1,11 @@
 import type { Quadrant } from '../core/types.ts';
 import type { DueFilter } from '../core/taskUtils.ts';
 import type { PropertyFilter } from '../obsidian-adapter/properties.ts';
+import {
+  DEFAULT_QUADRANT_RULES,
+  type QuadrantMode,
+  type QuadrantRules,
+} from '../core/quadrantRules.ts';
 
 /**
  * Plugin nastavení — persistovaná napříč restarty Obsidianu přes
@@ -25,6 +30,12 @@ export type PluginSettings = {
    */
   propertyFilters: PropertyFilter[];
   showPropertyFilter: boolean;
+  /**
+   * `tags` = quadrant from the leading tag only (default). `rules` = the tag
+   * still wins; untagged tasks go to the first matching rule.
+   */
+  quadrantMode: QuadrantMode;
+  quadrantRules: QuadrantRules;
   /**
    * Override pro daily notes folder. Prázdný string = použij konfiguraci
    * z core pluginu „Daily notes". Cesta relativní k vault rootu.
@@ -82,6 +93,8 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   excludedFolders: [],
   propertyFilters: [],
   showPropertyFilter: false,
+  quadrantMode: 'tags',
+  quadrantRules: DEFAULT_QUADRANT_RULES,
   dailyFolderOverride: '',
   dailySectionHeading: '# Today',
   headerCollapsed: false,
