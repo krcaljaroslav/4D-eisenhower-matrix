@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MarkdownView, Platform } from 'obsidian';
+import { Platform } from 'obsidian';
 import type { App, EventRef, PaneType } from 'obsidian';
 import {
   DndContext,
@@ -286,6 +286,10 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
   // === Data fetching ===
   const refetchTimerRef = useRef<number | null>(null);
+  const taskSourcePathsRef = useRef<ReadonlySet<string>>(new Set());
+  useEffect(() => {
+    taskSourcePathsRef.current = new Set(tasks.map((task) => task.sourceFile));
+  }, [tasks]);
 
   const refetch = useCallback(async () => {
     setLoading(true);
@@ -331,8 +335,19 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   useEffect(() => {
     if (!showPropertyFilter) return;
     // Metadata arrives after modify; refresh cache-derived filters without reading files again.
-    const metadataRef = app.metadataCache.on('changed', () => setPropertyRevision((revision) => revision + 1));
-    return () => app.metadataCache.offref(metadataRef);
+    let metadataTimer: number | null = null;
+    const metadataRef = app.metadataCache.on('changed', (file) => {
+      if (!taskSourcePathsRef.current.has(file.path)) return;
+      if (metadataTimer !== null) window.clearTimeout(metadataTimer);
+      metadataTimer = window.setTimeout(() => {
+        setPropertyRevision((revision) => revision + 1);
+        metadataTimer = null;
+      }, 200);
+    });
+    return () => {
+      app.metadataCache.offref(metadataRef);
+      if (metadataTimer !== null) window.clearTimeout(metadataTimer);
+    };
   }, [app, showPropertyFilter]);
 
   // Grace period interval — clean expired keys + re-render
@@ -531,23 +546,24 @@ export function MatrixApp({ app, repo, plugin }: Props) {
    * task's line), otherwise open it in a new tab so the matrix stays open.
    */
   const handleNavigateToSource = useCallback(
-    (task: Task, newLeaf = false) => {
+    async (task: Task, mode: PaneType | boolean = false) => {
       const file = app.vault.getFileByPath(task.sourceFile);
       if (!file) {
         showError(`File not found: ${task.sourceFile}`);
         return;
       }
       const eState = { line: task.lineIndex };
-      const existing = !newLeaf && app.workspace
+      const existing = !mode && app.workspace
         .getLeavesOfType('markdown')
-        .find((leaf) => leaf.view instanceof MarkdownView && leaf.view.file?.path === file.path);
+        .find((leaf) => leaf.getViewState().state?.file === file.path);
       if (existing) {
+        await existing.loadIfDeferred();
         app.workspace.setActiveLeaf(existing, { focus: true });
-        void app.workspace.revealLeaf(existing);
+        await app.workspace.revealLeaf(existing);
         existing.setEphemeralState(eState);
         return;
       }
-      void app.workspace.getLeaf('tab').openFile(file, { active: true, eState });
+      await app.workspace.getLeaf(mode || 'tab').openFile(file, { active: true, eState });
     },
     [app],
   );
@@ -653,7 +669,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const passesFilters = useCallback(
     (t: Task): boolean => {
       if (!graphView && plugin.settings.hideBlockedTasks && t.isBlocked) return false;
-      // Today's daily note always passes — new tasks land there.
+      // Today's daily note always passes - new tasks land there.
       if (!passesPropertyFilter(t, showPropertyFilter, propertyMatchedFiles)) {
         return false;
       }
@@ -814,7 +830,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
   /**
    * Per row: values of its property, counted by open tasks in notes that pass
-   * the *other* rows — so the counts show what selecting a chip would leave.
+   * the *other* rows - so the counts show what selecting a chip would leave.
    */
   const propertyRows = useMemo((): PropertyFilterRow[] => {
     if (!showPropertyFilter) return [];

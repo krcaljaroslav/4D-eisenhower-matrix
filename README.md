@@ -94,7 +94,7 @@ Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+
 | Edit a task | **Desktop:** double-click the card. **Mobile:** long-press / double-tap → menu → Edit |
 | Change due date alone | Click the 📅 badge on the card |
 | Move between quadrants | **Desktop:** drag the card onto the target quadrant. **Mobile:** long-press / double-tap → menu → "Move to…" |
-| Open the source file | Click the 📁 note name on the card — switches to the note if it's already open, otherwise opens it in a new tab (the matrix stays open); Ctrl/Cmd-click always opens a new tab. Enabled by default on desktop, disabled on mobile; toggle it in Settings. Or **Desktop:** right-click the card. **Mobile:** long-press / double-tap. → menu (current pane / new tab / split / window) — the cursor lands on the task's line |
+| Open the source file | Click the 📁 note name on the card - switches to the note if it's already open, otherwise opens it in a new tab (the matrix stays open); Ctrl/Cmd-click always opens a new tab. Enabled by default on desktop, disabled on mobile; toggle it in Settings. Or **Desktop:** right-click the card. **Mobile:** long-press / double-tap. → menu (current pane / new tab / split / window) - the cursor lands on the task's line |
 | Filter by tag | Click a chip in the filter bar (multi-select, OR) |
 | Filter by property | Enable **Show property filter** in Settings, choose a property in the **Property** dropdown under the filter bar, then click value chips (multi-select, OR) · **+** adds another property (AND) · **×** removes a row · *clear* resets all |
 | Due-date quick filter | The **Today** (overdue + due today) / **Selected** (due on the date picked in the header) / **This week** (overdue + next 7 days) buttons at the start of the filter bar |
@@ -138,7 +138,8 @@ The parser recognises a named list of Tasks fields (`⏳`, `➕`, `🔁`, `🏁`
 - **Respect task dependencies when sorting** — places prerequisites first within each quadrant. Default: on.
 - **Hide blocked tasks** — removes currently blocked tasks from the matrix. If a blocker is itself blocked, both cards can be hidden, so the matrix will not show what the chain is waiting for. Default: off.
 
-- **Open note from task card** — clicking the 📁 note name on a card opens that note, or switches to it if it's already open. Off = the name is plain text. Default: on.
+- **Open note from task card** - clicking the 📁 note name on a card opens that note, or switches to it if it's already open. Off = the name is plain text. Default: on (desktop), off (mobile).
+- **Show property filter** - shows frontmatter filter rows and applies saved property filters. Default: off.
 
 On Obsidian 1.13 and later the settings also show up in the search box at the top of the Settings window.
 
@@ -176,7 +177,7 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 
 ## Changelog
 
-**1.0.40 (unreleased)** — Thanks to @mason-bryant for PR #4 (frontmatter property filters) and PR #6 (open notes from the 📁 source line). Property filters are optional and use loaded task sources; source clicks follow platform defaults and support Ctrl/Cmd-click for a new tab.
+**1.0.40 (unreleased)** - Thanks to @mason-bryant for PR #4 (frontmatter property filters) and PR #6 (open notes from the 📁 source line). Property filters are optional and use loaded task sources; source clicks follow platform defaults and support Ctrl/Cmd-click for a new tab.
 
 **1.0.38-1.0.39** - Linked tasks straight from the right-click menu: a new last block, **Add previous task** / **Add follow-up task**, opens a form at the card and links the new task in the chosen direction, in the matrix, Kanban and graph alike (in the graph it replaces *Add blocker below* / *Add dependent above*); the edit-form dependency fields are renamed to **Previous task** / **Follow-up task** to match. The dependency graph lays out by branch instead of stretching one level across the screen: levels whose tasks have prerequisites stay in a single row and continue to the right (reach them with the scrollbar or by panning), tasks without prerequisites stack in a column directly under the task they block, and their links leave from the side of the card into the gap before turning up, so they no longer look attached to the card above. Rows are spaced further apart, the branch collapse button is half its former size and sits beside the incoming link, and manually placed cards stay where you put them. (1.0.38 briefly wrapped wide levels into several rows; 1.0.39 replaces that.)
 

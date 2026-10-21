@@ -36,7 +36,7 @@ const HIDE_BLOCKED_NAME = 'Hide blocked tasks';
 const HIDE_BLOCKED_DESC = 'Hide tasks that have at least one unfinished dependency.';
 const OPEN_SOURCE_NAME = 'Open note from task card';
 const OPEN_SOURCE_DESC =
-  "Click the 📁 note name on a task card to open that note — or switch to it if it's already open. Ctrl/Cmd-click opens a new tab. Defaults to on for desktop, off for mobile. Off = the note name isn't clickable.";
+  "Click the 📁 note name on a task card to open that note - or switch to it if it's already open. Ctrl/Cmd-click opens a new tab. Defaults to on for desktop, off for mobile. Off = the note name isn't clickable.";
 
 const PROPERTY_FILTER_NAME = 'Show property filter';
 const PROPERTY_FILTER_DESC = 'Show frontmatter filter rows and apply saved property filters. Off by default.';

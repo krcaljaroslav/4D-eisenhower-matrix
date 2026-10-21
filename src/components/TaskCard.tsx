@@ -19,7 +19,7 @@ import { renderInlineMarkdown, type InlineLinkHandler } from './inlineMarkdown.t
 export const GRACE_MS = 3000;
 
 /** Click on the 📁 source line: open/focus the note. Null = navigation disabled. */
-export const SourceNavigationContext = createContext<((task: Task, newLeaf?: boolean) => void) | null>(null);
+export const SourceNavigationContext = createContext<((task: Task, mode?: PaneType | boolean) => void) | null>(null);
 
 export const DependencyNavigationContext = createContext<
   ((task: Task, event?: React.MouseEvent) => void) | null
@@ -446,14 +446,14 @@ export function TaskCard({
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigateToSource(task, !!Keymap.isModEvent(e.nativeEvent));
+                    navigateToSource(task, Keymap.isModEvent(e.nativeEvent));
                   }}
                   onDoubleClick={(e) => e.stopPropagation()}
                   onKeyDown={(e) => {
                     if (e.key !== 'Enter' && e.key !== ' ') return;
                     e.preventDefault();
                     e.stopPropagation();
-                    navigateToSource(task);
+                    navigateToSource(task, Keymap.isModEvent(e.nativeEvent));
                   }}
                 >
                   📁 {shortenPath(task.sourceFile)}

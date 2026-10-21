@@ -95,7 +95,7 @@ Priorita ([Obsidian Tasks konvence](https://publish.obsidian.md/tasks/Getting+St
 | Filtr podle vlastností | Zapni **Show property filter** v nastavení, vyber vlastnost v **Property** pod filter barem a klikni na hodnoty (multi-select, OR) · **+** přidá vlastnost (AND) · **×** odebere řádek · *clear* vše zruší |
 | Změnit termín samostatně | Klik na 📅 badge na kartě |
 | Přesun mezi kvadranty | **Desktop:** drag karty na cílový kvadrant. **Mobil:** long-press / dvojklep → menu → „Move to…" |
-| Otevřít source soubor | Klik na 📁 název poznámky přepne do již otevřené poznámky, jinak ji otevře v novém tabu (matice zůstává otevřená); Ctrl/Cmd-klik vždy otevře nový tab. Na desktopu výchozí zapnuto, na mobilu vypnuto; přepínač v nastavení. Nebo **Desktop:** pravý klik na kartu. **Mobil:** long-press / dvojklep. → menu (current pane / nová záložka / split / okno) — kurzor přistane na řádku tasku |
+| Otevřít source soubor | Klik na 📁 název poznámky přepne do již otevřené poznámky, jinak ji otevře v novém tabu (matice zůstává otevřená); Ctrl/Cmd-klik vždy otevře nový tab. Na desktopu výchozí zapnuto, na mobilu vypnuto; přepínač v nastavení. Nebo **Desktop:** pravý klik na kartu. **Mobil:** long-press / dvojklep. → menu (current pane / nová záložka / split / okno) - kurzor přistane na řádku tasku |
 | Filtr podle tagu | Klik na chip ve filter baru (multi-select OR) |
 | Rychlý filtr podle due date | Tlačítka **Today** (overdue + due dnes) / **Selected** (due na datum vybrané v hlavičce) / **This week** (overdue + 7 dní) na začátku filter baru |
 | Předchozí / další den | Šipky ← → v headeru, kalendář, nebo „Dnes" |
@@ -137,6 +137,8 @@ Parser zachovává jen jmenovitě podporovaná pole Tasks (`⏳`, `➕`, `🔁`,
 - **Warn when completing a blocked task** — před zavřením blokovaného tasku zobrazí potvrzení. Výchozí: zapnuto.
 - **Respect task dependencies when sorting** — uvnitř kvadrantu řadí předpoklady před závislé tasky. Výchozí: zapnuto.
 - **Hide blocked tasks** — skryje právě blokované tasky z matice; pokud je blokovaný i blokátor, mohou zmizet obě karty a matice neukáže, na co řetěz čeká. Výchozí: vypnuto.
+- **Open note from task card** - klik na 📁 název poznámky otevře poznámku nebo přepne do již otevřené. Vypnuto = název je prostý text. Výchozí: zapnuto (desktop), vypnuto (mobil).
+- **Show property filter** - zobrazí filtr frontmatter vlastností a aplikuje uložené filtry. Výchozí: vypnuto.
 
 Na Obsidianu 1.13 a novějším se nastavení navíc najde přes vyhledávací pole nahoře v okně Settings.
 
@@ -174,7 +176,7 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 
 ## Changelog
 
-**1.0.40 (unreleased)** — Díky @mason-bryant za PR #4 (filtr podle frontmatter vlastností) a PR #6 (otevření poznámky klikem na 📁). Filtr je volitelný a nabídku sbírá ze zdrojů načtených tasků; klik na poznámku respektuje platformní default a Ctrl/Cmd-klik otevře nový tab.
+**1.0.40 (unreleased)** - Díky @mason-bryant za PR #4 (filtr podle frontmatter vlastností) a PR #6 (otevření poznámky klikem na 📁). Filtr je volitelný a nabídku sbírá ze zdrojů načtených tasků; klik na poznámku respektuje platformní default a Ctrl/Cmd-klik otevře nový tab.
 
 **1.0.38-1.0.39** - Navázané tasky přímo z kontextového menu: nový poslední blok **Add previous task** / **Add follow-up task** otevře formulář u karty a nový task naváže zvoleným směrem, v matici, Kanbanu i grafu (v grafu nahrazuje *Add blocker below* / *Add dependent above*); pole závislostí v editaci se k tomu přejmenovala na **Previous task** / **Follow-up task**. Graf závislostí rozmisťuje po větvích místo roztahování jedné úrovně přes celou obrazovku: úrovně, jejichž tasky mají předchozí tasky, zůstávají v jedné řadě a pokračují doprava (dostaneš se k nim posuvníkem nebo tažením plátna), tasky bez předchozích jsou ve sloupci přímo pod taskem, který blokují, a jejich spojnice vedou z boku karty do mezery a teprve pak nahoru, takže už nevypadají, že vedou ke kartě nad nimi. Řady mají větší rozestupy, tlačítko sbalení větve je poloviční a stojí vedle příchozí spojnice a ručně umístěné karty zůstávají, kde jsi je položil. (1.0.38 krátce zalamovala široké úrovně do víc řad; 1.0.39 to nahrazuje.)
 

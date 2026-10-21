@@ -11,9 +11,9 @@ export function propertyValueStrings(raw: unknown): string[] {
 }
 
 /** Sorted property keys from the loaded tasks' source files only. */
-export function collectPropertyKeys(app: App, tasks: readonly { sourceFile: string }[]): string[] {
+export function collectPropertyKeys(app: App, tasks: readonly { sourceFile: string; isFromDnes?: boolean }[]): string[] {
   const keys = new Set<string>();
-  for (const path of new Set(tasks.map((task) => task.sourceFile))) {
+  for (const path of new Set(tasks.filter((task) => !task.isFromDnes).map((task) => task.sourceFile))) {
     const frontmatter = app.metadataCache.getCache(path)?.frontmatter;
     if (frontmatter) for (const key of Object.keys(frontmatter)) keys.add(key);
   }
