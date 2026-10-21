@@ -51,6 +51,24 @@ describe('buildTaskLine', () => {
       '- [ ] 🛫 2026-05-14 capture',
     );
   });
+  it('OPEN preserves a user-typed leading #OPEN tag', () => {
+    expect(buildTaskLine('OPEN', '#OPEN Work', '2026-05-14')).toBe(
+      '- [ ] #OPEN 🛫 2026-05-14 Work',
+    );
+  });
+  it('OPEN preserves #OPEN after a leading context tag', () => {
+    expect(buildTaskLine('OPEN', '#ctx #OPEN Work', '2026-05-14')).toBe(
+      '- [ ] #ctx #OPEN 🛫 2026-05-14 Work',
+    );
+  });
+  it.each(['DO', 'DECIDE', 'DELEGATE', 'DELETE'] as const)(
+    '%s strips user-typed #OPEN without duplicating quadrant tags',
+    (quadrant) => {
+      expect(buildTaskLine(quadrant, '#ctx #OPEN Work', '2026-05-14')).toBe(
+        `- [ ] #${quadrant} #ctx 🛫 2026-05-14 Work`,
+      );
+    },
+  );
   it('extracts leading context tags', () => {
     expect(buildTaskLine('DO', '#Osobní #Work test', '2026-05-14')).toBe(
       '- [ ] #DO #Osobní #Work 🛫 2026-05-14 test',

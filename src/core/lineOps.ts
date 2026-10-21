@@ -99,7 +99,9 @@ export function buildTaskLine(
     remaining = leadingMatch[2].trim();
   }
 
-  const contextTags = leadingTags.filter((t) => !QUADRANT_TAG_SET.has(t.toUpperCase()));
+  const contextTags = leadingTags.filter(
+    (t) => !QUADRANT_TAG_SET.has(t.toUpperCase()) || (quadrant === 'OPEN' && t.toUpperCase() === '#OPEN'),
+  );
 
   const prefix = quadrant === 'OPEN' ? '' : `#${quadrant} `;
   const tagsPart = contextTags.length > 0 ? contextTags.join(' ') + ' ' : '';
