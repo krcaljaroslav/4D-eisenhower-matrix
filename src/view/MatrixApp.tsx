@@ -55,6 +55,7 @@ import {
   SourceNavigationContext,
   SearchHighlightContext,
   TaskEditingContext,
+  QuadrantActionsContext,
   TaskCardOverlay,
   GRACE_MS,
   type DependencySelection,
@@ -990,8 +991,8 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
   // Přesun tasku do jiného kvadrantu — sdíleno mezi drag-end a context menu.
   const handleMove = useCallback(
-    async (task: Task, targetQuadrant: Quadrant) => {
-      if (task.quadrant === targetQuadrant) return;
+    async (task: Task, targetQuadrant: Quadrant, action: 'move' | 'pin' | 'automatic' = 'move') => {
+      if (action === 'move' && task.quadrant === targetQuadrant) return;
       const id = taskKey(task.sourceFile, task.lineIndex);
 
       // Optimistic update
@@ -1004,9 +1005,8 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       );
 
       try {
-        await repo.moveTask(task.sourceFile, task.lineIndex, targetQuadrant);
-        // Rules mode: removing a tag (→ OPEN) may hand the task back to a rule,
-        // and a no-op write fires no vault event — recompute explicitly.
+        await repo.moveTask(task.sourceFile, task.lineIndex, targetQuadrant, plugin.settings.quadrantMode === 'rules' && action !== 'automatic', task.raw);
+        // Removing an explicit tag can change placement without changing the visible quadrant.
         if (plugin.settings.quadrantMode === 'rules') scheduleRefetch();
       } catch (err) {
         // rollback
@@ -1036,6 +1036,8 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           targetQuadrant,
           newStatus,
           today,
+          plugin.settings.quadrantMode === 'rules',
+          task.raw,
         );
       } catch (err) {
         applyLocalStatus(task.sourceFile, task.lineIndex, task.status);
@@ -1253,6 +1255,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         </div>
         )}
 
+        <QuadrantActionsContext.Provider value={{
+          rules: plugin.settings.quadrantMode === 'rules',
+          pin: (task) => { void handleMove(task, task.quadrant, 'pin'); },
+          automatic: (task) => { void handleMove(task, 'OPEN', 'automatic'); },
+        }}>
         <TaskEditingContext.Provider value={{ app, tasks }}>
         <DependencyNavigationContext.Provider value={handleNavigateToDependency}>
         <SourceNavigationContext.Provider
@@ -1349,6 +1356,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         </SourceNavigationContext.Provider>
         </DependencyNavigationContext.Provider>
         </TaskEditingContext.Provider>
+        </QuadrantActionsContext.Provider>
       </div>
       {/* DragOverlay jen na desktopu — na mobilu se posouvá originální karta
           (position:fixed overlay je na Obsidian mobile nespolehlivý). */}

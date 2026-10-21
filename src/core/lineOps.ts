@@ -13,11 +13,11 @@ const DONE_DATE_RE = /\s*✅\s*\d{4}-\d{2}-\d{2}/g;
 const DUE_DATE_STRIP_RE = /\s*📅\s*\d{4}-\d{2}-\d{2}/;
 const LEADING_TAGS_FULL_RE = /^(\s*-\s+\[[^\]]\]\s+(?:#[\p{L}\p{N}_-]+\s+)*)/u;
 const LEADING_QUADRANT_TAG_RE =
-  /^(\s*-\s+\[[^\]]\]\s+)(#(?:DO|DECIDE|DELEGATE|DELETE))(\s+|$)/i;
+  /^(\s*-\s+\[[^\]]\]\s+)(#(?:DO|DECIDE|DELEGATE|DELETE|OPEN))(\s+|$)/i;
 const LEADING_NO_TAG_RE = /^(\s*-\s+\[[^\]]\]\s+)(.*)$/;
 const FRONTMATTER_END_RE = /^---\s*$/;
 
-const QUADRANT_TAG_SET = new Set(['#DO', '#DECIDE', '#DELEGATE', '#DELETE']);
+const QUADRANT_TAG_SET = new Set(['#DO', '#DECIDE', '#DELEGATE', '#DELETE', '#OPEN']);
 
 // ============================================================
 // Toggle checkbox + manage ✅ done date
@@ -125,7 +125,7 @@ export type MoveResult = {
   newQuadrant: Quadrant;
 };
 
-export function moveLineQuadrant(line: string, newQuadrant: Quadrant): MoveResult {
+export function moveLineQuadrant(line: string, newQuadrant: Quadrant, explicitOpen = false): MoveResult {
   let newLine: string;
 
   const taggedMatch = LEADING_QUADRANT_TAG_RE.exec(line);
@@ -133,13 +133,13 @@ export function moveLineQuadrant(line: string, newQuadrant: Quadrant): MoveResul
     const prefix = taggedMatch[1];
     const rest = line.slice(prefix.length + taggedMatch[2].length + taggedMatch[3].length);
     newLine =
-      newQuadrant === 'OPEN'
+      newQuadrant === 'OPEN' && !explicitOpen
         ? `${prefix}${rest}`
         : `${prefix}#${newQuadrant} ${rest}`;
   } else {
     const noTagMatch = LEADING_NO_TAG_RE.exec(line);
     if (!noTagMatch) throw new Error(`Not a task line: "${line}"`);
-    if (newQuadrant === 'OPEN') {
+    if (newQuadrant === 'OPEN' && !explicitOpen) {
       return { previousLine: line, newLine: line, newQuadrant };
     }
     newLine = `${noTagMatch[1]}#${newQuadrant} ${noTagMatch[2]}`;
@@ -311,7 +311,7 @@ export function updateLineTextAndTags(
   // Zachováme původní status (` `, `/`, `x`, `-`, `>`, `<` …) — update se
   // týká jen textu/tagů/datumů/priority, ne checkbox stavu.
   const statusChar = parsed.status;
-  const quadrantPart = parsed.quadrant === 'OPEN' ? '' : `#${parsed.quadrant} `;
+  const quadrantPart = parsed.quadrant === 'OPEN' && parsed.explicitQuadrant !== 'OPEN' ? '' : `#${parsed.quadrant} `;
   const tagsPart = normalizedTags.length > 0 ? normalizedTags.join(' ') + ' ' : '';
   const priorityPart = effectivePriority ? `${PRIORITY_EMOJI[effectivePriority]} ` : '';
   const duePart = effectiveDueDate ? `📅 ${effectiveDueDate} ` : '';

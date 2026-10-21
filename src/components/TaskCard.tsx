@@ -16,6 +16,12 @@ import { TaskSuggest } from './TaskSuggest.ts';
 import { AddTaskInput } from './AddTaskInput.tsx';
 import { renderInlineMarkdown, type InlineLinkHandler } from './inlineMarkdown.tsx';
 
+export const QuadrantActionsContext = createContext<{
+  rules: boolean;
+  pin: (task: Task) => void;
+  automatic: (task: Task) => void;
+}>({ rules: false, pin: () => undefined, automatic: () => undefined });
+
 export const GRACE_MS = 3000;
 
 /** Click on the 📁 source line: open/focus the note. Null = navigation disabled. */
@@ -153,6 +159,8 @@ export function TaskCard({
     setEditing(true);
   };
 
+  const quadrantActions = useContext(QuadrantActionsContext);
+
   const buildMenu = (): Menu => {
     const menu = new Menu();
     menu.addItem((item) =>
@@ -187,6 +195,13 @@ export function TaskCard({
     // Přesun do jiného kvadrantu — hlavní cesta pro mobil (drag tam nefunguje
     // spolehlivě). Vynechá aktuální kvadrant tasku.
     menu.addSeparator();
+    if (quadrantActions.rules) {
+      if (task.automaticQuadrant) {
+        menu.addItem((entry) => entry.setTitle('Pin here').setIcon('pin').onClick(() => quadrantActions.pin(task)));
+      } else if (task.explicitQuadrant !== undefined) {
+        menu.addItem((entry) => entry.setTitle('Back to automatic').setIcon('refresh-cw').onClick(() => quadrantActions.automatic(task)));
+      }
+    }
     for (const q of QUADRANTS) {
       if (q === task.quadrant) continue;
       menu.addItem((item) =>
@@ -254,6 +269,10 @@ export function TaskCard({
       enterEdit();
     }
   };
+
+  const automaticBadge = quadrantActions.rules && task.automaticQuadrant ? (
+    <span className="em-badge" title={task.quadrant === 'OPEN' ? 'Assigned automatically: no matching rule (OPEN)' : `Assigned by rule: ${task.quadrant}`}>auto</span>
+  ) : null;
 
   const taskText = task.text ? (
     renderInlineMarkdown(task.text, onOpenLink)
@@ -426,6 +445,7 @@ export function TaskCard({
             <p className="em-task-text em-task-text-compact">{taskText}</p>
             <div className="em-task-badges">
               {dependencyBadges}
+              {automaticBadge}
               {priorityBadge}
               {dueDatePicker}
             </div>
@@ -471,6 +491,7 @@ export function TaskCard({
                   {tag}
                 </span>
               ))}
+              {automaticBadge}
               {priorityBadge}
               {dueDatePicker}
               {task.startDate && <span className="em-badge">🛫 {task.startDate}</span>}

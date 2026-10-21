@@ -20,6 +20,8 @@ export type Task = {
   checked: boolean;
   text: string;
   quadrant: Quadrant;
+  explicitQuadrant?: Quadrant;
+  automaticQuadrant?: boolean;
   contextTags: string[];
   dueDate?: string;
   startDate?: string;

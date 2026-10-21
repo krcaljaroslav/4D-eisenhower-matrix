@@ -224,3 +224,9 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 ## Licence
 
 [MIT](LICENSE)
+
+### Režim Rules
+
+Výchozí přiřazování kvadrantů je **Tags**. V režimu **Rules** úkoly bez úvodního kvadrantového tagu následují první vyhovující zapnuté pravidlo v pořadí DO → DECIDE → DELEGATE → DELETE; bez shody zůstanou OPEN. Pravidla umístění pouze počítají, poznámky nemění. Podmínky kombinují prioritu a skupiny termínů podle místních kalendářních dat.
+
+Automaticky zařazené karty mají malý odznak **auto**, jehož tooltip uvádí pravidlo (OPEN znamená, že žádné nevyhovělo). **Pin here** uloží tag aktuálního kvadrantu včetně `#OPEN`; **Back to automatic** úvodní kvadrantový tag odstraní. **Move to…** i přetažení do jiného kvadrantu připnou cílový kvadrant. Přesun do OPEN v Rules zapíše `#OPEN`, který má přednost před pravidly. V Tags přesun do OPEN kvadrantový tag odstraní jako dříve. Úvodní `#OPEN` explicitně vybírá OPEN v obou režimech.

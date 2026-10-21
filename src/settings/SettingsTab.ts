@@ -307,7 +307,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
     n.value = String(this.rule(q).dueDays);
     n.addEventListener('change', () => {
       const days = Math.floor(Number(n.value));
-      if (!Number.isFinite(days) || days < 0) {
+      if (n.value.trim() === '' || !Number.isFinite(days) || days < 0) {
         n.value = String(this.rule(q).dueDays);
         return;
       }

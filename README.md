@@ -233,3 +233,9 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 ## License
 
 [MIT](LICENSE)
+
+### Rules mode
+
+Quadrant assignment defaults to **Tags**. In **Rules** mode, tasks without a leading quadrant tag follow the first matching enabled rule, in DO → DECIDE → DELEGATE → DELETE order; unmatched tasks stay OPEN. Rules only calculate placement and never edit notes. Rule conditions combine priority and due-date buckets, using local calendar dates.
+
+Automatically placed cards show a small **auto** badge with the assigned rule in its tooltip (OPEN means no rule matched). **Pin here** saves the current quadrant tag, including `#OPEN`; **Back to automatic** removes the leading quadrant tag. **Move to…** and dragging to another quadrant pin the destination. Moving to OPEN in Rules writes `#OPEN`, which overrides rules. In Tags mode, moving to OPEN removes the quadrant tag as before. A leading `#OPEN` explicitly selects OPEN in either mode.

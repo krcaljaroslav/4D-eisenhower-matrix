@@ -75,7 +75,7 @@ export function normalizeQuadrantRules(raw: unknown): QuadrantRules {
   for (const q of RULE_QUADRANTS) {
     const merged = { ...DEFAULT_QUADRANT_RULES[q], ...(src[q] ?? {}) };
     const days = Number(merged.dueDays);
-    merged.dueDays = Number.isFinite(days) && days >= 0 ? Math.floor(days) : 7;
+    merged.dueDays = String(merged.dueDays).trim() !== '' && merged.dueDays !== null && Number.isFinite(days) && days >= 0 ? Math.floor(days) : 7;
     if (!PRIORITY_LEVELS.includes(merged.priority)) merged.priority = 'normal';
     if (!['any', 'atLeast', 'atMost'].includes(merged.priorityOp)) merged.priorityOp = 'any';
     out[q] = merged;
@@ -119,7 +119,7 @@ export function resolveQuadrant(
   rules: QuadrantRules,
   today: string,
 ): Quadrant {
-  if (mode !== 'rules' || task.quadrant !== 'OPEN') return task.quadrant;
+  if (mode !== 'rules' || task.explicitQuadrant !== undefined || task.quadrant !== 'OPEN') return task.quadrant;
   return RULE_QUADRANTS.find((q) => matchesQuadrantRule(task, rules[q], today)) ?? 'OPEN';
 }
 
@@ -132,6 +132,6 @@ export function applyQuadrantRules(
   if (mode !== 'rules') return tasks;
   return tasks.map((t) => {
     const quadrant = resolveQuadrant(t, mode, rules, today);
-    return quadrant === t.quadrant ? t : { ...t, quadrant };
+    return { ...t, quadrant, automaticQuadrant: t.explicitQuadrant === undefined && t.quadrant === 'OPEN' };
   });
 }

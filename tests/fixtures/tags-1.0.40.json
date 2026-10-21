@@ -1,0 +1,265 @@
+{
+  "commit": "25cdd18",
+  "fixtures": [
+    {
+      "raw": "- [ ] ⏫ Task 📅 2026-10-22",
+      "parsed": {
+        "lineIndex": 0,
+        "raw": "- [ ] ⏫ Task 📅 2026-10-22",
+        "status": " ",
+        "checked": false,
+        "text": "Task",
+        "quadrant": "OPEN",
+        "contextTags": [],
+        "dueDate": "2026-10-22",
+        "priority": "high",
+        "blockedBy": [],
+        "trailingTokens": []
+      },
+      "moves": {
+        "DO": {
+          "previousLine": "- [ ] ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DO"
+        },
+        "DECIDE": {
+          "previousLine": "- [ ] ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DECIDE"
+        },
+        "DELEGATE": {
+          "previousLine": "- [ ] ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELEGATE"
+        },
+        "DELETE": {
+          "previousLine": "- [ ] ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELETE"
+        },
+        "OPEN": {
+          "previousLine": "- [ ] ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "OPEN"
+        }
+      }
+    },
+    {
+      "raw": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+      "parsed": {
+        "lineIndex": 0,
+        "raw": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+        "status": " ",
+        "checked": false,
+        "text": "Task",
+        "quadrant": "DO",
+        "contextTags": [],
+        "dueDate": "2026-10-22",
+        "priority": "high",
+        "blockedBy": [],
+        "trailingTokens": []
+      },
+      "moves": {
+        "DO": {
+          "previousLine": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DO"
+        },
+        "DECIDE": {
+          "previousLine": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DECIDE"
+        },
+        "DELEGATE": {
+          "previousLine": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELEGATE"
+        },
+        "DELETE": {
+          "previousLine": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELETE"
+        },
+        "OPEN": {
+          "previousLine": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "OPEN"
+        }
+      }
+    },
+    {
+      "raw": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+      "parsed": {
+        "lineIndex": 0,
+        "raw": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+        "status": " ",
+        "checked": false,
+        "text": "Task",
+        "quadrant": "DECIDE",
+        "contextTags": [],
+        "dueDate": "2026-10-22",
+        "priority": "high",
+        "blockedBy": [],
+        "trailingTokens": []
+      },
+      "moves": {
+        "DO": {
+          "previousLine": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DO"
+        },
+        "DECIDE": {
+          "previousLine": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DECIDE"
+        },
+        "DELEGATE": {
+          "previousLine": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELEGATE"
+        },
+        "DELETE": {
+          "previousLine": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELETE"
+        },
+        "OPEN": {
+          "previousLine": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "OPEN"
+        }
+      }
+    },
+    {
+      "raw": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+      "parsed": {
+        "lineIndex": 0,
+        "raw": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+        "status": " ",
+        "checked": false,
+        "text": "Task",
+        "quadrant": "DELEGATE",
+        "contextTags": [],
+        "dueDate": "2026-10-22",
+        "priority": "high",
+        "blockedBy": [],
+        "trailingTokens": []
+      },
+      "moves": {
+        "DO": {
+          "previousLine": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DO"
+        },
+        "DECIDE": {
+          "previousLine": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DECIDE"
+        },
+        "DELEGATE": {
+          "previousLine": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELEGATE"
+        },
+        "DELETE": {
+          "previousLine": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELETE"
+        },
+        "OPEN": {
+          "previousLine": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "OPEN"
+        }
+      }
+    },
+    {
+      "raw": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+      "parsed": {
+        "lineIndex": 0,
+        "raw": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+        "status": " ",
+        "checked": false,
+        "text": "Task",
+        "quadrant": "DELETE",
+        "contextTags": [],
+        "dueDate": "2026-10-22",
+        "priority": "high",
+        "blockedBy": [],
+        "trailingTokens": []
+      },
+      "moves": {
+        "DO": {
+          "previousLine": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DO ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DO"
+        },
+        "DECIDE": {
+          "previousLine": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DECIDE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DECIDE"
+        },
+        "DELEGATE": {
+          "previousLine": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELEGATE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELEGATE"
+        },
+        "DELETE": {
+          "previousLine": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELETE"
+        },
+        "OPEN": {
+          "previousLine": "- [ ] #DELETE ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "OPEN"
+        }
+      }
+    },
+    {
+      "raw": "- [ ] #context ⏫ Task 📅 2026-10-22",
+      "parsed": {
+        "lineIndex": 0,
+        "raw": "- [ ] #context ⏫ Task 📅 2026-10-22",
+        "status": " ",
+        "checked": false,
+        "text": "Task",
+        "quadrant": "OPEN",
+        "contextTags": [
+          "#context"
+        ],
+        "dueDate": "2026-10-22",
+        "priority": "high",
+        "blockedBy": [],
+        "trailingTokens": []
+      },
+      "moves": {
+        "DO": {
+          "previousLine": "- [ ] #context ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DO #context ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DO"
+        },
+        "DECIDE": {
+          "previousLine": "- [ ] #context ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DECIDE #context ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DECIDE"
+        },
+        "DELEGATE": {
+          "previousLine": "- [ ] #context ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELEGATE #context ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELEGATE"
+        },
+        "DELETE": {
+          "previousLine": "- [ ] #context ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #DELETE #context ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "DELETE"
+        },
+        "OPEN": {
+          "previousLine": "- [ ] #context ⏫ Task 📅 2026-10-22",
+          "newLine": "- [ ] #context ⏫ Task 📅 2026-10-22",
+          "newQuadrant": "OPEN"
+        }
+      }
+    }
+  ]
+}

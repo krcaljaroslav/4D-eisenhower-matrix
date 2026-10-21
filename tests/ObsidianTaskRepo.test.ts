@@ -356,3 +356,20 @@ describe('ObsidianTaskRepo dependency updates', () => {
     expect(parseTaskLine(result.newLine, result.lineIndex)).toMatchObject({ id: result.newId, quadrant: 'OPEN' });
   });
 });
+
+describe('quadrant writes', () => {
+  it('writes explicit OPEN and removes it through vault.process, preserving CRLF', async () => {
+    const raw = '- [ ] #DO Task';
+    const { app, contents } = createApp({ 'a.md': `heading\r\n${raw}\r\nend` });
+    const repo = new ObsidianTaskRepo(app as never);
+    await repo.moveTask('a.md', 1, 'OPEN', true, raw);
+    expect(contents.get('a.md')).toBe('heading\r\n- [ ] #OPEN Task\r\nend');
+    await repo.moveTask('a.md', 1, 'OPEN', false, '- [ ] #OPEN Task');
+    expect(contents.get('a.md')).toBe('heading\r\n- [ ] Task\r\nend');
+  });
+  it('rejects stale source lines without changing the file', async () => {
+    const { app, contents } = createApp({ 'a.md': '- [ ] Changed' });
+    await expect(new ObsidianTaskRepo(app as never).moveTask('a.md', 0, 'DO', true, '- [ ] Original')).rejects.toThrow('Task line changed');
+    expect(contents.get('a.md')).toBe('- [ ] Changed');
+  });
+});

@@ -5,7 +5,7 @@
 
 import type { Priority, Quadrant } from './types.ts';
 
-const QUADRANT_TAGS = ['#DO', '#DECIDE', '#DELEGATE', '#DELETE'] as const;
+const QUADRANT_TAGS = ['#DO', '#DECIDE', '#DELEGATE', '#DELETE', '#OPEN'] as const;
 
 // `[^\]]` = jakýkoli stav uvnitř hranatých závorek (kromě samotného `]`).
 // Plugin pak rozliší 6 Basic stavů + ostatní (viz TASK_STATUSES v types.ts).
@@ -65,6 +65,7 @@ export type ParsedTask = {
   checked: boolean;
   text: string;
   quadrant: Quadrant;
+  explicitQuadrant?: Quadrant;
   contextTags: string[];
   dueDate?: string;
   startDate?: string;
@@ -200,6 +201,7 @@ export function parseTaskLine(line: string, lineIndex: number): ParsedTask | nul
     checked,
     text,
     quadrant,
+    explicitQuadrant: /^\s*#(?:DO|DECIDE|DELEGATE|DELETE|OPEN)(?=\s|$)/i.test(body) ? quadrant : undefined,
     contextTags,
     dueDate,
     startDate,

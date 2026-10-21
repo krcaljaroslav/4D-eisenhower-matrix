@@ -214,11 +214,14 @@ export class ObsidianTaskRepo {
     newQuadrant: Quadrant,
     status: string,
     todayISO: string,
+    explicitOpen = false,
+    expectedLine?: string,
   ): Promise<void> {
     const file = this.requireFile(sourceFile);
     await this.app.vault.process(file, (content) =>
       transformLineInContent(content, lineIndex, (line) => {
-        const moved = moveLineQuadrant(line, newQuadrant).newLine;
+        if (expectedLine !== undefined && line !== expectedLine) throw new Error("Task line changed; refresh and retry");
+        const moved = moveLineQuadrant(line, newQuadrant, explicitOpen).newLine;
         return setStatusOnLine(moved, status, todayISO).newLine;
       }),
     );
@@ -228,13 +231,18 @@ export class ObsidianTaskRepo {
     sourceFile: string,
     lineIndex: number,
     newQuadrant: Quadrant,
+    explicitOpen = false,
+    expectedLine?: string,
   ): Promise<void> {
     const file = this.requireFile(sourceFile);
     await this.app.vault.process(file, (content) =>
       transformLineInContent(
         content,
         lineIndex,
-        (line) => moveLineQuadrant(line, newQuadrant).newLine,
+        (line) => {
+          if (expectedLine !== undefined && line !== expectedLine) throw new Error("Task line changed; refresh and retry");
+          return moveLineQuadrant(line, newQuadrant, explicitOpen).newLine;
+        },
       ),
     );
   }
