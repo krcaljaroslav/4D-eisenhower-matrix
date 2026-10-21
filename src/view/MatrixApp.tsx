@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom';
+import { ExperimentalTouchSensor } from '../components/ExperimentalTouchSensor.ts';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform } from 'obsidian';
 import type { App, EventRef, PaneType } from 'obsidian';
@@ -55,6 +57,7 @@ import {
   SourceNavigationContext,
   SearchHighlightContext,
   TaskEditingContext,
+  TouchDragContext,
   QuadrantActionsContext,
   TaskCardOverlay,
   GRACE_MS,
@@ -974,9 +977,11 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   );
 
   // === Drag & drop ===
+  const mobileTouchDrag = Platform.isMobile && plugin.settings.touchDrag;
+  const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 5 } });
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    mobileTouchDrag ? undefined : pointerSensor,
+    useSensor(mobileTouchDrag ? ExperimentalTouchSensor : TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
   );
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -1082,6 +1087,12 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [tasks, handleMove, handleSetStatus, handleMoveAndSetStatus, kanbanQuadrant],
   );
 
+  const dragOverlay = (
+    <DragOverlay dropAnimation={null} modifiers={[snapCenterToCursor]}>
+      {activeTask && (!Platform.isMobile || mobileTouchDrag) ? <TaskCardOverlay task={activeTask} /> : null}
+    </DragOverlay>
+  );
+
   const isPastOrFuture = date !== today;
   // Kanban je dostupný i na mobilu/tabletu. Přesun mezi status-sloupci tam
   // nejde dragem (touch-drag je v Obsidian webview nespolehlivý) — řeší se přes
@@ -1135,6 +1146,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     <DndContext
       sensors={sensors}
       collisionDetection={cursorFirstCollisionDetection}
+      onDragCancel={mobileTouchDrag ? () => setActiveTask(null) : undefined}
       onDragStart={onDragStart}
       onDragEnd={(e) => void onDragEnd(e)}
     >
@@ -1255,6 +1267,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         </div>
         )}
 
+        <TouchDragContext.Provider value={plugin.settings.touchDrag}>
         <QuadrantActionsContext.Provider value={{
           rules: plugin.settings.quadrantMode === 'rules',
           pin: (task) => { void handleMove(task, task.quadrant, 'pin'); },
@@ -1357,12 +1370,9 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         </DependencyNavigationContext.Provider>
         </TaskEditingContext.Provider>
         </QuadrantActionsContext.Provider>
+        </TouchDragContext.Provider>
       </div>
-      {/* DragOverlay jen na desktopu — na mobilu se posouvá originální karta
-          (position:fixed overlay je na Obsidian mobile nespolehlivý). */}
-      <DragOverlay dropAnimation={null} modifiers={[snapCenterToCursor]}>
-        {activeTask && !Platform.isMobile ? <TaskCardOverlay task={activeTask} /> : null}
-      </DragOverlay>
+      {mobileTouchDrag ? createPortal(dragOverlay, document.body) : dragOverlay}
     </DndContext>
   );
 }

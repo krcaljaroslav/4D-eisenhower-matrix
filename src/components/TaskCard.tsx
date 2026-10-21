@@ -8,6 +8,7 @@ import {
   QUADRANT_META,
   TASK_STATUSES,
 } from '../core/types.ts';
+import { isTaskDragEnabled } from '../core/touchDrag.ts';
 import { isOverdue } from '../core/taskUtils.ts';
 import { DueDatePicker } from './DueDatePicker.tsx';
 import { HiddenDateInput, type HiddenDateInputHandle } from './HiddenDateInput.tsx';
@@ -21,6 +22,8 @@ export const QuadrantActionsContext = createContext<{
   pin: (task: Task) => void;
   automatic: (task: Task) => void;
 }>({ rules: false, pin: () => undefined, automatic: () => undefined });
+
+export const TouchDragContext = createContext(false);
 
 export const GRACE_MS = 3000;
 
@@ -136,12 +139,11 @@ export function TaskCard({
   const search = useContext(SearchHighlightContext);
   const isSearchMatch = search.matchKeys.has(draggableId);
   const isCurrentSearchMatch = search.currentKey === draggableId;
-  // Drag jen na desktopu. Na mobilu je touch-drag v Obsidian webview
-  // nespolehlivý (long-press hijackne OS) — místo toho přesun přes
-  // context menu „Přesunout do…".
+  const touchDrag = useContext(TouchDragContext);
+  const mobileTouchDrag = Platform.isMobile && touchDrag;
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: draggableId,
-    disabled: busy || Platform.isMobile,
+    disabled: busy || !isTaskDragEnabled(Platform.isMobile, touchDrag),
   });
 
   const now = Date.now();
@@ -412,13 +414,13 @@ export function TaskCard({
       onMouseLeave={onMouseLeave}
       data-task-key={draggableId}
       aria-current={isCurrentSearchMatch ? 'true' : undefined}
-      style={cardStyle}
+      style={mobileTouchDrag ? { ...cardStyle, touchAction: 'manipulation' } : cardStyle}
       className={`em-task ${overdue ? 'em-task-overdue' : ''} ${
         inGrace ? 'em-task-grace' : ''
       } ${editing ? 'em-task-editing' : ''} ${linkedKind ? 'em-task-linked-open' : ''} ${task.checked && !editing ? 'em-task-checked' : ''} ${
         task.status === '-' && !editing ? 'em-task-canceled' : ''
       } ${task.isBlocked && !editing ? 'em-task-blocked' : ''} ${
-        isActiveDrag && !Platform.isMobile ? 'em-task-active-drag' : ''
+        isActiveDrag && (!Platform.isMobile || touchDrag) ? 'em-task-active-drag' : ''
       } ${isSearchMatch ? 'em-task-match' : ''} ${
         isCurrentSearchMatch ? 'em-task-match-current' : ''
       } em-task-q-${task.quadrant.toLowerCase()} ${className}`}
@@ -426,7 +428,7 @@ export function TaskCard({
         editing
           ? undefined
           : Platform.isMobile
-            ? 'Long-press or double-tap for menu'
+            ? mobileTouchDrag ? 'Hold to drag · double-tap for menu' : 'Long-press or double-tap for menu'
             : 'Double-click to edit · right-click for menu'
       }
     >

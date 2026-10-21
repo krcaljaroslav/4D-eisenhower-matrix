@@ -63,6 +63,9 @@ const OPEN_SOURCE_NAME = 'Open note from task card';
 const OPEN_SOURCE_DESC =
   "Click the 📁 note name on a task card to open that note - or switch to it if it's already open. Ctrl/Cmd-click opens a new tab. Defaults to on for desktop, off for mobile. Off = the note name isn't clickable.";
 
+const TOUCH_DRAG_NAME = 'Touch drag (experimental)';
+const TOUCH_DRAG_DESC = 'Enable dragging on mobile and tablets: hold a card for 250 ms, then drag. Short swipes scroll; double-tap opens the menu. Off by default.';
+
 const PROPERTY_FILTER_NAME = 'Show property filter';
 const PROPERTY_FILTER_DESC = 'Show frontmatter filter rows and apply saved property filters. Off by default.';
 
@@ -130,6 +133,11 @@ export class MatrixSettingsTab extends PluginSettingTab {
         name: OPEN_SOURCE_NAME,
         desc: OPEN_SOURCE_DESC,
         control: { type: 'toggle', key: 'openSourceOnClick' },
+      },
+      {
+        name: TOUCH_DRAG_NAME,
+        desc: TOUCH_DRAG_DESC,
+        control: { type: 'toggle', key: 'touchDrag' },
       },
       {
         name: PROPERTY_FILTER_NAME,
@@ -341,6 +349,8 @@ export class MatrixSettingsTab extends PluginSettingTab {
         return this.plugin.settings.hideBlockedTasks;
       case 'openSourceOnClick':
         return resolveOpenSourceOnClick(this.plugin.settings.openSourceOnClick, Platform.isMobile);
+      case 'touchDrag':
+        return this.plugin.settings.touchDrag;
       case 'showPropertyFilter':
         return this.plugin.settings.showPropertyFilter;
       default:
@@ -373,6 +383,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       case 'respectTaskDependenciesWhenSorting':
       case 'hideBlockedTasks':
       case 'openSourceOnClick':
+      case 'touchDrag':
       case 'showPropertyFilter':
         if (typeof value !== 'boolean') return;
         await this.setBooleanSetting(key, value);
@@ -410,6 +421,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
         respectTaskDependenciesWhenSorting: this.plugin.settings.respectTaskDependenciesWhenSorting,
         hideBlockedTasks: this.plugin.settings.hideBlockedTasks,
         openSourceOnClick: this.plugin.settings.openSourceOnClick,
+        touchDrag: this.plugin.settings.touchDrag,
         showPropertyFilter: this.plugin.settings.showPropertyFilter,
         graphPositions: this.plugin.settings.graphPositions,
       };
@@ -462,6 +474,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       | 'respectTaskDependenciesWhenSorting'
       | 'hideBlockedTasks'
       | 'openSourceOnClick'
+      | 'touchDrag'
       | 'showPropertyFilter',
     value: boolean,
   ): Promise<void> {
@@ -513,6 +526,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       this.plugin.settings.respectTaskDependenciesWhenSorting = DEFAULT_SETTINGS.respectTaskDependenciesWhenSorting;
       this.plugin.settings.hideBlockedTasks = DEFAULT_SETTINGS.hideBlockedTasks;
       this.plugin.settings.openSourceOnClick = DEFAULT_SETTINGS.openSourceOnClick;
+      this.plugin.settings.touchDrag = DEFAULT_SETTINGS.touchDrag;
       this.plugin.settings.showPropertyFilter = DEFAULT_SETTINGS.showPropertyFilter;
     });
   }
@@ -629,6 +643,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       [RESPECT_DEPENDENCIES_NAME, RESPECT_DEPENDENCIES_DESC, 'respectTaskDependenciesWhenSorting'],
       [HIDE_BLOCKED_NAME, HIDE_BLOCKED_DESC, 'hideBlockedTasks'],
       [OPEN_SOURCE_NAME, OPEN_SOURCE_DESC, 'openSourceOnClick'],
+      [TOUCH_DRAG_NAME, TOUCH_DRAG_DESC, 'touchDrag'],
       [PROPERTY_FILTER_NAME, PROPERTY_FILTER_DESC, 'showPropertyFilter'],
     ] as const;
 

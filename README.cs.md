@@ -131,6 +131,8 @@ Parser zachovává jen jmenovitě podporovaná pole Tasks (`⏳`, `➕`, `🔁`,
 
 `Settings → 4D Eisenhower Matrix`:
 
+- **Touch drag (experimental)** — výchozí vypnuto. Na mobilu/tabletu zapněte, podržte kartu 250 ms a přetáhněte ji do kvadrantu nebo sloupce Kanbanu. Krátký tah dál posouvá seznam; dvojklepnutí otevírá menu. **Move to…** zůstává dostupné.
+
 - **Daily folder** — kam ukládat nové daily notes. Prázdné = respektuj core plugin „Daily notes" config. Override = vlastní cesta (s folder suggesterem).
 - **Daily section heading** — nadpis v daily note, pod který se čtou a přidávají dnešní tasky. Výchozí: `# Today`. Nastav podle toho, co používáš (např. `# Dnes`, `## Úkoly`).
 - **Vyloučené složky** — tasky z těchto složek se ignorují. Výchozí: žádné — vyloučené složky si nastav sám. Na Obsidianu 1.13+ je to nativní seznam (`+` otevře výběr složky, každý řádek má mazací tlačítko), na starších verzích UI s + / × a folder suggesterem.

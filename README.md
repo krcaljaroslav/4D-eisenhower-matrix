@@ -132,6 +132,8 @@ The parser recognises a named list of Tasks fields (`⏳`, `➕`, `🔁`, `🏁`
 
 `Settings → 4D Eisenhower Matrix`:
 
+- **Touch drag (experimental)** — off by default. On mobile/tablets, enable it, hold a card for 250 ms, then drag to a quadrant or Kanban column. Short swipes still scroll; double-tap still opens the menu. **Move to…** remains available.
+
 - **Daily folder** — where new daily notes are created. Empty = respect the core "Daily notes" plugin config. Override = a custom path (with a folder suggester).
 - **Daily section heading** — the heading in the daily note under which today's tasks are read and added. Default: `# Today`. Set it to whatever you use (e.g. `# Dnes`, `## Tasks`).
 - **Excluded folders** — tasks from these folders are ignored. Default: none — add the folders you want excluded yourself. On Obsidian 1.13+ this is the native list UI (`+` opens a folder picker, each row has a delete button); on older versions it's the + / × UI with a folder suggester.

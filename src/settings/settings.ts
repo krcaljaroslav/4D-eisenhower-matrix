@@ -34,6 +34,7 @@ export type PluginSettings = {
    * `tags` = quadrant from the leading tag only (default). `rules` = the tag
    * still wins; untagged tasks go to the first matching rule.
    */
+  touchDrag: boolean;
   quadrantMode: QuadrantMode;
   quadrantRules: QuadrantRules;
   /**
@@ -93,6 +94,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   excludedFolders: [],
   propertyFilters: [],
   showPropertyFilter: false,
+  touchDrag: false,
   quadrantMode: 'tags',
   quadrantRules: DEFAULT_QUADRANT_RULES,
   dailyFolderOverride: '',
