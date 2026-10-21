@@ -78,7 +78,7 @@ const PROPERTY_FILTER_DESC = 'Show frontmatter filter rows and apply saved prope
 
 const RESET_NAME = 'Reset to defaults';
 const RESET_DESC =
-  'Clears overrides — daily folder falls back to the core config, excluded folders are emptied.';
+  'Clears overrides — daily folder falls back to the core config, excluded folders are emptied. Quadrant assignment and rules are unchanged; use Reset rules to restore rule defaults.';
 const RESET_GRAPH_NAME = 'Reset graph positions';
 const RESET_GRAPH_DESC = 'Forget every manually placed card in the dependency graph.';
 const RESET_GRAPH_QUESTION = 'Reset every manually placed graph card?';

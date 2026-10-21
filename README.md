@@ -154,6 +154,12 @@ The parser recognises a named list of Tasks fields (`⏳`, `➕`, `🔁`, `🏁`
 
 On Obsidian 1.13 and later the settings also show up in the search box at the top of the Settings window.
 
+### Rules mode
+
+Quadrant assignment defaults to **Tags**. In **Rules** mode, tasks without a leading quadrant tag follow the first matching enabled rule, in DO → DECIDE → DELEGATE → DELETE order; unmatched tasks stay OPEN. Rules only calculate placement and never edit notes. Rule conditions combine priority and due-date buckets, using local calendar dates.
+
+Automatically placed cards show a small **auto** badge with the assigned rule in its tooltip (OPEN means no rule matched). **Pin here** saves the current quadrant tag, including `#OPEN`; **Back to automatic** removes the leading quadrant tag. **Move to…** and dragging to another quadrant pin the destination. Moving to OPEN in Rules writes `#OPEN`, which overrides rules. In Tags mode, moving to OPEN removes the quadrant tag as before. A leading `#OPEN` explicitly selects OPEN in either mode.
+
 ## Daily note integration
 
 The plugin looks for a configurable section heading in the daily note (set via **Settings → Daily section heading**, default `# Today`). New tasks are inserted under that heading.
@@ -167,7 +173,7 @@ If a daily note for the given day doesn't exist and you add the first task, the 
 Works on Android (`isDesktopOnly: false`; iOS untested but should work).
 
 - **Long-press or double-tap** a card → context menu (Edit · Open file · **Move to…**)
-- **Moving between quadrants** on mobile is done via the menu ("Move → DECIDE" etc.). Touch-drag is unreliable inside the Obsidian mobile webview, so the menu is used instead — two taps, deterministic.
+- **Moving between quadrants** on mobile is done via the menu ("Move → DECIDE" etc.). Enable **Touch drag (experimental)** in Settings to drag after holding a card for 250 ms; it is off by default. The menu remains available.
 - **Collapsed header** (the ▲ button) — frees up vertical space for the matrix.
 
 ## Roadmap
@@ -236,9 +242,3 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 ## License
 
 [MIT](LICENSE)
-
-### Rules mode
-
-Quadrant assignment defaults to **Tags**. In **Rules** mode, tasks without a leading quadrant tag follow the first matching enabled rule, in DO → DECIDE → DELEGATE → DELETE order; unmatched tasks stay OPEN. Rules only calculate placement and never edit notes. Rule conditions combine priority and due-date buckets, using local calendar dates.
-
-Automatically placed cards show a small **auto** badge with the assigned rule in its tooltip (OPEN means no rule matched). **Pin here** saves the current quadrant tag, including `#OPEN`; **Back to automatic** removes the leading quadrant tag. **Move to…** and dragging to another quadrant pin the destination. Moving to OPEN in Rules writes `#OPEN`, which overrides rules. In Tags mode, moving to OPEN removes the quadrant tag as before. A leading `#OPEN` explicitly selects OPEN in either mode.

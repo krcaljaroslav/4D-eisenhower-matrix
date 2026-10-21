@@ -260,6 +260,101 @@
           "newQuadrant": "OPEN"
         }
       }
+    },
+    {
+      "raw": "- [ ] #context #OPEN Work",
+      "parsed": {
+        "lineIndex": 0,
+        "raw": "- [ ] #context #OPEN Work",
+        "status": " ",
+        "checked": false,
+        "text": "Work",
+        "quadrant": "OPEN",
+        "contextTags": [
+          "#context",
+          "#OPEN"
+        ],
+        "blockedBy": [],
+        "trailingTokens": []
+      },
+      "moves": {
+        "DO": {
+          "previousLine": "- [ ] #context #OPEN Work",
+          "newLine": "- [ ] #DO #context #OPEN Work",
+          "newQuadrant": "DO"
+        },
+        "DECIDE": {
+          "previousLine": "- [ ] #context #OPEN Work",
+          "newLine": "- [ ] #DECIDE #context #OPEN Work",
+          "newQuadrant": "DECIDE"
+        },
+        "DELEGATE": {
+          "previousLine": "- [ ] #context #OPEN Work",
+          "newLine": "- [ ] #DELEGATE #context #OPEN Work",
+          "newQuadrant": "DELEGATE"
+        },
+        "DELETE": {
+          "previousLine": "- [ ] #context #OPEN Work",
+          "newLine": "- [ ] #DELETE #context #OPEN Work",
+          "newQuadrant": "DELETE"
+        },
+        "OPEN": {
+          "previousLine": "- [ ] #context #OPEN Work",
+          "newLine": "- [ ] #context #OPEN Work",
+          "newQuadrant": "OPEN"
+        }
+      },
+      "edit": {
+        "previousLine": "- [ ] #context #OPEN Work",
+        "newLine": "- [ ] #context #OPEN Edited"
+      }
+    },
+    {
+      "raw": "- [ ] Work #OPEN",
+      "parsed": {
+        "lineIndex": 0,
+        "raw": "- [ ] Work #OPEN",
+        "status": " ",
+        "checked": false,
+        "text": "Work #OPEN",
+        "quadrant": "OPEN",
+        "contextTags": [
+          "#OPEN"
+        ],
+        "blockedBy": [],
+        "trailingTokens": []
+      },
+      "moves": {
+        "DO": {
+          "previousLine": "- [ ] Work #OPEN",
+          "newLine": "- [ ] #DO Work #OPEN",
+          "newQuadrant": "DO"
+        },
+        "DECIDE": {
+          "previousLine": "- [ ] Work #OPEN",
+          "newLine": "- [ ] #DECIDE Work #OPEN",
+          "newQuadrant": "DECIDE"
+        },
+        "DELEGATE": {
+          "previousLine": "- [ ] Work #OPEN",
+          "newLine": "- [ ] #DELEGATE Work #OPEN",
+          "newQuadrant": "DELEGATE"
+        },
+        "DELETE": {
+          "previousLine": "- [ ] Work #OPEN",
+          "newLine": "- [ ] #DELETE Work #OPEN",
+          "newQuadrant": "DELETE"
+        },
+        "OPEN": {
+          "previousLine": "- [ ] Work #OPEN",
+          "newLine": "- [ ] Work #OPEN",
+          "newQuadrant": "OPEN"
+        }
+      },
+      "edit": {
+        "previousLine": "- [ ] Work #OPEN",
+        "newLine": "- [ ] #OPEN Edited"
+      }
     }
   ]
 }

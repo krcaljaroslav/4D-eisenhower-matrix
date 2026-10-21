@@ -5,7 +5,7 @@
 
 import type { Priority, Quadrant } from './types.ts';
 
-const QUADRANT_TAGS = ['#DO', '#DECIDE', '#DELEGATE', '#DELETE', '#OPEN'] as const;
+const QUADRANT_TAGS = ['#DO', '#DECIDE', '#DELEGATE', '#DELETE'] as const;
 
 // `[^\]]` = jakýkoli stav uvnitř hranatých závorek (kromě samotného `]`).
 // Plugin pak rozliší 6 Basic stavů + ostatní (viz TASK_STATUSES v types.ts).
@@ -158,11 +158,13 @@ export function parseTaskLine(line: string, lineIndex: number): ParsedTask | nul
   const body = m[4];
 
   const quadrant = determineQuadrant(body);
+  const explicitQuadrant = /^\s*#(?:DO|DECIDE|DELEGATE|DELETE|OPEN)(?=\s|$)/i.test(body) ? quadrant : undefined;
 
   const contextTags: string[] = [];
   const allTags = body.match(TAG_TOKEN) ?? [];
   for (const t of allTags) {
-    if (!QUADRANT_TAGS.includes(t.toUpperCase() as (typeof QUADRANT_TAGS)[number])) {
+    if (!QUADRANT_TAGS.includes(t.toUpperCase() as (typeof QUADRANT_TAGS)[number])
+      && !(explicitQuadrant === 'OPEN' && t.toUpperCase() === '#OPEN')) {
       contextTags.push(t);
     }
   }
@@ -201,7 +203,7 @@ export function parseTaskLine(line: string, lineIndex: number): ParsedTask | nul
     checked,
     text,
     quadrant,
-    explicitQuadrant: /^\s*#(?:DO|DECIDE|DELEGATE|DELETE|OPEN)(?=\s|$)/i.test(body) ? quadrant : undefined,
+    explicitQuadrant,
     contextTags,
     dueDate,
     startDate,

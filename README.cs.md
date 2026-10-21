@@ -133,7 +133,6 @@ Parser zachovává jen jmenovitě podporovaná pole Tasks (`⏳`, `➕`, `🔁`,
 `Settings → 4D Eisenhower Matrix`:
 
 - **Touch drag (experimental)** — výchozí vypnuto. Na mobilu/tabletu zapněte, podržte kartu 250 ms a přetáhněte ji do kvadrantu nebo sloupce Kanbanu. Krátký tah dál posouvá seznam; dvojklepnutí otevírá menu. **Move to…** zůstává dostupné.
-
 - **Daily folder** — kam ukládat nové daily notes. Prázdné = respektuj core plugin „Daily notes" config. Override = vlastní cesta (s folder suggesterem).
 - **Daily section heading** — nadpis v daily note, pod který se čtou a přidávají dnešní tasky. Výchozí: `# Today`. Nastav podle toho, co používáš (např. `# Dnes`, `## Úkoly`).
 - **Vyloučené složky** — tasky z těchto složek se ignorují. Výchozí: žádné — vyloučené složky si nastav sám. Na Obsidianu 1.13+ je to nativní seznam (`+` otevře výběr složky, každý řádek má mazací tlačítko), na starších verzích UI s + / × a folder suggesterem.
@@ -144,6 +143,12 @@ Parser zachovává jen jmenovitě podporovaná pole Tasks (`⏳`, `➕`, `🔁`,
 - **Show property filter** - zobrazí filtr frontmatter vlastností a aplikuje uložené filtry. Výchozí: vypnuto.
 
 Na Obsidianu 1.13 a novějším se nastavení navíc najde přes vyhledávací pole nahoře v okně Settings.
+
+### Režim Rules
+
+Výchozí přiřazování kvadrantů je **Tags**. V režimu **Rules** úkoly bez úvodního kvadrantového tagu následují první vyhovující zapnuté pravidlo v pořadí DO → DECIDE → DELEGATE → DELETE; bez shody zůstanou OPEN. Pravidla umístění pouze počítají, poznámky nemění. Podmínky kombinují prioritu a skupiny termínů podle místních kalendářních dat.
+
+Automaticky zařazené karty mají malý odznak **auto**, jehož tooltip uvádí pravidlo (OPEN znamená, že žádné nevyhovělo). **Pin here** uloží tag aktuálního kvadrantu včetně `#OPEN`; **Back to automatic** úvodní kvadrantový tag odstraní. **Move to…** i přetažení do jiného kvadrantu připnou cílový kvadrant. Přesun do OPEN v Rules zapíše `#OPEN`, který má přednost před pravidly. V Tags přesun do OPEN kvadrantový tag odstraní jako dříve. Úvodní `#OPEN` explicitně vybírá OPEN v obou režimech.
 
 ## Daily note integrace
 
@@ -158,7 +163,7 @@ Pokud daily note pro daný den neexistuje a přidáš první task, plugin ji **v
 Funguje na Androidu (`isDesktopOnly: false`; iOS nezkoušeno, ale mělo by fungovat).
 
 - **Long-press nebo dvojklep** na kartu → context menu (Edit · Open file · **Move to…**)
-- **Přesun mezi kvadranty** se na mobilu dělá přes menu („Přesunout → DECIDE" atd.). Touch-drag je v Obsidian mobile webview nespolehlivý, proto menu — dva klepy, deterministické.
+- **Přesun mezi kvadranty** se na mobilu dělá přes menu („Přesunout → DECIDE" atd.). Volitelné přetahování zapne **Touch drag (experimental)** v nastavení; výchozí je vypnuté. Po zapnutí kartu podrž 250 ms a táhni; menu zůstává dostupné.
 - **Sbalená hlavička** (▲ tlačítko) — uvolní vertikální místo pro matici
 
 ## Roadmap
@@ -227,9 +232,3 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 ## Licence
 
 [MIT](LICENSE)
-
-### Režim Rules
-
-Výchozí přiřazování kvadrantů je **Tags**. V režimu **Rules** úkoly bez úvodního kvadrantového tagu následují první vyhovující zapnuté pravidlo v pořadí DO → DECIDE → DELEGATE → DELETE; bez shody zůstanou OPEN. Pravidla umístění pouze počítají, poznámky nemění. Podmínky kombinují prioritu a skupiny termínů podle místních kalendářních dat.
-
-Automaticky zařazené karty mají malý odznak **auto**, jehož tooltip uvádí pravidlo (OPEN znamená, že žádné nevyhovělo). **Pin here** uloží tag aktuálního kvadrantu včetně `#OPEN`; **Back to automatic** úvodní kvadrantový tag odstraní. **Move to…** i přetažení do jiného kvadrantu připnou cílový kvadrant. Přesun do OPEN v Rules zapíše `#OPEN`, který má přednost před pravidly. V Tags přesun do OPEN kvadrantový tag odstraní jako dříve. Úvodní `#OPEN` explicitně vybírá OPEN v obou režimech.
