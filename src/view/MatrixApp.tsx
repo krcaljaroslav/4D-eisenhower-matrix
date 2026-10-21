@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'obsidian';
+import { MarkdownView, Platform } from 'obsidian';
 import type { App, EventRef, PaneType } from 'obsidian';
 import {
   DndContext,
@@ -39,11 +39,13 @@ import { parseTaskLine } from '../core/parser.ts';
 import { FilterBar } from '../components/FilterBar.tsx';
 import { PropertyFilterBar, type PropertyFilterRow } from '../components/PropertyFilterBar.tsx';
 import {
-  collectProperties,
+  collectPropertyKeys,
+  passesPropertyFilter,
   noteMatchesAllProperties,
   notePropertyValues,
   type PropertyFilter,
 } from '../obsidian-adapter/properties.ts';
+import { resolveOpenSourceOnClick } from '../settings/settings.ts';
 import { DateNav } from '../components/DateNav.tsx';
 import { SearchBox } from '../components/SearchBox.tsx';
 import { Icon } from '../components/Icon.tsx';
@@ -173,10 +175,16 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const [selectedTags, setSelectedTags] = useState<string[]>(plugin.settings.selectedTags);
   const [dueFilter, setDueFilter] = useState<DueFilter>(plugin.settings.dueFilter);
   // Always at least one (possibly empty) row so the dropdown is there to pick from.
-  const [propertyFilters, setPropertyFilters] = useState<PropertyFilter[]>(() =>
-    plugin.settings.propertyFilters.length > 0
+  const nextPropertyRowId = useRef(0);
+  const newPropertyRow = (filter: PropertyFilter = { key: '', values: [] }) => ({
+    ...filter, id: nextPropertyRowId.current++,
+  });
+  const showPropertyFilter = plugin.settings.showPropertyFilter;
+  const [propertyRevision, setPropertyRevision] = useState(0);
+  const [propertyFilters, setPropertyFilters] = useState(() =>
+    (plugin.settings.propertyFilters.length > 0
       ? plugin.settings.propertyFilters
-      : [{ key: '', values: [] }],
+      : [{ key: '', values: [] }]).map(newPropertyRow),
   );
   const [collapsed, setCollapsed] = useState<Record<Quadrant, boolean>>(
     plugin.settings.collapsedQuadrants,
@@ -243,7 +251,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   }, [dueFilter, plugin]);
 
   useEffect(() => {
-    plugin.settings.propertyFilters = propertyFilters.filter((f) => f.key);
+    plugin.settings.propertyFilters = propertyFilters.filter((f) => f.key).map(({ key, values }) => ({ key, values }));
     void plugin.saveSettings();
   }, [propertyFilters, plugin]);
 
@@ -314,14 +322,18 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     refs.push(app.vault.on('create', scheduleRefetch));
     refs.push(app.vault.on('delete', scheduleRefetch));
     refs.push(app.vault.on('rename', scheduleRefetch));
-    // Frontmatter edits reach metadataCache after vault 'modify' fires.
-    const metaRef = app.metadataCache.on('changed', scheduleRefetch);
     return () => {
       for (const ref of refs) app.vault.offref(ref);
-      app.metadataCache.offref(metaRef);
       if (refetchTimerRef.current) window.clearTimeout(refetchTimerRef.current);
     };
   }, [app, scheduleRefetch]);
+
+  useEffect(() => {
+    if (!showPropertyFilter) return;
+    // Metadata arrives after modify; refresh cache-derived filters without reading files again.
+    const metadataRef = app.metadataCache.on('changed', () => setPropertyRevision((revision) => revision + 1));
+    return () => app.metadataCache.offref(metadataRef);
+  }, [app, showPropertyFilter]);
 
   // Grace period interval — clean expired keys + re-render
   useEffect(() => {
@@ -519,16 +531,16 @@ export function MatrixApp({ app, repo, plugin }: Props) {
    * task's line), otherwise open it in a new tab so the matrix stays open.
    */
   const handleNavigateToSource = useCallback(
-    (task: Task) => {
+    (task: Task, newLeaf = false) => {
       const file = app.vault.getFileByPath(task.sourceFile);
       if (!file) {
         showError(`File not found: ${task.sourceFile}`);
         return;
       }
       const eState = { line: task.lineIndex };
-      const existing = app.workspace
+      const existing = !newLeaf && app.workspace
         .getLeavesOfType('markdown')
-        .find((leaf) => (leaf.view as { file?: { path: string } | null }).file?.path === file.path);
+        .find((leaf) => leaf.view instanceof MarkdownView && leaf.view.file?.path === file.path);
       if (existing) {
         app.workspace.setActiveLeaf(existing, { focus: true });
         void app.workspace.revealLeaf(existing);
@@ -630,19 +642,19 @@ export function MatrixApp({ app, repo, plugin }: Props) {
 
   /** Source files that pass every property filter (null = no filter active). */
   const propertyMatchedFiles = useMemo(() => {
-    if (activePropertyFilters.length === 0) return null;
+    if (!showPropertyFilter || activePropertyFilters.length === 0) return null;
     const files = new Set<string>();
     for (const path of new Set(tasks.map((t) => t.sourceFile))) {
       if (noteMatchesAllProperties(app, path, activePropertyFilters)) files.add(path);
     }
     return files;
-  }, [app, tasks, activePropertyFilters]);
+  }, [app, tasks, activePropertyFilters, showPropertyFilter, propertyRevision]);
 
   const passesFilters = useCallback(
     (t: Task): boolean => {
       if (!graphView && plugin.settings.hideBlockedTasks && t.isBlocked) return false;
       // Today's daily note always passes — new tasks land there.
-      if (propertyMatchedFiles && !t.isFromDnes && !propertyMatchedFiles.has(t.sourceFile)) {
+      if (!passesPropertyFilter(t, showPropertyFilter, propertyMatchedFiles)) {
         return false;
       }
       if (!matchesFilter(t, selectedTags)) return false;
@@ -653,7 +665,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       if (!isClosedStatus(t.status)) return true;
       return graceMap.has(taskKey(t.sourceFile, t.lineIndex));
     },
-    [plugin, selectedTags, dueFilter, today, date, showCompleted, graceMap, graphView, propertyMatchedFiles],
+    [plugin, selectedTags, dueFilter, today, date, showCompleted, graceMap, graphView, propertyMatchedFiles, showPropertyFilter],
   );
 
   /** Co projde filtry — bez ohledu na hledání. Tohle je číslo ve filter baru. */
@@ -794,13 +806,10 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     [tasks, showCompleted],
   );
 
-  /**
-   * Every frontmatter property in the scanned notes. `tasks` changes on each
-   * refetch, which is when properties can change.
-   */
+  /** Property options come only from loaded task sources. */
   const propertyKeys = useMemo(
-    () => [...collectProperties(app, plugin.settings.excludedFolders).keys()],
-    [app, plugin, tasks],
+    () => showPropertyFilter ? collectPropertyKeys(app, tasks) : [],
+    [app, tasks, showPropertyFilter, propertyRevision],
   );
 
   /**
@@ -808,11 +817,12 @@ export function MatrixApp({ app, repo, plugin }: Props) {
    * the *other* rows — so the counts show what selecting a chip would leave.
    */
   const propertyRows = useMemo((): PropertyFilterRow[] => {
+    if (!showPropertyFilter) return [];
     const openTasks = tasks.filter(
       (t) => !t.isFromDnes && (showCompleted || !isClosedStatus(t.status)),
     );
     return propertyFilters.map((row, i) => {
-      if (!row.key) return { key: '', values: [], selectedValues: [] };
+      if (!row.key) return { id: row.id, key: '', values: [], selectedValues: [] };
       const others = propertyFilters.filter((f, j) => j !== i && f.key);
       const counts = new Map<string, { value: string; count: number }>();
       for (const t of openTasks) {
@@ -831,12 +841,12 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       const values = [...counts.values()].sort(
         (a, b) => b.count - a.count || a.value.localeCompare(b.value),
       );
-      return { key: row.key, values, selectedValues: row.values };
+      return { id: row.id, key: row.key, values, selectedValues: row.values };
     });
-  }, [app, tasks, propertyFilters, showCompleted]);
+  }, [app, tasks, propertyFilters, showCompleted, showPropertyFilter, propertyRevision]);
 
   const selectPropertyKey = useCallback((row: number, key: string) => {
-    setPropertyFilters((prev) => prev.map((f, i) => (i === row ? { key, values: [] } : f)));
+    setPropertyFilters((prev) => prev.map((f, i) => (i === row ? { ...f, key, values: [] } : f)));
   }, []);
 
   const togglePropertyValue = useCallback((row: number, value: string) => {
@@ -856,16 +866,16 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   const removePropertyRow = useCallback((row: number) => {
     setPropertyFilters((prev) => {
       const next = prev.filter((_, i) => i !== row);
-      return next.length > 0 ? next : [{ key: '', values: [] }];
+      return next.length > 0 ? next : [newPropertyRow()];
     });
   }, []);
 
   const addPropertyRow = useCallback(() => {
-    setPropertyFilters((prev) => [...prev, { key: '', values: [] }]);
+    setPropertyFilters((prev) => [...prev, newPropertyRow()]);
   }, []);
 
   const clearPropertyFilters = useCallback(() => {
-    setPropertyFilters([{ key: '', values: [] }]);
+    setPropertyFilters([newPropertyRow()]);
   }, []);
 
   // Live ref na seznam tagů pro autocomplete v add/edit formech.
@@ -1205,7 +1215,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           filteredCount={filteredTasks.length}
         />
 
-        <PropertyFilterBar
+        {showPropertyFilter && <PropertyFilterBar
           propertyKeys={propertyKeys}
           rows={propertyRows}
           onSelectKey={selectPropertyKey}
@@ -1213,14 +1223,14 @@ export function MatrixApp({ app, repo, plugin }: Props) {
           onRemoveRow={removePropertyRow}
           onAddRow={addPropertyRow}
           onClear={clearPropertyFilters}
-        />
+        />}
         </div>
         )}
 
         <TaskEditingContext.Provider value={{ app, tasks }}>
         <DependencyNavigationContext.Provider value={handleNavigateToDependency}>
         <SourceNavigationContext.Provider
-          value={plugin.settings.openSourceOnClick ? handleNavigateToSource : null}
+          value={resolveOpenSourceOnClick(plugin.settings.openSourceOnClick, Platform.isMobile) ? handleNavigateToSource : null}
         >
         <SearchHighlightContext.Provider value={searchHighlight}>
         <div className="em-app-body">

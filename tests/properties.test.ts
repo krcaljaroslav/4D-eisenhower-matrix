@@ -1,14 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { App, TFile } from 'obsidian';
 import {
-  collectProperties,
+  collectPropertyKeys,
+  passesPropertyFilter,
   noteMatchesAllProperties,
   noteMatchesProperty,
   normalizePropertyFilters,
   notePropertyValues,
-  isExcludedPath,
   propertyValueStrings,
 } from '../src/obsidian-adapter/properties.ts';
+
+import { isExcludedPath } from '../src/core/fileScope.ts';
 
 function fakeApp(files: Record<string, Record<string, unknown> | undefined>): App {
   const tfiles = Object.keys(files).map((path) => ({ path }) as TFile);
@@ -38,18 +40,22 @@ describe('isExcludedPath', () => {
   });
 });
 
-describe('collectProperties', () => {
-  it('gathers sorted keys and distinct values, skipping excluded folders', () => {
+describe('collectPropertyKeys', () => {
+  it('gathers sorted keys only from loaded task sources', () => {
     const app = fakeApp({
       'a.md': { context: ['Remitly', 'career'], type: 'note' },
       'b.md': { context: 'remitly-ops', status: null },
-      'tpl/c.md': { context: ['template-only'] },
+      'tpl/c.md': { templateOnly: 'hidden' },
+      'unused.md': { unusedOnly: 'no loaded tasks' },
       'd.md': undefined,
     });
-    const props = collectProperties(app, ['tpl']);
-    expect([...props.keys()]).toEqual(['context', 'status', 'type']);
-    expect(props.get('context')).toEqual(['career', 'Remitly', 'remitly-ops']);
-    expect(props.get('status')).toEqual([]);
+    const readCache = vi.spyOn(app.metadataCache, 'getCache');
+    const scanVault = vi.spyOn(app.vault, 'getMarkdownFiles');
+    const tasks = ['a.md', 'b.md', 'a.md', 'd.md'].map((sourceFile) => ({ sourceFile }));
+    expect(collectPropertyKeys(app, tasks)).toEqual(['context', 'status', 'type']);
+    expect(readCache.mock.calls.map(([path]) => path)).toEqual(['a.md', 'b.md', 'd.md']);
+    expect(scanVault).not.toHaveBeenCalled();
+    expect(collectPropertyKeys(app, [])).toEqual([]);
   });
 });
 
@@ -118,5 +124,26 @@ describe('normalizePropertyFilters', () => {
       ]),
     ).toEqual([{ key: 'context', values: ['work'] }]);
     expect(normalizePropertyFilters('nope')).toEqual([]);
+  });
+});
+
+describe('passesPropertyFilter', () => {
+  const ordinaryTask = { sourceFile: 'other.md', isFromDnes: false };
+  const todayTask = { sourceFile: 'daily.md', isFromDnes: true };
+  const matchedFiles = new Set(['matching.md']);
+
+  it('ignores saved property filters when the setting is off', () => {
+    expect(passesPropertyFilter(ordinaryTask, false, matchedFiles)).toBe(true);
+    expect(passesPropertyFilter(ordinaryTask, true, matchedFiles)).toBe(false);
+  });
+
+  it("always passes tasks from today's daily note", () => {
+    expect(passesPropertyFilter(todayTask, true, matchedFiles)).toBe(true);
+    expect(passesPropertyFilter(todayTask, true, new Set())).toBe(true);
+  });
+
+  it('passes matching sources and inactive filters', () => {
+    expect(passesPropertyFilter({ ...ordinaryTask, sourceFile: 'matching.md' }, true, matchedFiles)).toBe(true);
+    expect(passesPropertyFilter(ordinaryTask, true, null)).toBe(true);
   });
 });

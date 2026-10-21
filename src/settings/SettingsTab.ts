@@ -1,6 +1,7 @@
 import {
   type App,
   PluginSettingTab,
+  Platform,
   requireApiVersion,
   Setting,
   type SettingDefinitionItem,
@@ -8,7 +9,7 @@ import {
 import type EisenhowerMatrixPlugin from '../../main.ts';
 import { getDailyNotesFolder } from '../obsidian-adapter/dailyNotes.ts';
 import { showError } from '../obsidian-adapter/toast.ts';
-import { DEFAULT_SETTINGS } from './settings.ts';
+import { DEFAULT_SETTINGS, resolveOpenSourceOnClick } from './settings.ts';
 import { ConfirmModal } from '../obsidian-adapter/ConfirmModal.ts';
 import { ExcludeFolderModal } from './ExcludeFolderModal.ts';
 import { FolderSuggest } from './FolderSuggest.ts';
@@ -35,7 +36,10 @@ const HIDE_BLOCKED_NAME = 'Hide blocked tasks';
 const HIDE_BLOCKED_DESC = 'Hide tasks that have at least one unfinished dependency.';
 const OPEN_SOURCE_NAME = 'Open note from task card';
 const OPEN_SOURCE_DESC =
-  "Click the 📁 note name on a task card to open that note — or switch to it if it's already open. Off = the note name isn't clickable.";
+  "Click the 📁 note name on a task card to open that note — or switch to it if it's already open. Ctrl/Cmd-click opens a new tab. Defaults to on for desktop, off for mobile. Off = the note name isn't clickable.";
+
+const PROPERTY_FILTER_NAME = 'Show property filter';
+const PROPERTY_FILTER_DESC = 'Show frontmatter filter rows and apply saved property filters. Off by default.';
 
 const RESET_NAME = 'Reset to defaults';
 const RESET_DESC =
@@ -101,6 +105,11 @@ export class MatrixSettingsTab extends PluginSettingTab {
         name: OPEN_SOURCE_NAME,
         desc: OPEN_SOURCE_DESC,
         control: { type: 'toggle', key: 'openSourceOnClick' },
+      },
+      {
+        name: PROPERTY_FILTER_NAME,
+        desc: PROPERTY_FILTER_DESC,
+        control: { type: 'toggle', key: 'showPropertyFilter' },
       },
       {
         type: 'list',
@@ -174,7 +183,9 @@ export class MatrixSettingsTab extends PluginSettingTab {
       case 'hideBlockedTasks':
         return this.plugin.settings.hideBlockedTasks;
       case 'openSourceOnClick':
-        return this.plugin.settings.openSourceOnClick;
+        return resolveOpenSourceOnClick(this.plugin.settings.openSourceOnClick, Platform.isMobile);
+      case 'showPropertyFilter':
+        return this.plugin.settings.showPropertyFilter;
       default:
         return undefined;
     }
@@ -200,6 +211,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       case 'respectTaskDependenciesWhenSorting':
       case 'hideBlockedTasks':
       case 'openSourceOnClick':
+      case 'showPropertyFilter':
         if (typeof value !== 'boolean') return;
         await this.setBooleanSetting(key, value);
         break;
@@ -234,6 +246,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
         respectTaskDependenciesWhenSorting: this.plugin.settings.respectTaskDependenciesWhenSorting,
         hideBlockedTasks: this.plugin.settings.hideBlockedTasks,
         openSourceOnClick: this.plugin.settings.openSourceOnClick,
+        showPropertyFilter: this.plugin.settings.showPropertyFilter,
         graphPositions: this.plugin.settings.graphPositions,
       };
       try {
@@ -284,7 +297,8 @@ export class MatrixSettingsTab extends PluginSettingTab {
       | 'warnWhenCompletingBlockedTask'
       | 'respectTaskDependenciesWhenSorting'
       | 'hideBlockedTasks'
-      | 'openSourceOnClick',
+      | 'openSourceOnClick'
+      | 'showPropertyFilter',
     value: boolean,
   ): Promise<void> {
     await this.mutate(() => {
@@ -335,6 +349,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
       this.plugin.settings.respectTaskDependenciesWhenSorting = DEFAULT_SETTINGS.respectTaskDependenciesWhenSorting;
       this.plugin.settings.hideBlockedTasks = DEFAULT_SETTINGS.hideBlockedTasks;
       this.plugin.settings.openSourceOnClick = DEFAULT_SETTINGS.openSourceOnClick;
+      this.plugin.settings.showPropertyFilter = DEFAULT_SETTINGS.showPropertyFilter;
     });
   }
 
@@ -417,11 +432,12 @@ export class MatrixSettingsTab extends PluginSettingTab {
       [RESPECT_DEPENDENCIES_NAME, RESPECT_DEPENDENCIES_DESC, 'respectTaskDependenciesWhenSorting'],
       [HIDE_BLOCKED_NAME, HIDE_BLOCKED_DESC, 'hideBlockedTasks'],
       [OPEN_SOURCE_NAME, OPEN_SOURCE_DESC, 'openSourceOnClick'],
+      [PROPERTY_FILTER_NAME, PROPERTY_FILTER_DESC, 'showPropertyFilter'],
     ] as const;
 
     for (const [name, desc, key] of toggles) {
       new Setting(parent).setName(name).setDesc(desc).addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings[key]).onChange(async (value) => {
+        toggle.setValue(this.getControlValue(key) as boolean).onChange(async (value) => {
           await this.setBooleanSetting(key, value);
         }),
       );

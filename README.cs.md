@@ -32,6 +32,7 @@ Vizualizace tasků napříč celým vault-em v **5-polové Eisenhower matici** (
 | **Klikatelné odkazy** | `[[wikilinky]]` (i s `#nadpisem` / `\|aliasem`) a `[text](url)` v názvu tasku jsou aktivní — klikem otevřeš poznámku (rozlišeno vůči souboru tasku) nebo URL; Ctrl/Cmd-klik otevře v novém panelu. Klik nespustí drag ani editaci. Externě se otevřou jen `https:`/`http:`/`mailto:` URL — jiná schémata zůstanou plain text. |
 | **Tag autocomplete** | Při psaní napovídá existující tagy z vault-u, ať netvoříš skoro-duplicity. |
 | **Filtr podle tagu** | Context-tag chipy ve filter baru (multi-select, OR logika) + virtuální „Other" chip pro tasky bez tagu. |
+| **Filtr podle vlastností** | Zapni **Show property filter** v nastavení (výchozí vypnuto). Pod filter barem vyber frontmatter vlastnost z poznámek obsahujících načtené tasky a jednu či více hodnot (OR, bez rozlišení velikosti písmen, podporuje seznamy). **+** přidá další řádek; řádky se kombinují pomocí AND. Chipy ukazují počet otevřených tasků při použití ostatních řádků. Bez vybrané hodnoty stačí přítomnost vlastnosti. Tasky z dnešní daily note filtrem vždy projdou. Vypnutí nastavení skryje řádky a přestane aplikovat uložený filtr. |
 | **Rychlé filtry podle due date** | Tlačítka **Today** (overdue + due dnes), **Selected** (due přesně na datum vybrané v hlavičce) a **This week** (overdue + 7 dní dopředu) na začátku filter baru, opticky odlišená oranžovou. |
 | **Datum navigace** | ← / → / kalendář / Dnes + den-cutoff banner po půlnoci s nabídkou skoku na dnešek. |
 | **Undo grace period** | 3sekundové okno se zeleným odpočtem po odškrtnutí/zrušení tasku — klik znovu = vrátit. |
@@ -91,9 +92,10 @@ Priorita ([Obsidian Tasks konvence](https://publish.obsidian.md/tasks/Getting+St
 | Odškrtnout task | Klik na checkbox · 3 s grace period (klik znovu = vrátit) |
 | Přidat task | Klik `+` v headeru kvadrantu → text + #tagy + 📅 + ⏫ → Enter |
 | Editovat task | **Desktop:** dvojklik na kartu. **Mobil:** long-press / dvojklep → menu → „Edit" |
+| Filtr podle vlastností | Zapni **Show property filter** v nastavení, vyber vlastnost v **Property** pod filter barem a klikni na hodnoty (multi-select, OR) · **+** přidá vlastnost (AND) · **×** odebere řádek · *clear* vše zruší |
 | Změnit termín samostatně | Klik na 📅 badge na kartě |
 | Přesun mezi kvadranty | **Desktop:** drag karty na cílový kvadrant. **Mobil:** long-press / dvojklep → menu → „Move to…" |
-| Otevřít source soubor | **Desktop:** pravý klik na kartu. **Mobil:** long-press / dvojklep. → menu (current pane / nová záložka / split / okno) — kurzor přistane na řádku tasku |
+| Otevřít source soubor | Klik na 📁 název poznámky přepne do již otevřené poznámky, jinak ji otevře v novém tabu (matice zůstává otevřená); Ctrl/Cmd-klik vždy otevře nový tab. Na desktopu výchozí zapnuto, na mobilu vypnuto; přepínač v nastavení. Nebo **Desktop:** pravý klik na kartu. **Mobil:** long-press / dvojklep. → menu (current pane / nová záložka / split / okno) — kurzor přistane na řádku tasku |
 | Filtr podle tagu | Klik na chip ve filter baru (multi-select OR) |
 | Rychlý filtr podle due date | Tlačítka **Today** (overdue + due dnes) / **Selected** (due na datum vybrané v hlavičce) / **This week** (overdue + 7 dní) na začátku filter baru |
 | Předchozí / další den | Šipky ← → v headeru, kalendář, nebo „Dnes" |
@@ -171,6 +173,8 @@ Něco postrádáš? [Issue na GitHubu](https://github.com/krcaljaroslav/4D-eisen
 [Issues](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) · Pull requesty vítané.
 
 ## Changelog
+
+**1.0.40 (unreleased)** — Díky @mason-bryant za PR #4 (filtr podle frontmatter vlastností) a PR #6 (otevření poznámky klikem na 📁). Filtr je volitelný a nabídku sbírá ze zdrojů načtených tasků; klik na poznámku respektuje platformní default a Ctrl/Cmd-klik otevře nový tab.
 
 **1.0.38-1.0.39** - Navázané tasky přímo z kontextového menu: nový poslední blok **Add previous task** / **Add follow-up task** otevře formulář u karty a nový task naváže zvoleným směrem, v matici, Kanbanu i grafu (v grafu nahrazuje *Add blocker below* / *Add dependent above*); pole závislostí v editaci se k tomu přejmenovala na **Previous task** / **Follow-up task**. Graf závislostí rozmisťuje po větvích místo roztahování jedné úrovně přes celou obrazovku: úrovně, jejichž tasky mají předchozí tasky, zůstávají v jedné řadě a pokračují doprava (dostaneš se k nim posuvníkem nebo tažením plátna), tasky bez předchozích jsou ve sloupci přímo pod taskem, který blokují, a jejich spojnice vedou z boku karty do mezery a teprve pak nahoru, takže už nevypadají, že vedou ke kartě nad nimi. Řady mají větší rozestupy, tlačítko sbalení větve je poloviční a stojí vedle příchozí spojnice a ručně umístěné karty zůstávají, kde jsi je položil. (1.0.38 krátce zalamovala široké úrovně do víc řad; 1.0.39 to nahrazuje.)
 

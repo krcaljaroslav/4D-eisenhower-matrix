@@ -32,7 +32,7 @@ Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (
 | **Clickable links** | `[[wikilinks]]` (with `#heading` / `\|alias`) and `[text](url)` in the task title are live — click to open the note (resolved relative to the task's file) or the URL; Ctrl/Cmd-click opens in a new pane. Clicks don't trigger drag or edit. Only `https:`/`http:`/`mailto:` URLs open externally — other schemes stay plain text. |
 | **Tag autocomplete** | Suggests existing vault tags as you type, so you don't create near-duplicates. |
 | **Filter by tag** | Context-tag chips in the filter bar (multi-select, OR logic) + a virtual "Other" chip for untagged tasks. |
-| **Filter by property** | Filter rows under the filter bar: pick any frontmatter property found in the scanned notes, then one or more of its values (OR logic, case-insensitive, list properties supported). **+** adds another row; rows combine with AND. Each value chip shows how many open tasks it would leave given the other rows. With no value selected, any note that has the property passes. Today's daily note always passes, so new tasks never vanish. |
+| **Filter by property** | Enable **Show property filter** in Settings (off by default); then use filter rows under the filter bar: pick any frontmatter property found in notes containing loaded tasks, then one or more of its values (OR logic, case-insensitive, list properties supported). **+** adds another row; rows combine with AND. Each value chip shows how many open tasks it would leave given the other rows. With no value selected, any note that has the property passes. Today's daily note always passes, so new tasks never vanish. Disabling the setting hides the rows and stops applying saved property filters. |
 | **Due-date quick filters** | **Today** (overdue + due today), **Selected** (due exactly on the date picked in the header), and **This week** (overdue + next 7 days) buttons at the start of the filter bar, set apart in orange. |
 | **Date navigation** | ← / → / calendar / Today, plus a day-cutoff banner offering to jump to today after midnight. |
 | **Undo grace period** | A 3-second window with a green countdown bar after you complete or cancel a task — click again to undo. |
@@ -94,9 +94,9 @@ Priority ([Obsidian Tasks convention](https://publish.obsidian.md/tasks/Getting+
 | Edit a task | **Desktop:** double-click the card. **Mobile:** long-press / double-tap → menu → Edit |
 | Change due date alone | Click the 📅 badge on the card |
 | Move between quadrants | **Desktop:** drag the card onto the target quadrant. **Mobile:** long-press / double-tap → menu → "Move to…" |
-| Open the source file | Click the 📁 note name on the card — switches to the note if it's already open, otherwise opens it in a new tab (the matrix stays open); can be turned off in Settings. Or **Desktop:** right-click the card. **Mobile:** long-press / double-tap. → menu (current pane / new tab / split / window) — the cursor lands on the task's line |
+| Open the source file | Click the 📁 note name on the card — switches to the note if it's already open, otherwise opens it in a new tab (the matrix stays open); Ctrl/Cmd-click always opens a new tab. Enabled by default on desktop, disabled on mobile; toggle it in Settings. Or **Desktop:** right-click the card. **Mobile:** long-press / double-tap. → menu (current pane / new tab / split / window) — the cursor lands on the task's line |
 | Filter by tag | Click a chip in the filter bar (multi-select, OR) |
-| Filter by property | Choose a property in the **Property** dropdown under the filter bar, then click value chips (multi-select, OR) · **+** adds another property (AND) · **×** removes a row · *clear* resets all |
+| Filter by property | Enable **Show property filter** in Settings, choose a property in the **Property** dropdown under the filter bar, then click value chips (multi-select, OR) · **+** adds another property (AND) · **×** removes a row · *clear* resets all |
 | Due-date quick filter | The **Today** (overdue + due today) / **Selected** (due on the date picked in the header) / **This week** (overdue + next 7 days) buttons at the start of the filter bar |
 | Previous / next day | The ← → arrows in the header, the calendar, or "Today" |
 | Collapse a quadrant | Click the ▼/▶ arrow next to the quadrant name |
@@ -175,6 +175,8 @@ Missing something? [Open an issue](https://github.com/krcaljaroslav/4D-eisenhowe
 [Issues](https://github.com/krcaljaroslav/4D-eisenhower-matrix/issues) · Pull requests welcome.
 
 ## Changelog
+
+**1.0.40 (unreleased)** — Thanks to @mason-bryant for PR #4 (frontmatter property filters) and PR #6 (open notes from the 📁 source line). Property filters are optional and use loaded task sources; source clicks follow platform defaults and support Ctrl/Cmd-click for a new tab.
 
 **1.0.38-1.0.39** - Linked tasks straight from the right-click menu: a new last block, **Add previous task** / **Add follow-up task**, opens a form at the card and links the new task in the chosen direction, in the matrix, Kanban and graph alike (in the graph it replaces *Add blocker below* / *Add dependent above*); the edit-form dependency fields are renamed to **Previous task** / **Follow-up task** to match. The dependency graph lays out by branch instead of stretching one level across the screen: levels whose tasks have prerequisites stay in a single row and continue to the right (reach them with the scrollbar or by panning), tasks without prerequisites stack in a column directly under the task they block, and their links leave from the side of the card into the gap before turning up, so they no longer look attached to the card above. Rows are spaced further apart, the branch collapse button is half its former size and sits beside the incoming link, and manually placed cards stay where you put them. (1.0.38 briefly wrapped wide levels into several rows; 1.0.39 replaces that.)
 

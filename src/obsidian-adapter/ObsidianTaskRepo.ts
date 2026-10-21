@@ -1,4 +1,5 @@
 import { MarkdownView, type App, type TFile } from 'obsidian';
+import { isExcludedPath } from '../core/fileScope.ts';
 import { parseAllTasks, parseDaily } from '../core/parser.ts';
 import {
   addIdToLine,
@@ -615,9 +616,7 @@ export class ObsidianTaskRepo {
   }
 
   private isExcluded(file: TFile): boolean {
-    return this.excludedFolders.some(
-      (folder) => file.path === folder || file.path.startsWith(folder + '/'),
-    );
+    return isExcludedPath(file.path, this.excludedFolders);
   }
 
   setExcludedFolders(folders: string[]) {

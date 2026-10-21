@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { Menu, Platform, setIcon, type App, type PaneType } from 'obsidian';
+import { Keymap, Menu, Platform, setIcon, type App, type PaneType } from 'obsidian';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
 import {
   PRIORITY_META,
@@ -19,7 +19,7 @@ import { renderInlineMarkdown, type InlineLinkHandler } from './inlineMarkdown.t
 export const GRACE_MS = 3000;
 
 /** Click on the 📁 source line: open/focus the note. Null = navigation disabled. */
-export const SourceNavigationContext = createContext<((task: Task) => void) | null>(null);
+export const SourceNavigationContext = createContext<((task: Task, newLeaf?: boolean) => void) | null>(null);
 
 export const DependencyNavigationContext = createContext<
   ((task: Task, event?: React.MouseEvent) => void) | null
@@ -443,9 +443,10 @@ export function TaskCard({
                   title={`Open ${task.sourceFile}`}
                   role="link"
                   tabIndex={0}
+                  onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigateToSource(task);
+                    navigateToSource(task, !!Keymap.isModEvent(e.nativeEvent));
                   }}
                   onDoubleClick={(e) => e.stopPropagation()}
                   onKeyDown={(e) => {

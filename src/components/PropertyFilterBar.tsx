@@ -1,4 +1,5 @@
 export type PropertyFilterRow = {
+  id: number;
   key: string;
   values: { value: string; count: number }[];
   selectedValues: string[];
@@ -39,7 +40,7 @@ export function PropertyFilterBar({
         if (row.key && !keys.includes(row.key)) keys.unshift(row.key);
         const isLast = i === rows.length - 1;
         return (
-          <div key={i} className="em-filterbar em-propbar">
+          <div key={row.id} className="em-filterbar em-propbar">
             <span className="em-filterbar-label">{i === 0 ? 'Property:' : 'and'}</span>
             <select
               className="dropdown em-propbar-select"

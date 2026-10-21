@@ -1,9 +1,5 @@
 import type { App } from 'obsidian';
 
-export function isExcludedPath(path: string, excludedFolders: string[]): boolean {
-  return excludedFolders.some((folder) => path === folder || path.startsWith(folder + '/'));
-}
-
 /** Flattens a frontmatter value into comparable strings (list items, scalars). */
 export function propertyValueStrings(raw: unknown): string[] {
   if (raw === undefined || raw === null) return [];
@@ -14,27 +10,23 @@ export function propertyValueStrings(raw: unknown): string[] {
     .filter((v) => v !== '');
 }
 
-/**
- * Collects every frontmatter property (and its distinct values) across the
- * scanned files — same scope as the matrix: all markdown files minus excluded
- * folders. Keys and values are sorted case-insensitively.
- */
-export function collectProperties(app: App, excludedFolders: string[]): Map<string, string[]> {
-  const byKey = new Map<string, Set<string>>();
-  for (const file of app.vault.getMarkdownFiles()) {
-    if (isExcludedPath(file.path, excludedFolders)) continue;
-    const fm = app.metadataCache.getFileCache(file)?.frontmatter;
-    if (!fm) continue;
-    for (const [key, raw] of Object.entries(fm)) {
-      const values = byKey.get(key) ?? new Set<string>();
-      for (const v of propertyValueStrings(raw)) values.add(v);
-      byKey.set(key, values);
-    }
+/** Sorted property keys from the loaded tasks' source files only. */
+export function collectPropertyKeys(app: App, tasks: readonly { sourceFile: string }[]): string[] {
+  const keys = new Set<string>();
+  for (const path of new Set(tasks.map((task) => task.sourceFile))) {
+    const frontmatter = app.metadataCache.getCache(path)?.frontmatter;
+    if (frontmatter) for (const key of Object.keys(frontmatter)) keys.add(key);
   }
-  const compare = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' });
-  return new Map(
-    [...byKey.keys()].sort(compare).map((key) => [key, [...byKey.get(key)!].sort(compare)]),
-  );
+  return [...keys].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
+/** Today's daily tasks bypass property filters; disabling the UI disables filtering too. */
+export function passesPropertyFilter(
+  task: { isFromDnes: boolean; sourceFile: string },
+  enabled: boolean,
+  matchedFiles: ReadonlySet<string> | null,
+): boolean {
+  return !enabled || task.isFromDnes || matchedFiles === null || matchedFiles.has(task.sourceFile);
 }
 
 /** Values of `key` in the note at `path`, or null when the note lacks the property. */

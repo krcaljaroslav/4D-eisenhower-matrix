@@ -24,6 +24,7 @@ export type PluginSettings = {
    * Today's daily note always passes.
    */
   propertyFilters: PropertyFilter[];
+  showPropertyFilter: boolean;
   /**
    * Override pro daily notes folder. Prázdný string = použij konfiguraci
    * z core pluginu „Daily notes". Cesta relativní k vault rootu.
@@ -52,7 +53,7 @@ export type PluginSettings = {
   /** Skryje úkoly, které čekají na alespoň jeden otevřený blokátor. */
   hideBlockedTasks: boolean;
   /** Clicking a card's 📁 source line opens (or focuses) that note. */
-  openSourceOnClick: boolean;
+  openSourceOnClick: boolean | undefined;
   /**
    * Kanban režim (desktop i mobil/tablet): pokud je nastaven kvadrant, ten se rozbalí
    * na celou šířku se 4 status-sloupci (To-do / In progress / Scheduled /
@@ -80,6 +81,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   // Generic plugin nemá hádat vault-specifické složky.
   excludedFolders: [],
   propertyFilters: [],
+  showPropertyFilter: false,
   dailyFolderOverride: '',
   dailySectionHeading: '# Today',
   headerCollapsed: false,
@@ -87,9 +89,14 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   warnWhenCompletingBlockedTask: true,
   respectTaskDependenciesWhenSorting: true,
   hideBlockedTasks: false,
-  openSourceOnClick: true,
+  openSourceOnClick: undefined,
   kanbanQuadrant: null,
   graphView: false,
   graphPositions: {},
   graphZoom: 1,
 };
+
+/** Undefined keeps the default local to each device instead of syncing a desktop default. */
+export function resolveOpenSourceOnClick(override: boolean | undefined, isMobile: boolean): boolean {
+  return override ?? !isMobile;
+}
