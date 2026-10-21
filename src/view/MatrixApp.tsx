@@ -287,15 +287,16 @@ export function MatrixApp({ app, repo, plugin }: Props) {
   // === Data fetching ===
   const refetchTimerRef = useRef<number | null>(null);
   const taskSourcePathsRef = useRef<ReadonlySet<string>>(new Set());
-  useEffect(() => {
-    taskSourcePathsRef.current = new Set(tasks.map((task) => task.sourceFile));
-  }, [tasks]);
+  const replaceTasks = useCallback((loadedTasks: Task[]) => {
+    taskSourcePathsRef.current = new Set(loadedTasks.map((task) => task.sourceFile));
+    setTasks(loadedTasks);
+  }, []);
 
   const refetch = useCallback(async () => {
     setLoading(true);
     try {
       const result = await repo.getMatrixTasks(date);
-      setTasks(result.tasks);
+      replaceTasks(result.tasks);
       setTodayFileExists(result.todayFileExists);
       setScannedFiles(result.scannedFiles);
       setExistingDates(repo.getExistingDailyDates());
@@ -305,7 +306,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [repo, date]);
+  }, [repo, date, replaceTasks]);
 
   const scheduleRefetch = useCallback(() => {
     if (refetchTimerRef.current) window.clearTimeout(refetchTimerRef.current);
@@ -547,23 +548,27 @@ export function MatrixApp({ app, repo, plugin }: Props) {
    */
   const handleNavigateToSource = useCallback(
     async (task: Task, mode: PaneType | boolean = false) => {
-      const file = app.vault.getFileByPath(task.sourceFile);
-      if (!file) {
-        showError(`File not found: ${task.sourceFile}`);
-        return;
+      try {
+        const file = app.vault.getFileByPath(task.sourceFile);
+        if (!file) {
+          showError(`File not found: ${task.sourceFile}`);
+          return;
+        }
+        const eState = { line: task.lineIndex };
+        const existing = !mode && app.workspace
+          .getLeavesOfType('markdown')
+          .find((leaf) => leaf.getViewState().state?.file === file.path);
+        if (existing) {
+          await existing.loadIfDeferred();
+          app.workspace.setActiveLeaf(existing, { focus: true });
+          await app.workspace.revealLeaf(existing);
+          existing.setEphemeralState(eState);
+          return;
+        }
+        await app.workspace.getLeaf(mode || 'tab').openFile(file, { active: true, eState });
+      } catch (error) {
+        showError(`Opening source failed: ${String((error as Error).message ?? error)}`);
       }
-      const eState = { line: task.lineIndex };
-      const existing = !mode && app.workspace
-        .getLeavesOfType('markdown')
-        .find((leaf) => leaf.getViewState().state?.file === file.path);
-      if (existing) {
-        await existing.loadIfDeferred();
-        app.workspace.setActiveLeaf(existing, { focus: true });
-        await app.workspace.revealLeaf(existing);
-        existing.setEphemeralState(eState);
-        return;
-      }
-      await app.workspace.getLeaf(mode || 'tab').openFile(file, { active: true, eState });
     },
     [app],
   );
@@ -1279,10 +1284,10 @@ export function MatrixApp({ app, repo, plugin }: Props) {
             onToggleTask={(task) => void handleToggle(task)} onSetStatus={handleSetStatus} onSetDueDate={handleSetDueDate} onUpdateTask={handleUpdate}
             onOpenSource={handleOpenSource} onOpenLink={handleOpenLink} onMoveQuadrant={(task, quadrant) => void handleMove(task, quadrant)}
             onAddTask={handleAdd}
-            onAddAtCell={async (cell, input) => { const result = await repo.addTaskAtCell(date, input); setGraphPositions((current) => ({ ...current, [result.newId]: cell })); setGraphHighlightKey(taskKey(result.sourceFile, result.lineIndex)); const parsed = parseTaskLine(result.newLine, result.lineIndex); if (parsed) setTasks((current) => [...current, { ...parsed, sourceFile: result.sourceFile, isFromDnes: true, isBlocked: false, blockedByTasks: [], blocksTasks: [], missingBlockers: [], hasCircularDependency: false }]); }}
+            onAddAtCell={async (cell, input) => { const result = await repo.addTaskAtCell(date, input); setGraphPositions((current) => ({ ...current, [result.newId]: cell })); setGraphHighlightKey(taskKey(result.sourceFile, result.lineIndex)); const parsed = parseTaskLine(result.newLine, result.lineIndex); if (parsed) { taskSourcePathsRef.current = new Set([...taskSourcePathsRef.current, result.sourceFile]); setTasks((current) => [...current, { ...parsed, sourceFile: result.sourceFile, isFromDnes: true, isBlocked: false, blockedByTasks: [], blocksTasks: [], missingBlockers: [], hasCircularDependency: false }]); } }}
             onAddLinked={handleAddLinked}
-            onLinkTasks={async (source, target) => { await repo.linkTasks(source, target); setTasks((await repo.getMatrixTasks(date)).tasks); }}
-            onRemoveDependency={async (source, target) => { await repo.unlinkTasks(source, target); setTasks((await repo.getMatrixTasks(date)).tasks); }}
+            onLinkTasks={async (source, target) => { await repo.linkTasks(source, target); replaceTasks((await repo.getMatrixTasks(date)).tasks); }}
+            onRemoveDependency={async (source, target) => { await repo.unlinkTasks(source, target); replaceTasks((await repo.getMatrixTasks(date)).tasks); }}
             createTagSuggest={createTagSuggest}
           />
         ) : effectiveKanban ? (
