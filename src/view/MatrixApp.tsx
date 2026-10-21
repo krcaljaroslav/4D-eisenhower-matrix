@@ -543,7 +543,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
       void leaf.openFile(file, {
         active: true,
         eState: { line: task.lineIndex },
-      });
+      }).catch((error: unknown) => showError(`Opening source failed: ${String(error)}`));
     },
     [app],
   );
@@ -1276,7 +1276,7 @@ export function MatrixApp({ app, repo, plugin }: Props) {
         <TaskEditingContext.Provider value={{ app, tasks }}>
         <DependencyNavigationContext.Provider value={handleNavigateToDependency}>
         <SourceNavigationContext.Provider
-          value={resolveOpenSourceOnClick(plugin.settings.openSourceOnClick, Platform.isMobile) ? handleNavigateToSource : null}
+          value={resolveOpenSourceOnClick(plugin.settings.openSourceOnClick, Platform.isMobile) ? (task, mode) => { void handleNavigateToSource(task, mode).catch((error: unknown) => showError(`Opening source failed: ${String(error)}`)); } : null}
         >
         <SearchHighlightContext.Provider value={searchHighlight}>
         <div className="em-app-body">

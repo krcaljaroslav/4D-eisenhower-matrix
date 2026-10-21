@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'obsidian';
+import { showError } from '../obsidian-adapter/toast.ts';
 import type { Priority, Quadrant } from '../core/types.ts';
 import { PriorityPicker } from './PriorityPicker.tsx';
 import { HiddenDateInput, type HiddenDateInputHandle } from './HiddenDateInput.tsx';
@@ -76,6 +77,8 @@ export function AddTaskInput({ quadrant, status, onSubmit, onCancel, createTagSu
       setTagsRaw('');
       setDueDate('');
       setPriority(null);
+    } catch (error) {
+      showError(`Adding task failed: ${String(error)}`);
     } finally {
       setPending(false);
     }

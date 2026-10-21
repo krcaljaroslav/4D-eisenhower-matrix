@@ -6,7 +6,7 @@ import { buildDependencyIndex, canLinkTasks, graphLinkRoles, type GraphLinkPort 
 import { centeredScrollOffset, isGraphCanvasBackground } from '../core/graphInteractions.ts';
 import type { Priority, Quadrant, Task } from '../core/types.ts';
 import { isClosedStatus } from '../core/types.ts';
-import { showInfo } from '../obsidian-adapter/toast.ts';
+import { showError, showInfo } from '../obsidian-adapter/toast.ts';
 import type { InlineLinkTarget } from './inlineMarkdown.tsx';
 import { AddTaskInput } from './AddTaskInput.tsx';
 import { TaskCard as UnmemoizedTaskCard, type DependencySelection, type LinkedTaskKind } from './TaskCard.tsx';
@@ -109,7 +109,7 @@ export function GraphView(props: Props) {
     if (occupant) { showInfo('That cell is occupied'); return; }
     await props.onSetPosition(task, cell);
   }, [props, layout, geometry, nodeByKey]);
-  useDndMonitor({ onDragEnd: (event) => void handleDrop(event) });
+  useDndMonitor({ onDragEnd: (event) => void handleDrop(event).catch((error: unknown) => showError(`Could not save position: ${String(error)}`)) });
 
   useEffect(() => {
     if (!linkDrag) return;
@@ -148,7 +148,7 @@ export function GraphView(props: Props) {
       if (eventTarget instanceof HTMLElement && (eventTarget.isContentEditable || eventTarget.matches('input, textarea, select, button, [contenteditable="true"]'))) return;
       const edge = layout.edges.find((candidate) => `${candidate.from}->${candidate.to}` === selectedEdge);
       const source = props.tasks.find((task) => taskKey(task) === edge?.from), target = props.tasks.find((task) => taskKey(task) === edge?.to);
-      if (source && target) { event.preventDefault(); void props.onRemoveDependency(source, target); setSelectedEdge(null); }
+      if (source && target) { event.preventDefault(); void props.onRemoveDependency(source, target).catch((error: unknown) => showError(`Could not remove dependency: ${String(error)}`)); setSelectedEdge(null); }
     };
     window.addEventListener('keydown', keyDown); return () => window.removeEventListener('keydown', keyDown);
   }, [selectedEdge, layout.edges, props]);
@@ -202,7 +202,7 @@ export function GraphView(props: Props) {
     <div ref={viewportRef} className={`em-graph-viewport ${panning ? 'em-graph-panning' : ''}`} onPointerDown={startPan} onPointerMove={movePan} onPointerUp={stopPan} onPointerCancel={stopPan}>
       <div className="em-graph-scaler" style={{ width: layout.size.width * props.zoom, height: layout.size.height * props.zoom }}>
         <div ref={(element) => { canvasRef.current = element; setNodeRef(element); }} className="em-graph-canvas" style={{ width: layout.size.width, height: layout.size.height, transform: `scale(${props.zoom})` }} onClick={(event) => { if (event.target === event.currentTarget || (event.target instanceof SVGSVGElement && event.target.classList.contains('em-graph-edges'))) setSelectedEdge(null); }} onDoubleClick={openEmptyCell}>
-          <svg className="em-graph-edges" width={layout.size.width} height={layout.size.height}><defs><marker id="em-graph-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" /></marker></defs>{layout.edges.map((edge) => { const edgeKey = `${edge.from}->${edge.to}`; return <path key={edgeKey} d={edge.points.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ')} className={`em-graph-edge ${edge.resolved ? 'em-graph-edge-resolved' : ''} ${edge.cycle ? 'em-graph-edge-cycle' : ''} ${hoverKey === edge.from || hoverKey === edge.to ? 'em-graph-edge-active' : ''} ${selectedEdge === edgeKey ? 'em-graph-edge-selected' : ''}`} markerEnd="url(#em-graph-arrow)" onClick={(event) => { event.stopPropagation(); setSelectedEdge(edgeKey); }} onContextMenu={(event) => { event.preventDefault(); setSelectedEdge(edgeKey); const source = props.tasks.find((task) => taskKey(task) === edge.from), target = props.tasks.find((task) => taskKey(task) === edge.to); if (!source || !target) return; const menu = new Menu(); menu.addItem((item) => item.setTitle('Remove dependency').setIcon('trash-2').onClick(() => void props.onRemoveDependency(source, target))); menu.showAtMouseEvent(event.nativeEvent); }} />; })}{linkDrag && <line x1={linkDrag.start.x} y1={linkDrag.start.y} x2={linkDrag.pointer.x} y2={linkDrag.pointer.y} className={`em-graph-link-preview ${linkDrag.target && (() => { const roles = graphLinkRoles(linkDrag.port, linkDrag.source, linkDrag.target); return !canLinkTasks(roles.blocker, roles.blocked, dependencyIndex).ok; })() ? 'em-graph-link-preview-invalid' : ''}`} />}</svg>
+          <svg className="em-graph-edges" width={layout.size.width} height={layout.size.height}><defs><marker id="em-graph-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" /></marker></defs>{layout.edges.map((edge) => { const edgeKey = `${edge.from}->${edge.to}`; return <path key={edgeKey} d={edge.points.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' ')} className={`em-graph-edge ${edge.resolved ? 'em-graph-edge-resolved' : ''} ${edge.cycle ? 'em-graph-edge-cycle' : ''} ${hoverKey === edge.from || hoverKey === edge.to ? 'em-graph-edge-active' : ''} ${selectedEdge === edgeKey ? 'em-graph-edge-selected' : ''}`} markerEnd="url(#em-graph-arrow)" onClick={(event) => { event.stopPropagation(); setSelectedEdge(edgeKey); }} onContextMenu={(event) => { event.preventDefault(); setSelectedEdge(edgeKey); const source = props.tasks.find((task) => taskKey(task) === edge.from), target = props.tasks.find((task) => taskKey(task) === edge.to); if (!source || !target) return; const menu = new Menu(); menu.addItem((item) => item.setTitle('Remove dependency').setIcon('trash-2').onClick(() => void props.onRemoveDependency(source, target).catch((error: unknown) => showError(`Could not remove dependency: ${String(error)}`)))); menu.showAtMouseEvent(event.nativeEvent); }} />; })}{linkDrag && <line x1={linkDrag.start.x} y1={linkDrag.start.y} x2={linkDrag.pointer.x} y2={linkDrag.pointer.y} className={`em-graph-link-preview ${linkDrag.target && (() => { const roles = graphLinkRoles(linkDrag.port, linkDrag.source, linkDrag.target); return !canLinkTasks(roles.blocker, roles.blocked, dependencyIndex).ok; })() ? 'em-graph-link-preview-invalid' : ''}`} />}</svg>
           <div className="em-graph-band-separator" style={{ top: layout.bandTop }}>No dependencies · {layout.nodes.filter((node) => node.inBand).length}</div>
           <ul className="em-graph-nodes">{layout.nodes.map((node) => {
             const point = cellToPoint(node.cell, { ...geometry, gapX: GRID.gapX, gapY: GRID.gapY, topRow: layout.topRow });

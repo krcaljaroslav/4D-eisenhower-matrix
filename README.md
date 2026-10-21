@@ -4,6 +4,7 @@
 
 Visualize tasks across your entire vault in a **5-quadrant Eisenhower matrix** (DO / DECIDE / DELEGATE / DELETE / OPEN) + Kanban view. Reads and writes [Obsidian Tasks](https://publish.obsidian.md/tasks/Introduction) syntax — `#tags`, `📅 due`, `🛫 start`, `✅ done`, priority.
 
+The plugin reads all Markdown notes to discover tasks wherever they are stored in the vault.
 > A morning dashboard for deciding *what to do now*: open it, see tasks split by priority, check off the done ones, add new ones. Markdown files stay the source of truth — the plugin is just a visual layer on top.
 
 <img src="docs/Light.png" alt="Light theme — grid view" width="100%" />

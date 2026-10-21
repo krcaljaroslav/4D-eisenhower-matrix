@@ -1,5 +1,6 @@
 import {
   type App,
+  type ButtonComponent,
   PluginSettingTab,
   Platform,
   requireApiVersion,
@@ -21,6 +22,12 @@ import {
 import { ConfirmModal } from '../obsidian-adapter/ConfirmModal.ts';
 import { ExcludeFolderModal } from './ExcludeFolderModal.ts';
 import { FolderSuggest } from './FolderSuggest.ts';
+
+function styleDestructiveButton(button: ButtonComponent): ButtonComponent {
+  return requireApiVersion('1.13.0') && typeof button.setDestructive === 'function'
+    ? button.setDestructive()
+    : button.setWarning();
+}
 
 const DEFAULT_DAILY_HEADING = DEFAULT_SETTINGS.dailySectionHeading;
 
@@ -584,7 +591,7 @@ export class MatrixSettingsTab extends PluginSettingTab {
     // === Excluded folders ===
     this.renderExcludedFoldersSection(containerEl);
 
-    new Setting(containerEl).setName(RESET_GRAPH_NAME).setDesc(RESET_GRAPH_DESC).addButton((btn) => btn.setButtonText('Reset').setWarning().onClick(() => {
+    new Setting(containerEl).setName(RESET_GRAPH_NAME).setDesc(RESET_GRAPH_DESC).addButton((btn) => styleDestructiveButton(btn).setButtonText('Reset').onClick(() => {
       new ConfirmModal(this.app, RESET_GRAPH_QUESTION, 'Reset', (confirmed) => {
         if (confirmed) void this.resetGraphPositions().then(() => this.display());
       }).open();
@@ -595,10 +602,8 @@ export class MatrixSettingsTab extends PluginSettingTab {
       .setName(RESET_NAME)
       .setDesc(RESET_DESC)
       .addButton((btn) =>
-        btn
+        styleDestructiveButton(btn)
           .setButtonText('Reset')
-          // `setDestructive()` je až od 1.13.0 — tahle větev běží na starších verzích.
-          .setWarning()
           .onClick(async () => {
             await this.resetOverrides();
             this.display();

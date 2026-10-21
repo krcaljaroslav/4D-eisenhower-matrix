@@ -60,8 +60,9 @@ export function noteMatchesAllProperties(app: App, path: string, filters: Proper
 /** Drops malformed entries from persisted settings. */
 export function normalizePropertyFilters(raw: unknown): PropertyFilter[] {
   if (!Array.isArray(raw)) return [];
-  return raw
-    .filter((f): f is PropertyFilter => !!f && typeof f.key === 'string' && Array.isArray(f.values))
+  const entries: unknown[] = raw;
+  return entries
+    .filter((f): f is { key: string; values: unknown[] } => !!f && typeof f === 'object' && 'key' in f && 'values' in f && typeof f.key === 'string' && Array.isArray(f.values))
     .map((f) => ({ key: f.key, values: f.values.filter((v): v is string => typeof v === 'string') }))
     .filter((f) => f.key !== '');
 }
