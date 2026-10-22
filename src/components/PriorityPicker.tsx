@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { computePopupPosition } from '../core/popupPosition.ts';
 import type { Priority } from '../core/types.ts';
 import { PRIORITIES, PRIORITY_META } from '../core/types.ts';
 
@@ -19,17 +20,18 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
 
   const recomputePosition = useCallback(() => {
     const el = triggerRef.current;
-    if (!el) return;
+    const popover = popoverRef.current;
+    if (!el || !popover) return;
     const win = el.ownerDocument.defaultView ?? window;
     const rect = el.getBoundingClientRect();
-    const popoverWidth = 160;
-    const left = Math.min(rect.left, win.innerWidth - popoverWidth - 8);
-    setPos({ top: rect.bottom + 4, left: Math.max(8, left) });
+    setPos(computePopupPosition(rect, popover.getBoundingClientRect(), {
+      width: win.innerWidth, height: win.innerHeight,
+    }));
   }, []);
 
   useLayoutEffect(() => {
     if (open) recomputePosition();
-  }, [open, recomputePosition]);
+  }, [open, value, recomputePosition]);
 
   useEffect(() => {
     if (!open) return;
@@ -82,13 +84,13 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
 
   const doc = triggerRef.current?.ownerDocument ?? activeDocument;
   const popover =
-    open && pos
+    open
       ? createPortal(
           <div
             ref={popoverRef}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 1000 }}
+            style={{ position: 'fixed', top: pos?.top ?? 8, left: pos?.left ?? 8, visibility: pos ? undefined : 'hidden', zIndex: 1000 }}
             className="em-popover em-popover-menu"
             role="menu"
           >
