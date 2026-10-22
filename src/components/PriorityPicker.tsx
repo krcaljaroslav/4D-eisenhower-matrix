@@ -10,7 +10,7 @@ type Props = {
   disabled?: boolean;
 };
 
-type Position = { top: number; left: number };
+type Position = { top: number; left: number; maxHeight: number };
 
 export function PriorityPicker({ value, onChange, disabled }: Props) {
   const [open, setOpen] = useState(false);
@@ -23,10 +23,17 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
     const popover = popoverRef.current;
     if (!el || !popover) return;
     const win = el.ownerDocument.defaultView ?? window;
+    const viewportHeight = win.visualViewport?.height ?? win.innerHeight;
+    const offsetTop = win.visualViewport?.offsetTop ?? 0;
+    const maxHeight = Math.max(0, viewportHeight - 16);
+    popover.style.maxHeight = `${maxHeight}px`;
     const rect = el.getBoundingClientRect();
-    setPos(computePopupPosition(rect, popover.getBoundingClientRect(), {
-      width: win.innerWidth, height: win.innerHeight,
-    }));
+    const position = computePopupPosition({
+      left: rect.left, top: rect.top - offsetTop, bottom: rect.bottom - offsetTop,
+    }, popover.getBoundingClientRect(), {
+      width: win.innerWidth, height: viewportHeight,
+    });
+    setPos({ ...position, top: position.top + offsetTop, maxHeight });
   }, []);
 
   useLayoutEffect(() => {
@@ -43,7 +50,10 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
       if (triggerRef.current?.contains(target)) return;
       setOpen(false);
     };
-    const onScroll = () => setOpen(false);
+    const onScroll = (e: Event) => {
+      if (e.target && 'nodeType' in e.target && popoverRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
@@ -52,6 +62,7 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
       doc.addEventListener('keydown', onKey);
       win.addEventListener('scroll', onScroll, true);
       win.addEventListener('resize', recomputePosition);
+      win.visualViewport?.addEventListener('resize', recomputePosition);
     }, 0);
     return () => {
       win.clearTimeout(t);
@@ -59,6 +70,7 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
       doc.removeEventListener('keydown', onKey);
       win.removeEventListener('scroll', onScroll, true);
       win.removeEventListener('resize', recomputePosition);
+      win.visualViewport?.removeEventListener('resize', recomputePosition);
     };
   }, [open, recomputePosition]);
 
@@ -90,7 +102,7 @@ export function PriorityPicker({ value, onChange, disabled }: Props) {
             ref={popoverRef}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            style={{ position: 'fixed', top: pos?.top ?? 8, left: pos?.left ?? 8, visibility: pos ? undefined : 'hidden', zIndex: 1000 }}
+            style={{ position: 'fixed', top: pos?.top ?? 8, left: pos?.left ?? 8, maxHeight: pos?.maxHeight, overflowY: 'auto', boxSizing: 'border-box', visibility: pos ? undefined : 'hidden', zIndex: 1000 }}
             className="em-popover em-popover-menu"
             role="menu"
           >

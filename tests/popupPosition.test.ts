@@ -5,6 +5,22 @@ describe('computePopupPosition', () => {
   const popup = { width: 160, height: 180 };
   const viewport = { width: 800, height: 600 };
 
+  it('fits within the viewport when neither side fits and below has more room', () => {
+    expect(computePopupPosition({ left: 40, top: 130, bottom: 154 }, popup,
+      { width: 800, height: 300 }))
+      .toEqual({ top: 112, left: 40 });
+  });
+
+  it('keeps a popup inside the viewport when the anchor is below it', () => {
+    expect(computePopupPosition({ left: 40, top: 700, bottom: 724 }, popup, viewport))
+      .toEqual({ top: 412, left: 40 });
+  });
+
+  it('places a popup below when it fits exactly at the bottom margin', () => {
+    expect(computePopupPosition({ left: 40, top: 400, bottom: 408 }, popup, viewport))
+      .toEqual({ top: 412, left: 40 });
+  });
+
   it('places a popup below an anchor near the top', () => {
     expect(computePopupPosition({ left: 40, top: 20, bottom: 44 }, popup, viewport))
       .toEqual({ top: 48, left: 40 });

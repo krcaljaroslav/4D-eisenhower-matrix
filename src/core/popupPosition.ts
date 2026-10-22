@@ -12,7 +12,7 @@ export function computePopupPosition(anchorRect: AnchorRect, popupSize: Size, vi
     : below;
 
   return {
-    top: Math.max(margin, top),
+    top: Math.max(margin, Math.min(top, viewport.height - margin - popupSize.height)),
     left: Math.max(margin, Math.min(anchorRect.left, viewport.width - popupSize.width - margin)),
   };
 }
